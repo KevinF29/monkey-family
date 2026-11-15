@@ -248,6 +248,24 @@
     }
   };
 
+  /* ---------- erreurs : les dernières erreurs du jeu sont jointes à la fiche du joueur, visibles dans l'écran admin ---------- */
+  const ERRS = [];let errT = 0;
+  function report(msg, where){
+    msg = String(msg || "").slice(0, 300); if (!msg || /ResizeObserver loop|Script error\.?$/.test(msg)) return;
+    if (ERRS.some(e => e.m === msg)) return;
+    ERRS.push({m:msg, w:String(where || "").slice(0, 160), t:Date.now(), ua:navigator.userAgent.slice(0, 160), v:document.documentElement.dataset.v || ""});
+    while (ERRS.length > 8) ERRS.shift();
+    clearTimeout(errT);
+    errT = setTimeout(async () => {
+      try{ await ready; const p = "data/users/" + session.user.id + "/errs"; const {data} = await sb.from("docs").select("data").eq("path", p).maybeSingle();
+        const old = (data && data.data && data.data.errs) || []; const all = old.concat(ERRS.splice(0)).slice(-10);
+        await sb.from("docs").upsert({path:p, coll:"data/users/" + session.user.id, data:{errs:all}}); }catch(e){}
+    }, 4000);
+  }
+  window.addEventListener("error", e => report(e.message, (e.filename || "").split("/").pop() + ":" + e.lineno));
+  window.addEventListener("unhandledrejection", e => report(e.reason && (e.reason.message || e.reason), "promesse"));
+  window.MF_REPORT = report;
+
   window.claude = {use: async name => {
     await ready;
     if (name === "db") return DBAPI;

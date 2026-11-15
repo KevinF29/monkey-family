@@ -149,7 +149,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 .openrow{display:grid;justify-items:center;gap:6px;margin-top:-4px}
 /* phones: the stage takes all the height above the button, so the pack and the cards can be bigger and the button sits just above the tab bar */
 @media (max-width:700px){
-  .stage{min-height:max(clamp(520px,68vw,680px),calc(100svh - var(--tabh) - 150px))}
+  body:not(.admin) .stage,body.preview .stage{min-height:max(clamp(520px,68vw,680px),calc(100svh - var(--tabh) - 150px))}
   .pack{width:clamp(250px,74vw,330px)}
   .card{width:clamp(240px,72vw,330px)}
 }
@@ -1816,6 +1816,7 @@ td.n{text-align:right}
     const cv=$("gl");let renderer;
     try{renderer=new T.WebGLRenderer({canvas:cv,antialias:(window.devicePixelRatio||1)<1.5,alpha:true,powerPreference:"high-performance"});}catch(e){return api;}
     if(!renderer.getContext())return api;
+    cv.addEventListener("webglcontextlost",e=>{e.preventDefault();api.lost=true;try{api.onLost&&api.onLost();}catch(_){}} ,false);
     const DPR=Math.min(window.devicePixelRatio||1,window.innerWidth<700?1.5:2);
     renderer.setPixelRatio(DPR);renderer.outputEncoding=T.sRGBEncoding;
     renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
@@ -2078,6 +2079,7 @@ td.n{text-align:right}
   try{if(localStorage.getItem(KEY+"-3d")==="0")use3d=false;}catch(e){}
   $("three3d").checked=use3d;$("three3d").disabled=!P3.ok;
   if(!P3.ok)$("three3d").parentElement.title="WebGL indisponible sur cet appareil : booster 2D";
+  P3.onLost=()=>{if(!use3d)return;use3d=false;$("three3d").checked=false;$("three3d").disabled=true;applyPackMode();if(mode==="pack"){gsap.set(pack,{display:"block",opacity:1});packHint();}};
   function applyPackMode(){stage.classList.toggle("is3d",use3d);if(use3d){if(mode==="pack")P3.show(false);}else P3.hide();}
   P3.onTap=()=>open();
   P3.onCut=dir=>open({cut:true,dir});
@@ -2597,6 +2599,7 @@ td.n{text-align:right}
       const cv=document.createElement("canvas");cv.className="bgl";cv.setAttribute("role","img");cv.setAttribute("aria-label","Classeur Monkey Family");
       let R;try{R=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true,powerPreference:"high-performance"});}catch(e){return api;}
       if(!R||!R.getContext())return api;
+      cv.addEventListener("webglcontextlost",e=>{e.preventDefault();api.lost=true;},false);
       api.ok=true;api.canvas=cv;
       const PH=1.47,TP=.0028,TC=.034,TB=.034,PI=Math.PI;
       R.setPixelRatio(Math.min(2,window.devicePixelRatio||1));R.setClearColor(0x000000,0);
@@ -2958,7 +2961,9 @@ td.n{text-align:right}
         if(performance.now()-opened<400||moved){moved=false;return;}
         sway&&sway.kill();gsap.killTweensOf(P);if(z.dataset.mus)VOICE.stopMusic(600);gsap.to(z,{opacity:0,duration:.18,onComplete:()=>{z.remove();if(!root.querySelector(".bzoom"))root.classList.remove("zooming");if(use3&&z.dataset.changed)G3.invalidate(false);}});});}
 
+    try{if(sessionStorage.getItem("mf-ob")){sessionStorage.removeItem("mf-ob");setTimeout(()=>openBinder(),1200);}}catch(e){}
     function openBinder(){
+      if(G3.lost){try{sessionStorage.setItem("mf-ob","1");}catch(e){}location.reload();return;}
       if(B.open)return;B.open=true;B.scrollY=window.scrollY;
       document.querySelector(".wrap").style.display="none";cancelAnimationFrame(foilRaf);
       root.hidden=false;document.body.style.overflow="hidden";P3.pause&&P3.pause(true);

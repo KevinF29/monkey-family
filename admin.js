@@ -37,7 +37,7 @@
     const d = document.createElement("div"); d.id = "mfadmin"; d.className = "shop"; d.hidden = true;
     d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-label", "Admin");
     d.innerHTML = `<div class="shopbox"><div class="shophead"><b>Admin</b><span class="shopbal" id="mfaCount"></span><button class="bbtn" id="mfaClose" type="button" aria-label="Fermer">✕</button></div>
-      <div class="stabs" role="tablist"><button type="button" role="tab" data-mt="players" aria-selected="true">Joueurs</button><button type="button" role="tab" data-mt="import" aria-selected="false">Importer les médias</button><button type="button" role="tab" data-mt="export" aria-selected="false">Exporter pour Claude</button></div>
+      <div class="stabs" role="tablist"><button type="button" role="tab" data-mt="players" aria-selected="true">Joueurs</button><button type="button" role="tab" data-mt="import" aria-selected="false">Importer les médias</button><button type="button" role="tab" data-mt="export" aria-selected="false">Exporter pour Claude</button><button type="button" role="tab" data-mt="errs" aria-selected="false">Bugs</button></div>
       <div class="shopbody" id="mfaBody"></div></div>`;
     document.body.appendChild(d);
     $("mfaClose").addEventListener("click", closeAdmin);
@@ -50,7 +50,7 @@
   function closeAdmin(){ $("mfadmin").hidden = true; document.body.style.overflow = ""; }
   function render(){
     const d = $("mfadmin"); d.querySelectorAll("[data-mt]").forEach(b => b.setAttribute("aria-selected", b.dataset.mt === tab));
-    if (tab === "players") renderPlayers(); else if (tab === "import") renderImport(); else renderExport();
+    if (tab === "players") renderPlayers(); else if (tab === "import") renderImport(); else if (tab === "errs") renderErrs(); else renderExport();
   }
   function linkBox(link, label){
     return `<div class="mflinkbox"><p class="shint">${label}</p><input class="mflink" readonly value="${esc(link)}"><button type="button" class="sbtn mfcopy">Copier le lien</button></div>`;
@@ -104,6 +104,20 @@
     };
     $("mfFiles").addEventListener("change", e => go([...e.target.files]));
     $("mfDir").addEventListener("change", e => go([...e.target.files]));
+  }
+
+  async function renderErrs(){
+    const body = $("mfaBody"); body.innerHTML = `<p class="shint">Chargement…</p>`;
+    try{
+      const [{data:pl}, list] = await Promise.all([MF_SB.from("docs").select("path,data").like("path", "data/users/%/errs"), MF_ADMIN.list()]);
+      const name = Object.fromEntries(list.map(m => [m.uid, m.pseudo]));
+      const rows = (pl || []).filter(r => r.data && r.data.errs && r.data.errs.length).map(r => {
+        const uid = r.path.split("/")[2];
+        return `<div class="mferrs"><b>${esc(name[uid] || uid)}</b>` + r.data.errs.slice().reverse().map(e =>
+          `<p class="shint"><span>${new Date(e.t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span> — ${esc(e.m)}<br><small>${esc(e.w)} · ${esc(e.ua)}</small></p>`).join("") + `</div>`;
+      }).join("");
+      body.innerHTML = `<p class="shint">Les erreurs rencontrées par chaque joueur (les 10 dernières). Envoie une capture de cet écran à Claude s'il y a un souci.</p>` + (rows || `<p class="shint"><b>Aucune erreur signalée.</b></p>`);
+    }catch(err){ body.innerHTML = `<p class="shint mferr">${esc(err.message)}</p>`; }
   }
 
   function renderExport(){
