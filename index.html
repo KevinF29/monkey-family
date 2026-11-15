@@ -1538,7 +1538,7 @@ td.n{text-align:right}
   /* ---------- online save: the player's collection follows their account on every device ---------- */
   let USER=null,UID=null,CLOUD=false,cloudT=null,cloudBusy=false,cloudAgain=false;
   function cloudSave(){if(!CLOUD)return;clearTimeout(cloudT);cloudT=setTimeout(cloudPush,1200);}
-  async function cloudPush(){if(!CLOUD||!DB||!UID)return;if(cloudBusy){cloudAgain=true;return;}cloudBusy=true;
+  async function cloudPush(){if(SRV||!CLOUD||!DB||!UID)return;if(cloudBusy){cloudAgain=true;return;}cloudBusy=true;
     try{const {fresh,...keep}=S;await DB.doc(`data/users/${UID}/save`).set({S:JSON.parse(JSON.stringify(keep)),t:S.t||Date.now()});
       await DB.doc("players/"+UID).set(publicStats());setSaveState("ok");}
     catch(e){setSaveState("err");}
@@ -1547,6 +1547,28 @@ td.n{text-align:right}
     return {pseudo:(PREFS.pseudo||"").slice(0,20),unique:uniq,cards:tot,total:CARDS.length,opened:S.opened||0,by,t:Date.now()};}
   function setSaveState(k){const el=document.getElementById("saveState");if(!el)return;
     el.textContent=k==="ok"?"✓ Sauvegarde en ligne : ta collection te suit sur tous tes appareils.":k==="err"?"Sauvegarde en ligne indisponible pour l'instant : ta collection reste sur cet appareil.":"Sauvegarde : sur cet appareil";}
+  /* ---------- collection managed by the server (PWA): boosters, stock, bananas and purchases are decided there ---------- */
+  let SRV=typeof window.MF_RPC==="function";
+  let KIDX=null;const kidx=()=>KIDX||(KIDX=new Map(CARDS.map(c=>[c.key,c.id])));
+  const cardOfKey=k=>{const m=kidx();const i=m.has(k)?m.get(k):m.get(KEY_ALIAS[k]);return i===undefined?null:CARDS[i];};
+  function applyServer(st){
+    if(!st||typeof st!=="object")return;if(st.state)st=st.state;
+    const off=Date.now()-(+st.now||Date.now()),owned={};
+    Object.entries(st.owned||{}).forEach(([k,n])=>{const c=cardOfKey(k);if(c&&n>0)owned[c.id]=(owned[c.id]||0)+(+n);});
+    S.owned=owned;S.opened=+st.opened||0;S.bananas=+st.bananas||0;S.stock=+st.stock;S.nextAt=+st.nextAt?(+st.nextAt+off):0;S.counts=st.counts||{};
+    S.styles=[...new Set([0,...(st.styles||[]).map(n=>STYLES.findIndex(x=>x.name===n)).filter(i=>i>=0)])];S.style=Math.max(0,STYLES.findIndex(x=>x.name===st.style));
+    if(st.pseudo&&st.pseudo!==PREFS.pseudo){PREFS.pseudo=st.pseudo;savePrefs();const pi=document.getElementById("pseudoIn");if(pi&&document.activeElement!==pi)pi.value=st.pseudo;}
+    try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+    try{syncBananas();renderStats();renderPacks();}catch(e){}try{BIND.repaint();}catch(e){}
+    try{if(mode==="pack"||mode==="summary")shown.forEach(s=>paint(s.cv,s.c,0));}catch(e){}}
+  const SRV_MSG={no_pack:"Plus de booster pour le moment.",no_bananas:"Pas assez de bananes.",owned:"Tu as déjà cette carte.",no_cards:"Le catalogue n'est pas encore prêt : réessaie dans un instant.",not_member:"Ton accès est en pause."};
+  let srvRefreshT=0;
+  function srvRefresh(){clearTimeout(srvRefreshT);srvRefreshT=setTimeout(()=>{window.MF_RPC("mf_state").then(applyServer,()=>{});},300);}
+  // the screen changes right away; the server's answer then becomes the truth (and undoes anything it refused)
+  function serverDo(name,args){if(!SRV)return Promise.resolve(null);
+    return window.MF_RPC(name,args||{}).then(r=>{applyServer(r);return r;},e=>{const m=String(e&&e.message||e);
+      const k=Object.keys(SRV_MSG).find(x=>m.includes(x));say(k?SRV_MSG[k]:"Connexion impossible : réessaie dans un instant.");srvRefresh();throw e;});}
+  if(SRV){document.addEventListener("visibilitychange",()=>{if(!document.hidden&&CLOUD)srvRefresh();});setInterval(()=>{if(!document.hidden&&CLOUD)srvRefresh();},5*60*1000);}
   /* per-device preferences */
   const PREFS={snd:true,vib:true,pseudo:""};try{Object.assign(PREFS,JSON.parse(localStorage.getItem("mf-prefs")||"{}"));}catch(e){}
   const savePrefs=()=>{try{localStorage.setItem("mf-prefs",JSON.stringify(PREFS));}catch(e){}};
@@ -2119,11 +2141,22 @@ td.n{text-align:right}
     foilRaf=requestAnimationFrame(step);}
   function flipUp(s,dur,onDone){SFX.play("flip");gsap.to(s.flip,{rotationY:180,duration:D(dur),ease:"power2.inOut",onComplete:()=>{s.el.dataset.open=1;foilLoop();onDone&&onDone();}});}
 
-  function open(o){
+  async function open(o){
     if(busy||mode!=="pack")return;
     if(!takePack()){if(use3d)P3.show(false);setHint("Plus de booster : le prochain arrive dans "+hms(S.nextAt-Date.now()));renderPacks();return;}
     busy=true;mode="opening";say("");setBtn("Ouverture…",true);
-    deckCards=rollBooster();save();idx=0;postPulls(deckCards);
+    if(SRV){let res;
+      try{res=await window.MF_RPC("mf_open",{p_free:!limitOn(),p_force:$("force").value||null});}
+      catch(e){const m=String(e&&e.message||e);const k=Object.keys(SRV_MSG).find(x=>m.includes(x));say(k?SRV_MSG[k]:"Connexion impossible : le booster n'a pas été ouvert, réessaie.");
+        busy=false;mode="pack";if(use3d)P3.show(false);else gsap.set(pack,{display:"block",opacity:1});srvRefresh();renderPacks();if(!/Prochain/.test(openBtn.textContent))setBtn("Ouvrir le booster");return;}
+      const got=(res.cards||[]).map(cardOfKey).filter(Boolean);
+      if(got.length<5){location.reload();return;}  // a card unknown to this (older) page: reload to get the new list
+      got.sort((x,y)=>x.r-y.r);
+      S.fresh=(res.fresh||[]).map(k=>{const c=cardOfKey(k);return c&&c.id;}).filter(i=>i!==undefined&&i!==null);
+      got.forEach(c=>{if(TIER[c.rarity]>=3)S.log.unshift({b:(+res.state.opened)||0,name:c.name.trim(),rarity:c.rarity});});S.log=S.log.slice(0,30);
+      applyServer(res.state);deckCards=got;
+    }else{deckCards=rollBooster();postPulls(deckCards);}
+    save();idx=0;
     buildStack(deckCards);
     const els=shown.map(s=>s.el);
     gsap.killTweensOf(pack);
@@ -2920,7 +2953,7 @@ td.n{text-align:right}
       const cv=z.querySelector("canvas"),card=z.querySelector(".bzcard"),shine=z.querySelector(".bzshine i"),glare=z.querySelector(".bzglare");
       paint(cv,c,0);formTicker(cv,c,()=>z.isConnected);
       if(n>1){const b=document.createElement("button");b.type="button";b.className="bzrec";const lbl=()=>`Recycler 1 double · +${RECYCLE[c.rarity]} 🍌`;b.textContent=lbl();z.appendChild(b);
-        b.addEventListener("click",e=>{e.stopPropagation();if(dupes(c)<1)return;const v=recycleCard(c,1);addBananas(v);z.dataset.changed=1;
+        b.addEventListener("click",e=>{e.stopPropagation();if(dupes(c)<1)return;const v=recycleCard(c,1);addBananas(v);z.dataset.changed=1;serverDo("mf_recycle",{p_key:c.key,p_count:1}).catch(()=>{});
           const m=S.owned[c.id];z.querySelector("p").textContent=`${c.name.trim()} · ${c.rarity}${m>1?` · ×${m}`:""}`;
           const slot=book.querySelector(`.slot[data-id="${c.id}"] .cnt`);if(slot){if(m>1)slot.textContent="×"+m;else slot.remove();}
           if(m<=1)b.remove();renderStats();});}
@@ -3273,8 +3306,9 @@ td.n{text-align:right}
         ${rows.map((r,i)=>`<tr><td><span style="white-space:nowrap"><span class="dot" style="background:${colorOf(r.R.name)}"></span>${r.R.name.split(" ")[0]}</span>${r.R.name.includes(" ")?" "+r.R.name.split(" ").slice(1).join(" "):""}</td><td class="n">${r.n}</td><td class="n">${RECYCLE[r.R.name]}</td><td class="n">${fmt(r.v)}</td>
           <td class="n"><button class="sbtn" data-rec="${i}" aria-label="Recycler les doubles ${r.R.name}" ${r.n?"":"disabled"}><span class="rlong">Recycler</span><span class="rshort" aria-hidden="true">♻️</span></button></td></tr>`).join("")}</table>
         <button class="sbtn big" id="recAll" ${count?"":"disabled"}>Tout recycler · ${count} carte${count>1?"s":""} · +${fmt(total)} 🍌</button>`;
-      body.querySelectorAll("[data-rec]").forEach(b=>b.addEventListener("click",()=>{let v=0;byR[+b.dataset.rec].forEach(c=>v+=recycleCard(c));finishRecycle(v);}));
-      const all=$("recAll");all&&all.addEventListener("click",()=>{let v=0;CARDS.forEach(c=>v+=recycleCard(c));finishRecycle(v);});
+      body.querySelectorAll("[data-rec]").forEach(b=>b.addEventListener("click",()=>{let v=0;byR[+b.dataset.rec].forEach(c=>v+=recycleCard(c));finishRecycle(v);
+        if(v)serverDo("mf_recycle",{p_rarity:RARITIES[+b.dataset.rec].name}).then(()=>render(),()=>render());}));
+      const all=$("recAll");all&&all.addEventListener("click",()=>{let v=0;CARDS.forEach(c=>v+=recycleCard(c));finishRecycle(v);if(v)serverDo("mf_recycle",{}).then(()=>render(),()=>render());});
     }
     function finishRecycle(v){if(!v)return;addBananas(v);say(`Doubles recyclés : +${fmt(v)} bananes.`);renderStats();render();toast(`+${fmt(v)} 🍌`);}
     function renderCards(){
@@ -3288,7 +3322,8 @@ td.n{text-align:right}
       $("sfilter").addEventListener("change",e=>{filter=e.target.value;renderCards();});
       body.querySelectorAll("[data-buy]").forEach(b=>b.addEventListener("click",()=>{const c=CARDS[+b.dataset.buy],p=CRAFT[c.rarity];
         if((S.bananas||0)<p||S.owned[c.id])return;addBananas(-p);S.owned[c.id]=1;S.fresh=[...(S.fresh||[]),c.id];
-        S.counts[c.rarity]=S.counts[c.rarity]||0;save();renderStats();say(`Carte achetée : ${c.name.trim()} (${c.rarity}).`);reveal1(c);renderCards();}));
+        S.counts[c.rarity]=S.counts[c.rarity]||0;save();renderStats();say(`Carte achetée : ${c.name.trim()} (${c.rarity}).`);reveal1(c);renderCards();
+        serverDo("mf_buy_card",{p_key:c.key}).then(()=>renderCards(),()=>renderCards());}));
     }
     function renderStyles(){
       const sample=byR[RIDX["Rare"]][0]||CARDS[0];
@@ -3320,7 +3355,7 @@ td.n{text-align:right}
     document.addEventListener("keydown",e=>{if(open&&e.key==="Escape"){const pop=root.querySelector(".spop");if(pop)pop.click();else hide();}});
     return {show,hide};
   })();
-  function setStyle(i){S.style=i;save();shown.forEach(s=>paint(s.cv,s.c,0));}
+  function setStyle(i){S.style=i;save();shown.forEach(s=>paint(s.cv,s.c,0));serverDo("mf_style",{p_name:STYLES[i].name}).catch(()=>{});}
   $("shopBtn").addEventListener("click",()=>SHOP.show());
   STYLES.forEach((st,i)=>{const o=document.createElement("option");o.value=i;o.textContent=st.name;$("tstyle").appendChild(o);});
 
@@ -3356,11 +3391,25 @@ td.n{text-align:right}
   setInterval(renderPacks,1000);
   $("limit").addEventListener("change",()=>{try{localStorage.setItem(KEY+"-limit",$("limit").checked?"1":"0");}catch(e){}renderPacks();});
   try{if(localStorage.getItem(KEY+"-limit")==="0")$("limit").checked=false;}catch(e){}
-  $("giveBan").addEventListener("click",()=>{addBananas(500);say("+500 bananes (test).");});
-  $("refill").addEventListener("click",()=>{S.stock=PACK_MAX;S.nextAt=0;save();renderPacks();say("Boosters rechargés (test).");});
+  $("giveBan").addEventListener("click",()=>{addBananas(500);say("+500 bananes (test).");serverDo("mf_admin_bananas",{p_n:500}).catch(()=>{});});
+  $("refill").addEventListener("click",()=>{S.stock=PACK_MAX;S.nextAt=0;save();renderPacks();say("Boosters rechargés (test).");serverDo("mf_admin_refill").catch(()=>{});});
 
   /* ---------- online save: load / merge ---------- */
   async function cloudInit(){
+    if(SRV){try{
+      if(ADMIN){await window.MF_RPC("mf_sync_cards",{p_cards:CARDS.map(c=>({key:c.key,name:c.orig.trim(),cat:c.cat,rarity:c.rarity}))});}
+      const st=await window.MF_RPC("mf_state");CLOUD=true;
+      if(!st.pseudo){let p=PREFS.pseudo;if(!p&&USER){try{const me=await USER.me();p=me&&me.name;}catch(e){}}
+        if(p){try{applyServer(await window.MF_RPC("mf_pseudo",{p_pseudo:p}));}catch(e){applyServer(st);}}else applyServer(st);}
+      else applyServer(st);
+      $("pseudoIn").value=PREFS.pseudo||"";setSaveState("ok");
+      let joined=false;try{joined=localStorage.getItem("mf-joined-"+UID)==="1";localStorage.setItem("mf-joined-"+UID,"1");}catch(e){}
+      if(!joined&&!(+st.opened))postFeed({kind:"join"});
+    }catch(e){const m=String(e&&e.message||e);
+      /* server functions not installed yet: keep the previous online save */
+      if(/PGRST202|Could not find the function|does not exist/i.test(m)){SRV=false;}
+      else{CLOUD=false;setSaveState("err");say("Connexion impossible : ta collection n'a pas pu être chargée. Recharge la page.");return;}}
+    if(SRV)return;}
     try{const snap=await DB.doc(`data/users/${UID}/save`).get();const r=snap.exists?snap.data():null;
       if(r&&r.S&&typeof r.S==="object"&&(+r.t||0)>(+S.t||0))adoptSave(r.S);
       CLOUD=true;
@@ -3477,7 +3526,7 @@ td.n{text-align:right}
     const seg=()=>{const on=$("three3d").checked;$("seg3d").setAttribute("aria-pressed",on);$("seg2d").setAttribute("aria-pressed",!on);$("seg3d").disabled=$("three3d").disabled;};
     const pick=v=>{if($("three3d").disabled||$("three3d").checked===v)return;$("three3d").checked=v;$("three3d").dispatchEvent(new Event("change"));seg();};
     $("seg2d").addEventListener("click",()=>pick(false));$("seg3d").addEventListener("click",()=>pick(true));seg();
-    const savePseudo=()=>{const v=$("pseudoIn").value.trim().replace(/\s+/g," ").slice(0,20);if(v===(PREFS.pseudo||""))return;PREFS.pseudo=v;savePrefs();cloudSave();};
+    const savePseudo=()=>{const v=$("pseudoIn").value.trim().replace(/\s+/g," ").slice(0,20);if(v===(PREFS.pseudo||""))return;PREFS.pseudo=v;savePrefs();cloudSave();if(v)serverDo("mf_pseudo",{p_pseudo:v}).catch(()=>{});};
     $("pseudoIn").addEventListener("change",savePseudo);$("pseudoIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();savePseudo();$("pseudoIn").blur();}});
     document.addEventListener("pointerdown",e=>{if(!root.hidden&&!root.contains(e.target)&&!$("setBtn").contains(e.target))hide();});
     document.addEventListener("keydown",e=>{if(!root.hidden&&e.key==="Escape"){hide();$("setBtn").focus();}});

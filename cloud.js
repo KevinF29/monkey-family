@@ -274,6 +274,13 @@
     return null;
   }};
   window.MF_READY = ready;
+  /* fonctions côté serveur (boosters, bananes, achats) : le résultat fait foi */
+  window.MF_RPC = async (name, args) => {
+    await ready;
+    const {data, error} = await sb.rpc(name, args || {});
+    if (error) throw new Error(error.message || String(error));
+    return data;
+  };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
