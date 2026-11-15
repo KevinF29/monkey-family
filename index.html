@@ -163,6 +163,11 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 .binder{bottom:var(--tabh)!important;min-height:0!important}/*X*/
 .shop:not(.studio){bottom:var(--tabh)!important}
 body:has(.bzoom) .tabbar,body:has(.studio:not([hidden])) .tabbar,body:has(.studio:not([hidden])) .socialbtn{display:none}
+/* a zoomed binder card covers the whole screen, down to where the tab bar was */
+body:has(.bzoom) .binder{bottom:0!important}
+/* players (and the player preview): the night-sky look of the booster stage reaches every edge, down to the tab bar */
+body:not(.admin),body.preview{--bg:#0d0f1a;--panel:#1b1d29;--fg:#e9eaf2;--muted:#9a9eb3;--line:#2e3142;--field:#232636;--accent:#9d93ff;--accent-fg:#14121f;color-scheme:dark}
+html:has(body:not(.admin)),html:has(body.preview){background:#0d0f1a}
 .socialbtn{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));z-index:95;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
   background:rgba(20,18,32,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;font-size:21px;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .socialbtn .sbadge{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#ff4b45;color:#fff;font:700 11px/19px var(--ui);text-align:center}
