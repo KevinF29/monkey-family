@@ -277,7 +277,8 @@
   /* fonctions côté serveur (boosters, bananes, achats) : le résultat fait foi */
   window.MF_RPC = async (name, args) => {
     await ready;
-    const {data, error} = await sb.rpc(name, args || {});
+    let t; const late = new Promise((_, no) => t = setTimeout(() => no(new Error("timeout")), 20000));
+    const {data, error} = await Promise.race([sb.rpc(name, args || {}), late]).finally(() => clearTimeout(t));
     if (error) throw new Error(error.message || String(error));
     return data;
   };

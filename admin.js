@@ -73,17 +73,27 @@
       try{ const r = await MF_ADMIN.add(p); renderPlayers(linkBox(r.link, `Lien personnel de <b>${esc(p)}</b> : envoie-le-lui, il l'ouvre une fois et garde le lien.`)); }
       catch(err){ btn.disabled = false; btn.textContent = "Créer son accès"; $("mfNote").innerHTML = `<p class="shint mferr">${esc(/duplicate|unique/i.test(err.message) ? "Ce pseudo existe déjà." : err.message)}</p>`; }
     });
-    let list = [];
-    try{ list = await MF_ADMIN.list(); }catch(err){ body.querySelector(".shint:last-child").textContent = "Erreur : " + err.message; return; }
+    let list = [], packs = null;
+    try{ [list, packs] = await Promise.all([MF_ADMIN.list(), window.MF_RPC("mf_admin_players").catch(() => null)]); }catch(err){ body.querySelector(".shint:last-child").textContent = "Erreur : " + err.message; return; }
     $("mfaCount").textContent = list.length + " joueur" + (list.length > 1 ? "s" : "");
-    const rows = list.map(m => `<div class="sitem"><span class="sname">${esc(m.pseudo)}<small>${m.active ? "Actif" : "En pause"} · ${new Date(m.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</small></span>
-      <span class="mfbtns"><button class="sbtn" data-link="${m.uid}" data-p="${esc(m.pseudo)}">Nouveau lien</button><button class="sbtn" data-act="${m.uid}" data-on="${m.active ? 0 : 1}">${m.active ? "Mettre en pause" : "Réactiver"}</button></span></div>`).join("");
-    body.querySelector(".shint:last-child").outerHTML = `<p class="shint">« Nouveau lien » remplace l'ancien (qui ne marchera plus) : la collection du joueur est conservée.</p><div class="slist">${rows}</div>`;
+    const P = Object.fromEntries((Array.isArray(packs) ? packs : []).map(x => [x.uid, x]));
+    const hm = ms => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") : m + " min"; };
+    const packInfo = x => !x ? "" : ` · 🎴 <b data-stock="${x.uid}">${x.stock}</b> booster${x.stock > 1 ? "s" : ""} à ouvrir` + (x.nextAt ? ` (prochain dans ${hm(x.nextAt - x.now)})` : "") + ` · ${x.opened} ouvert${x.opened > 1 ? "s" : ""} · 🍌 ${x.bananas}`;
+    const rows = list.map(m => `<div class="sitem" style="display:grid;grid-template-columns:minmax(0,1fr)"><span class="sname">${esc(m.pseudo)}<small style="display:block;line-height:1.45">${m.active ? "Actif" : "En pause"} · ${new Date(m.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}${packInfo(P[m.uid])}</small></span>
+      <span class="mfbtns">${P[m.uid] ? `<button class="sbtn" data-give="${m.uid}" data-p="${esc(m.pseudo)}">+1 booster</button>` : ""}<button class="sbtn" data-link="${m.uid}" data-p="${esc(m.pseudo)}">Nouveau lien</button><button class="sbtn" data-act="${m.uid}" data-on="${m.active ? 0 : 1}">${m.active ? "Mettre en pause" : "Réactiver"}</button></span></div>`).join("");
+    body.querySelector(".shint:last-child").outerHTML = `${packs ? "" : `<p class="shint mferr">Boosters des joueurs indisponibles : lance d'abord le script SQL de sécurisation dans Supabase.</p>`}<p class="shint">« Nouveau lien » remplace l'ancien (qui ne marchera plus) : la collection du joueur est conservée.</p><div class="slist">${rows}</div>`;
     body.querySelectorAll("[data-link]").forEach(b => b.addEventListener("click", async () => {
       if (b.dataset.sure !== "1"){ b.dataset.sure = "1"; b.textContent = "Confirmer ?"; setTimeout(() => { b.dataset.sure = ""; b.textContent = "Nouveau lien"; }, 3000); return; }
       b.disabled = true;
       try{ const l = await MF_ADMIN.newLink(b.dataset.link); renderPlayers(linkBox(l, `Nouveau lien de <b>${b.dataset.p}</b> (l'ancien ne marche plus) :`)); }
       catch(err){ b.disabled = false; $("mfNote").innerHTML = `<p class="shint mferr">${esc(err.message)}</p>`; }
+    }));
+    body.querySelectorAll("[data-give]").forEach(b => b.addEventListener("click", async () => {
+      b.disabled = true;
+      try{ const x = await window.MF_RPC("mf_admin_give", {p_uid: b.dataset.give, p_n: 1}); const el = body.querySelector(`[data-stock="${b.dataset.give}"]`); if (el) el.textContent = x.stock;
+        $("mfNote").innerHTML = `<p class="shint">+1 booster pour <b>${b.dataset.p}</b> (${x.stock} à ouvrir).</p>`; }
+      catch(err){ $("mfNote").innerHTML = `<p class="shint mferr">${esc(err.message)}</p>`; }
+      b.disabled = false;
     }));
     body.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", async () => {
       b.disabled = true; try{ await MF_ADMIN.setActive(b.dataset.act, b.dataset.on === "1"); renderPlayers(); }catch(err){ b.disabled = false; }

@@ -176,6 +176,8 @@ body:not(.admin),body.preview{--bg:#0d0f1a;--panel:#1b1d29;--fg:#e9eaf2;--muted:
 html:has(body:not(.admin)),html:has(body.preview){background:#0d0f1a}
 .socialbtn{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));z-index:95;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
   background:rgba(20,18,32,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;font-size:21px;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.gearbtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 56px);font-size:19px}
+.gearbtn.on{background:rgba(157,147,255,.45)}
 .socialbtn .sbadge{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#ff4b45;color:#fff;font:700 11px/19px var(--ui);text-align:center}
 body:has(.binder:not([hidden])) .socialbtn,body:has(.shop:not([hidden])) .socialbtn{display:none}
 .social{position:fixed;top:0;right:0;bottom:var(--tabh);z-index:140;width:min(420px,100%);box-sizing:border-box;background:var(--panel);color:var(--fg);border-left:1px solid var(--line);box-shadow:-12px 0 40px rgba(0,0,0,.3);
@@ -209,9 +211,9 @@ body.kb .social{bottom:auto}
 .chatform input{flex:1;min-width:0;box-sizing:border-box;background:var(--field);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:10px 14px;font:500 16px var(--ui)}
 .chatform button{border-radius:999px}
 .socnote{color:var(--muted);font-size:13px;padding:0 14px 12px;margin:0}
-.setsheet{position:fixed;left:0;right:0;bottom:var(--tabh);z-index:140;display:grid;justify-items:center;padding:0 12px 12px;pointer-events:none}
+.setsheet{position:fixed;left:0;right:0;top:calc(max(12px,env(safe-area-inset-top,0px)) + 112px);z-index:140;display:grid;justify-items:end;padding:0 12px 12px;pointer-events:none}
 .setsheet[hidden]{display:none}
-.sheetbox{pointer-events:auto;width:min(480px,100%);background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:18px;box-shadow:0 -10px 40px rgba(0,0,0,.3);padding:16px;display:grid;gap:14px;box-sizing:border-box}
+.sheetbox{pointer-events:auto;width:min(480px,100%);background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:18px;box-shadow:0 -10px 40px rgba(0,0,0,.3);padding:16px;display:grid;gap:14px;box-sizing:border-box;max-height:calc(100svh - var(--tabh) - 130px - env(safe-area-inset-top,0px));overflow:auto;overscroll-behavior:contain}
 .sheetbox h2{margin:0;font:400 20px var(--display)}
 .srow{display:flex;align-items:center;justify-content:space-between;gap:14px}
 .srow .sl{display:grid}
@@ -318,6 +320,23 @@ td.n{text-align:right}
 .spcard canvas{width:100%;height:100%;display:block;border-radius:4%/3%;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .spop p{margin:0;font:600 15px var(--label);letter-spacing:.1em;text-transform:uppercase;text-align:center;padding:0 16px}
 .stoast{position:fixed;left:50%;bottom:28px;translate:-50% 0;z-index:130;background:#ffd98a;color:#241a05;font:700 16px var(--ui);padding:10px 18px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+/* ---- marché ---- */
+.mkitem{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:10px;border-radius:12px;background:rgba(255,255,255,.05);align-items:start}
+.mkitem.can{outline:2px solid #ffd98a;outline-offset:-2px}
+.mkthumb{width:72px;aspect-ratio:750/1050;border-radius:6%/4.5%;display:block;cursor:zoom-in;background:#222}
+.mkmain{display:grid;gap:6px;min-width:0}
+.mkmain p{margin:0;line-height:1.4;overflow-wrap:anywhere}
+.mkwants{display:grid;gap:6px}
+.mkwant{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.2)}
+.mkwant span{min-width:0;overflow-wrap:anywhere}
+.mktag{display:inline-block;font:700 11px var(--ui);padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#e9e4f2;margin-left:6px;vertical-align:1px}
+.mktag.mknew{background:#ffd98a;color:#241a05}
+.mkform{display:grid;gap:12px}
+.mkform select{width:100%;background:#1b1826;color:#f3eee4;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 10px;font:15px var(--ui)}
+.mkpick{display:grid;gap:6px;max-height:46vh;overflow:auto;padding-right:4px}
+.mkpick label{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer}
+.mkpick input{width:20px;height:20px;accent-color:#ffd98a;flex:none}
+.mkh{font:600 13px var(--label);letter-spacing:.08em;text-transform:uppercase;color:#a59fb4;margin:8px 0 0}
 .bzrec{appearance:none;border:1px solid #ffd98a;background:rgba(255,217,138,.15);color:#ffe7b0;border-radius:10px;padding:9px 14px;font:700 14px var(--ui);cursor:pointer}
 /* ---- studio des artworks ---- */
 .studio [hidden]{display:none!important}
@@ -620,11 +639,12 @@ td.n{text-align:right}
   <button type="button" class="tab on" id="tabBooster" aria-current="page"><span class="ti" aria-hidden="true">🎴</span><span>Booster</span></button>
   <button type="button" class="tab" id="binderBtn"><span class="ti" aria-hidden="true">📖</span><span>Classeur</span></button>
   <button type="button" class="tab" id="shopBtn"><span class="ti" aria-hidden="true">🍌</span><span class="tbadge" id="banCount" aria-label="bananes">0</span><span>Boutique</span></button>
+  <button type="button" class="tab" id="marketBtn"><span class="ti" aria-hidden="true">🔄</span><span class="tbadge" id="mkBadge" aria-label="échanges possibles" hidden>0</span><span>Marché</span></button>
   <button type="button" class="tab" id="rankBtn"><span class="ti" aria-hidden="true">🏆</span><span>Classement</span></button>
-  <button type="button" class="tab" id="setBtn" aria-expanded="false" aria-controls="settings"><span class="ti" aria-hidden="true">⚙️</span><span>Réglages</span></button>
 </nav>
 
 <button type="button" class="socialbtn" id="socialBtn" aria-label="Actu et chat" aria-expanded="false" aria-controls="social">💬<span class="sbadge" id="socialBadge" hidden></span></button>
+<button type="button" class="socialbtn gearbtn" id="setBtn" aria-label="Réglages" aria-expanded="false" aria-controls="settings">⚙️</button>
 <aside id="social" class="social" aria-label="Actu et chat" hidden>
   <div class="sochead"><b>Entre potes</b><button type="button" class="socx" id="socClose" aria-label="Fermer">✕</button></div>
   <div class="soctabs" role="tablist"><button type="button" role="tab" id="socFeedTab" class="on" aria-selected="true">Actu<span class="dotn" id="feedN" hidden></span></button><button type="button" role="tab" id="socChatTab" aria-selected="false">Chat<span class="dotn" id="chatN" hidden></span></button></div>
@@ -651,10 +671,18 @@ td.n{text-align:right}
   </div>
 </div>
 
+<div id="market" class="shop" role="dialog" aria-modal="true" aria-label="Marché" hidden>
+  <div class="shopbox">
+    <div class="shophead"><b>Marché</b><span class="shopbal" id="mkSub"></span><button class="bbtn" id="mkClose" type="button" aria-label="Fermer le marché">✕</button></div>
+    <div class="stabs" role="tablist"><button type="button" role="tab" data-mk="all">Annonces</button><button type="button" role="tab" data-mk="mine">Mes annonces</button><button type="button" role="tab" data-mk="new">Proposer</button></div>
+    <div class="shopbody" id="mkBody"></div>
+  </div>
+</div>
+
 <div id="shop" class="shop" role="dialog" aria-modal="true" aria-label="Boutique" hidden>
   <div class="shopbox">
     <div class="shophead"><b>Boutique</b><span class="shopbal">🍌 <b id="shopBal">0</b></span><button class="bbtn" id="shopClose" type="button" aria-label="Fermer la boutique">✕</button></div>
-    <div class="stabs" role="tablist"><button type="button" role="tab" data-tab="recycle">Recycler les doubles</button><button type="button" role="tab" data-tab="cards">Cartes manquantes</button><button type="button" role="tab" data-tab="styles">Styles</button></div>
+    <div class="stabs" role="tablist"><button type="button" role="tab" data-tab="recycle">Recycler les doubles</button><button type="button" role="tab" data-tab="styles">Styles</button></div>
     <div class="shopbody" id="shopBody"></div>
   </div>
 </div>
@@ -1559,7 +1587,7 @@ td.n{text-align:right}
     S.styles=[...new Set([0,...(st.styles||[]).map(n=>STYLES.findIndex(x=>x.name===n)).filter(i=>i>=0)])];S.style=Math.max(0,STYLES.findIndex(x=>x.name===st.style));
     if(st.pseudo&&st.pseudo!==PREFS.pseudo){PREFS.pseudo=st.pseudo;savePrefs();const pi=document.getElementById("pseudoIn");if(pi&&document.activeElement!==pi)pi.value=st.pseudo;}
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
-    try{syncBananas();renderStats();renderPacks();}catch(e){}try{BIND.repaint();}catch(e){}
+    try{syncBananas();renderStats();renderPacks();}catch(e){}try{BIND.repaint();}catch(e){}try{MARKET.badge();}catch(e){}
     try{if(mode==="pack"||mode==="summary")shown.forEach(s=>paint(s.cv,s.c,0));}catch(e){}}
   const SRV_MSG={no_pack:"Plus de booster pour le moment.",no_bananas:"Pas assez de bananes.",owned:"Tu as déjà cette carte.",no_cards:"Le catalogue n'est pas encore prêt : réessaie dans un instant.",not_member:"Ton accès est en pause."};
   let srvRefreshT=0;
@@ -3275,9 +3303,8 @@ td.n{text-align:right}
   {let k=null;try{k=sessionStorage.getItem("mf-open-card");sessionStorage.removeItem("mf-open-card");}catch(e){}
    if(k){const c=CARDS.find(x=>slug(x.name)===k);if(c){const go=()=>{$("studioBtn").hidden=false;STUDIO.show();STUDIO.pick&&STUDIO.pick(c);};setTimeout(go,300);}}}
 
-  /* ---------- bananes : recycler les doubles, acheter des cartes manquantes et des styles ---------- */
+  /* ---------- bananes : recycler les doubles, acheter des styles ---------- */
   const RECYCLE={"Commune":1,"Peu commune":2,"Rare":5,"Épique":10,"Légendaire":25,"Mythique":50,"Secret":80,"Originel":150};
-  const CRAFT={"Commune":10,"Peu commune":20,"Rare":50,"Épique":100,"Légendaire":250,"Mythique":500,"Secret":800,"Originel":1500};
   const STYLE_PRICES={"Classique":0,"Manga":200,"Pop Art":200,"Graffiti":200,
     "Néon":400,"Souvenir":400,"Pixel":400,"Chromé":400,"Aquarelle":400,"Steampunk":400,"Estampe":400,"Bonbon":400,
     "Galaxie":600,"Vitrail":600,"VHS":600,"Gemme":600,"Verre":600};
@@ -3296,7 +3323,7 @@ td.n{text-align:right}
     function render(){
       root.querySelectorAll("[data-tab]").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab));
       syncBananas();
-      if(tab==="recycle")renderRecycle();else if(tab==="cards")renderCards();else renderStyles();
+      if(tab==="recycle")renderRecycle();else renderStyles();
     }
     function renderRecycle(){
       const rows=RARITIES.map((R,i)=>{const list=byR[i],n=list.reduce((s,c)=>s+dupes(c),0);return {R,n,v:n*RECYCLE[R.name]};});
@@ -3311,20 +3338,6 @@ td.n{text-align:right}
       const all=$("recAll");all&&all.addEventListener("click",()=>{let v=0;CARDS.forEach(c=>v+=recycleCard(c));finishRecycle(v);if(v)serverDo("mf_recycle",{}).then(()=>render(),()=>render());});
     }
     function finishRecycle(v){if(!v)return;addBananas(v);say(`Doubles recyclés : +${fmt(v)} bananes.`);renderStats();render();toast(`+${fmt(v)} 🍌`);}
-    function renderCards(){
-      const miss=CARDS.filter(c=>!S.owned[c.id]&&(!filter||c.rarity===filter)).sort((a,b)=>a.num.localeCompare(b.num,"fr",{numeric:true}));
-      const allMiss=CARDS.filter(c=>!S.owned[c.id]).length;
-      body.innerHTML=`<div class="srow"><p class="shint">${allMiss?`${allMiss} carte${allMiss>1?"s":""} manquante${allMiss>1?"s":""}. Achète celle que tu veux avec tes bananes.`:"Collection complète, bravo !"}</p>
-        <select id="sfilter" aria-label="Filtrer par rareté"><option value="">Toutes les raretés</option>${RARITIES.map(R=>`<option ${filter===R.name?"selected":""}>${R.name}</option>`).join("")}</select></div>
-        <div class="slist">${miss.map(c=>{const p=CRAFT[c.rarity],ok=(S.bananas||0)>=p;
-          return `<div class="sitem"><span class="sinum">${c.num}</span><span class="sname">${esc(c.name.trim())}<small><span class="dot" style="background:${colorOf(c.rarity)}"></span>${c.rarity}</small></span>
-          <button class="sbtn" data-buy="${c.id}" ${ok?"":"disabled"}>${fmt(p)} 🍌</button></div>`;}).join("")||`<p class="shint">Aucune carte manquante dans cette rareté.</p>`}</div>`;
-      $("sfilter").addEventListener("change",e=>{filter=e.target.value;renderCards();});
-      body.querySelectorAll("[data-buy]").forEach(b=>b.addEventListener("click",()=>{const c=CARDS[+b.dataset.buy],p=CRAFT[c.rarity];
-        if((S.bananas||0)<p||S.owned[c.id])return;addBananas(-p);S.owned[c.id]=1;S.fresh=[...(S.fresh||[]),c.id];
-        S.counts[c.rarity]=S.counts[c.rarity]||0;save();renderStats();say(`Carte achetée : ${c.name.trim()} (${c.rarity}).`);reveal1(c);renderCards();
-        serverDo("mf_buy_card",{p_key:c.key}).then(()=>renderCards(),()=>renderCards());}));
-    }
     function renderStyles(){
       const sample=byR[RIDX["Rare"]][0]||CARDS[0];
       body.innerHTML=`<p class="shint">Un style s'applique à toute ta collection : boosters, classeur et zoom. Tu peux changer de style à tout moment parmi ceux que tu possèdes.</p>
@@ -3447,6 +3460,9 @@ td.n{text-align:right}
     const ICON={"Épique":"✨","Légendaire":"🌟","Mythique":"🔥","Secret":"🤫","Originel":"🌈"};
     function item(x){const who=`<b>${esc(nameOf(x.uid))}</b>`;
       if(x.kind==="join")return `<div class="fitem"><span class="fi" aria-hidden="true">👋</span><p>${who} a rejoint la partie<br><small>${ago(x.t)}</small></p></div>`;
+      if(x.kind==="offer"||x.kind==="trade"){const c=cardOfKey(x.card),g=x.gave&&cardOfKey(x.gave);if(!c)return "";
+        const t=x.kind==="offer"?`${who} propose <b>${esc(c.name.trim())}</b> ${rpill(c.rarity)} au Marché`:`${who} a échangé ${g?`<b>${esc(g.name.trim())}</b>`:"une carte"} contre <b>${esc(c.name.trim())}</b> avec <b>${esc(nameOf(x.with))}</b>`;
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🔄</span><p>${t}<br><small>${ago(x.t)}</small></p></div>`;}
       if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${ICON[x.rarity]||"🎴"}</span><p>${who} a tiré <b>${esc(String(x.name||"une carte"))}</b> ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p></div>`;
       return "";}
     function render(){badge();if(root.hidden)return;
@@ -3460,8 +3476,11 @@ td.n{text-align:right}
         if(atBottom||chat.length!==lastChatLen)list.scrollTop=list.scrollHeight;lastChatLen=chat.length;}
       mark(tab);badge();}
     function start(){if(started||!DB)return;started=true;
-      DB.collection("players").onSnapshot(sn=>{players={};sn.docs.forEach(d=>{players[d.id]=d.data()||{};});resolve();render();BOARD.update(players);},()=>{});
-      DB.collection("feed").orderBy("t","desc").limit(50).onSnapshot(sn=>{feed=sn.docs.map(d=>({id:d.id,...(d.data()||{})}));resolve();render();},()=>{});
+      let myT=0,mkT=-1;
+      DB.collection("players").onSnapshot(sn=>{players={};sn.docs.forEach(d=>{players[d.id]=d.data()||{};});resolve();render();BOARD.update(players);
+        const t=UID&&players[UID]&&+players[UID].t||0;if(SRV&&CLOUD&&myT&&t&&t!==myT)srvRefresh();if(t)myT=t;},()=>{});  // a gift or a trade changed my collection elsewhere
+      DB.collection("feed").orderBy("t","desc").limit(50).onSnapshot(sn=>{feed=sn.docs.map(d=>({id:d.id,...(d.data()||{})}));resolve();render();
+        const t=feed.filter(x=>x.kind==="offer"||x.kind==="trade").reduce((a,x)=>Math.max(a,+x.t||0),0);if(t!==mkT){mkT=t;MARKET.refresh();}},()=>{});
       DB.collection("chat").orderBy("t","desc").limit(80).onSnapshot(sn=>{chat=sn.docs.map(d=>({id:d.id,...(d.data()||{})})).reverse();resolve();render();},()=>{});
       setInterval(()=>{if(!root.hidden)render();},30000);}
     function show(){closeOthers("social");root.hidden=false;$("socialBtn").setAttribute("aria-expanded","true");render();$("socClose").focus();}
@@ -3514,6 +3533,102 @@ td.n{text-align:right}
     return {show,hide,update};
   })();
 
+  /* ---------- marché : échanges de doubles entre joueurs, carte contre carte, même rareté ---------- */
+  const MARKET=(function(){const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[]},loaded=false,err="",busyMk=false,offerKey="",picked=[],showOwned=false;
+    const mine=x=>x.uid===UID;
+    const nOf=c=>c?(S.owned[c.id]||0):0;
+    const label=c=>`<b>${esc(c.name.trim())}</b> <span class="mktag">${c.num}</span>`;
+    const canGive=x=>!mine(x)&&x.wants.some(k=>nOf(cardOfKey(k))>=2);
+    function badge(){const n=data.open.filter(x=>cardOfKey(x.offer)&&canGive(x)).length,b=$("mkBadge");b.hidden=!n;b.textContent=n;}
+    async function load(){if(!SRV||!CLOUD){loaded=true;err=SRV?"":"local";render();return;}
+      try{const d=await window.MF_RPC("mf_market");data={open:(d&&d.open)||[],done:(d&&d.done)||[]};err="";}catch(e){err=String(e&&e.message||e);}
+      loaded=true;badge();render();}
+    let lt=0;function refresh(){clearTimeout(lt);lt=setTimeout(load,400);}
+    function thumbs(){body.querySelectorAll("canvas[data-key]").forEach(cv=>{const c=cardOfKey(cv.dataset.key);if(c)paint(cv,c,0);});}
+    function zoom(c){const z=document.createElement("div");z.className="spop";
+      z.innerHTML=`<div class="spcard"><canvas width="${750*ZOOM_K}" height="${1050*ZOOM_K}"></canvas></div><p>${esc(c.name.trim())} · ${c.rarity}</p>`;paint(z.querySelector("canvas"),c,0);root.appendChild(z);
+      gsap.fromTo(z.querySelector(".spcard"),{scale:.4,rotationY:180,opacity:0},{scale:1,rotationY:0,opacity:1,duration:.6,ease:"back.out(1.4)"});
+      z.addEventListener("click",()=>gsap.to(z,{opacity:0,duration:.2,onComplete:()=>z.remove()}));}
+    const thumb=c=>`<canvas class="mkthumb" width="180" height="252" data-key="${c.key}" role="img" aria-label="${esc(c.name.trim())}" tabindex="0"></canvas>`;
+    function render(){
+      root.querySelectorAll("[data-mk]").forEach(b=>b.setAttribute("aria-selected",b.dataset.mk===tab));
+      const mineN=data.open.filter(mine).length;$("mkSub").textContent=mineN?`${mineN} annonce${mineN>1?"s":""} à toi`:"";
+      if(!open)return;
+      if(err==="local"||!SRV){body.innerHTML=`<p class="shint">Le marché est disponible dans l'appli en ligne, connectée à ton compte.</p>`;return;}
+      if(!loaded){body.innerHTML=`<p class="shint">Chargement…</p>`;return;}
+      if(err){body.innerHTML=`<p class="shint mferr">${/PGRST202|Could not find|does not exist/i.test(err)?"Le marché n'est pas encore installé sur le serveur.":"Marché indisponible pour l'instant."}</p><button class="sbtn" id="mkRetry">Réessayer</button>`;$("mkRetry").addEventListener("click",()=>{loaded=false;render();load();});return;}
+      if(tab==="all")renderAll();else if(tab==="mine")renderMine();else renderNew();
+      thumbs();setTimeout(thumbs,700);setTimeout(thumbs,2200);
+      body.querySelectorAll("canvas[data-key]").forEach(cv=>{const go=()=>{const c=cardOfKey(cv.dataset.key);if(c)zoom(c);};cv.addEventListener("click",go);cv.addEventListener("keydown",e=>{if(e.key==="Enter")go();});});}
+    function renderAll(){
+      const list=data.open.filter(x=>!mine(x)&&cardOfKey(x.offer)).sort((a,b)=>(canGive(b)-canGive(a))||(b.t-a.t));
+      body.innerHTML=`<p class="shint">Échange tes doubles avec tes potes : carte contre carte, de même rareté. Touche une carte pour l'agrandir.</p>
+        <div class="slist">${list.map(x=>{const c=cardOfKey(x.offer),missing=!nOf(c);
+          return `<div class="mkitem${canGive(x)?" can":""}">${thumb(c)}<div class="mkmain"><p><b>${esc(x.pseudo||SOCIAL.nameOf(x.uid))}</b> propose ${label(c)} ${rpill(c.rarity)}${missing?`<span class="mktag mknew">Tu ne l'as pas</span>`:`<span class="mktag">Tu l'as ×${nOf(c)}</span>`}</p>
+            <p><small>Contre une de ces cartes :</small></p><div class="mkwants">${x.wants.map(k=>{const w=cardOfKey(k);if(!w)return "";const n=nOf(w);
+              return `<div class="mkwant"><span>${label(w)}</span>${n>=2?`<button class="sbtn" data-take="${x.id}" data-give="${w.key}">Donner la mienne</button>`:`<small>${n?"tu n'en as qu'une":"tu ne l'as pas"}</small>`}</div>`;}).join("")}</div></div></div>`;}).join("")
+          ||`<p class="shint">Aucune annonce pour l'instant. Lance la première dans « Proposer » !</p>`}</div>`;
+      body.querySelectorAll("[data-take]").forEach(b=>b.addEventListener("click",()=>take(+b.dataset.take,b.dataset.give,b)));}
+    async function take(id,give,b){if(busyMk)return;const x=data.open.find(o=>o.id===id),c=x&&cardOfKey(x.offer),g=cardOfKey(give);if(!c||!g)return;
+      if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Confirmer l'échange";setTimeout(()=>{if(b.isConnected){b.dataset.sure="";b.textContent="Donner la mienne";}},3500);return;}
+      busyMk=true;b.disabled=true;
+      try{const res=await window.MF_RPC("mf_market_take",{p_id:id,p_give:give});const fresh=!nOf(c);applyServer(res.state);
+        if(fresh)S.fresh=[...new Set([...(S.fresh||[]),c.id])];
+        SFX.play("coin");say(`Échange réussi : tu as reçu ${c.name.trim()} contre ${g.name.trim()}.`);zoom(c);}
+      catch(e){const m=String(e&&e.message||e);say(/gone/.test(m)?"Trop tard : cette annonce n'est plus disponible.":/no_double/.test(m)?"Il te faut un double de cette carte.":"Échange impossible pour l'instant, réessaie.");}
+      busyMk=false;load();}
+    function renderMine(){
+      const list=data.open.filter(mine);
+      body.innerHTML=`<p class="shint">Ta carte proposée est mise de côté tant que l'annonce est en ligne. Si tu la retires, la carte revient dans ta collection.</p>
+        <div class="slist">${list.map(x=>{const c=cardOfKey(x.offer);if(!c)return "";
+          return `<div class="mkitem">${thumb(c)}<div class="mkmain"><p>Tu proposes ${label(c)} ${rpill(c.rarity)}<br><small>${ago(x.t)}</small></p>
+            <p><small>Contre : ${x.wants.map(k=>{const w=cardOfKey(k);return w?esc(w.name.trim()):"";}).filter(Boolean).join(" · ")}</small></p>
+            <div><button class="sbtn" data-cancel="${x.id}">Retirer l'annonce</button></div></div></div>`;}).join("")||`<p class="shint">Tu n'as pas d'annonce en cours.</p>`}</div>
+        ${data.done.length?`<p class="mkh">Historique</p><div class="slist">${data.done.map(x=>{const c=cardOfKey(x.offer),g=x.got&&cardOfKey(x.got);if(!c)return "";
+          const t=x.status==="cancelled"?`Annonce retirée : ${label(c)}`:mine(x)?`Échange avec <b>${esc(x.takerPseudo||SOCIAL.nameOf(x.taker))}</b> : tu as donné ${label(c)} et reçu ${g?label(g):"une carte"}`
+            :`Échange avec <b>${esc(x.pseudo||SOCIAL.nameOf(x.uid))}</b> : tu as reçu ${label(c)} et donné ${g?label(g):"une carte"}`;
+          return `<div class="sitem" style="grid-template-columns:minmax(0,1fr)"><span class="sname">${t}<small>${ago(x.t)}</small></span></div>`;}).join("")}</div>`:""}`;
+      body.querySelectorAll("[data-cancel]").forEach(b=>b.addEventListener("click",async()=>{if(busyMk)return;busyMk=true;b.disabled=true;
+        try{const res=await window.MF_RPC("mf_market_cancel",{p_id:+b.dataset.cancel});applyServer(res.state);say("Annonce retirée : ta carte est revenue dans ta collection.");}
+        catch(e){say("Impossible de retirer l'annonce pour l'instant.");}busyMk=false;load();}));}
+    function renderNew(){
+      const dbl=CARDS.filter(c=>nOf(c)>=2).sort((a,b)=>b.r-a.r||a.num.localeCompare(b.num,"fr",{numeric:true}));
+      const mineN=data.open.filter(mine).length;
+      if(mineN>=5){body.innerHTML=`<p class="shint">Tu as déjà 5 annonces en cours : retires-en une dans « Mes annonces » pour en proposer une autre.</p>`;return;}
+      if(!dbl.length){body.innerHTML=`<p class="shint">Tu n'as pas encore de double à échanger. Ouvre des boosters !</p>`;return;}
+      if(!dbl.some(c=>c.key===offerKey)){offerKey=dbl[0].key;picked=[];}
+      const off=cardOfKey(offerKey);
+      const pool=CARDS.filter(c=>c.rarity===off.rarity&&c.key!==off.key&&(showOwned||!nOf(c))).sort((a,b)=>(!!nOf(a)-!!nOf(b))||a.num.localeCompare(b.num,"fr",{numeric:true}));
+      picked=picked.filter(k=>pool.some(c=>c.key===k));
+      const groups=RARITIES.map(R=>({R,l:dbl.filter(c=>c.rarity===R.name)})).filter(g=>g.l.length).reverse();
+      body.innerHTML=`<div class="mkform">
+        <label class="mkh" for="mkOffer">1. La carte que tu proposes (un de tes doubles)</label>
+        <select id="mkOffer">${groups.map(g=>`<optgroup label="${g.R.name}">${g.l.map(c=>`<option value="${c.key}" ${c.key===offerKey?"selected":""}>${c.num} · ${esc(c.name.trim())} (×${nOf(c)})</option>`).join("")}</optgroup>`).join("")}</select>
+        <div class="mkitem">${thumb(off)}<div class="mkmain"><p>${label(off)} ${rpill(off.rarity)}</p><p><small>Tu en gardes au moins une.</small></p></div></div>
+        <p class="mkh">2. Ce que tu veux en échange (1 à 3 cartes ${esc(off.rarity)})</p>
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="mkShowOwned" ${showOwned?"checked":""}> Voir aussi les cartes que j'ai déjà</label>
+        <div class="mkpick">${pool.map(c=>`<label><input type="checkbox" value="${c.key}" ${picked.includes(c.key)?"checked":""} ${!picked.includes(c.key)&&picked.length>=3?"disabled":""}><span>${label(c)}${nOf(c)?`<span class="mktag">×${nOf(c)}</span>`:`<span class="mktag mknew">Manquante</span>`}</span></label>`).join("")||`<p class="shint">Tu as déjà toutes les cartes ${esc(off.rarity)} : coche « Voir aussi les cartes que j'ai déjà ».</p>`}</div>
+        <button class="sbtn big" id="mkPost" ${picked.length?"":"disabled"}>Publier l'annonce</button></div>`;
+      $("mkOffer").addEventListener("change",e=>{offerKey=e.target.value;picked=[];renderNew();thumbs();setTimeout(thumbs,700);});
+      $("mkShowOwned").addEventListener("change",e=>{showOwned=e.target.checked;renderNew();thumbs();});
+      body.querySelectorAll(".mkpick input").forEach(i=>i.addEventListener("change",()=>{picked=i.checked?[...new Set([...picked,i.value])].slice(0,3):picked.filter(k=>k!==i.value);
+        body.querySelectorAll(".mkpick input").forEach(j=>j.disabled=!j.checked&&picked.length>=3);$("mkPost").disabled=!picked.length;}));
+      $("mkPost").addEventListener("click",async()=>{if(busyMk||!picked.length)return;busyMk=true;$("mkPost").disabled=true;
+        try{const res=await window.MF_RPC("mf_market_post",{p_offer:offerKey,p_wants:picked});applyServer(res.state);picked=[];tab="mine";say("Annonce publiée : tes potes peuvent la voir dans le Marché.");}
+        catch(e){const m=String(e&&e.message||e);say(/too_many/.test(m)?"Tu as déjà 5 annonces en cours.":/no_double/.test(m)?"Il te faut un double de cette carte.":/same_rarity/.test(m)?"Les cartes demandées doivent être de la même rareté.":"Publication impossible pour l'instant, réessaie.");}
+        busyMk=false;load();});}
+    function show(t){if(t)tab=t;if(open){render();return;}closeOthers("market");open=true;root.hidden=false;document.querySelector(".wrap").style.display="none";document.body.style.overflow="hidden";P3.pause&&P3.pause(true);cancelAnimationFrame(foilRaf);
+      render();load();gsap.fromTo(root.querySelector(".shopbox"),{y:30,opacity:0},{y:0,opacity:1,duration:.35,ease:"power2.out"});$("mkClose").focus();}
+    function hide(){if(!open)return;open=false;root.hidden=true;root.querySelectorAll(".spop").forEach(z=>z.remove());document.querySelector(".wrap").style.display="";document.body.style.overflow="";
+      window.dispatchEvent(new Event("resize"));P3.pause&&P3.pause(false);if(shown.some(s=>s.el.dataset.open))foilLoop();renderStats();}
+    root.querySelectorAll("[data-mk]").forEach(b=>b.addEventListener("click",()=>{tab=b.dataset.mk;render();}));
+    $("mkClose").addEventListener("click",()=>{hide();$("marketBtn").focus();});
+    document.addEventListener("keydown",e=>{if(open&&e.key==="Escape"){const pop=root.querySelector(".spop");if(pop)pop.click();else hide();}});
+    setInterval(()=>{if(!document.hidden&&CLOUD&&SRV)load();},120000);
+    return {show,hide,refresh,badge};
+  })();
+  $("marketBtn").addEventListener("click",()=>MARKET.show());
+
   /* ---------- settings sheet ---------- */
   const SETTINGS=(function(){const root=$("settings");
     function show(){closeOthers("settings");root.hidden=false;$("setBtn").setAttribute("aria-expanded","true");$("setBtn").classList.add("on");$("pseudoIn").value=PREFS.pseudo||"";}
@@ -3537,13 +3652,14 @@ td.n{text-align:right}
   function closeOthers(keep){
     if(keep!=="binder")BIND.close();
     if(keep!=="shop")SHOP.hide();
+    if(keep!=="market")MARKET.hide();
     if(keep!=="rank")BOARD.hide();
     if(keep!=="settings")SETTINGS.hide();
     if(keep!=="social")SOCIAL.hide();}
-  const TABS={booster:"tabBooster",binder:"binderBtn",shop:"shopBtn",rank:"rankBtn"};
-  function markTab(){const cur=!$("binder").hidden?"binder":!$("shop").hidden?"shop":!$("rank").hidden?"rank":"booster";
+  const TABS={booster:"tabBooster",binder:"binderBtn",shop:"shopBtn",market:"marketBtn",rank:"rankBtn"};
+  function markTab(){const cur=!$("binder").hidden?"binder":!$("shop").hidden?"shop":!$("market").hidden?"market":!$("rank").hidden?"rank":"booster";
     Object.entries(TABS).forEach(([k,id])=>{$(id).classList.toggle("on",k===cur);if(k===cur)$(id).setAttribute("aria-current","page");else $(id).removeAttribute("aria-current");});}
-  {const mo=new MutationObserver(markTab);["binder","shop","rank"].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:["hidden"]}));}
+  {const mo=new MutationObserver(markTab);["binder","shop","market","rank"].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:["hidden"]}));}
   Object.entries(TABS).forEach(([k,id])=>$(id).addEventListener("click",e=>{
     if(busy&&k!=="booster"){e.stopImmediatePropagation();say("Attends la fin de l'ouverture du booster.");return;}
     closeOthers(k);if(k==="booster"){window.scrollTo({top:0,behavior:"smooth"});}markTab();},true));
