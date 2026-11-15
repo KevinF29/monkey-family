@@ -3441,7 +3441,7 @@ td.n{text-align:right}
   function postFeed(d){if(!CLOUD||!DB||!UID)return;const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     DB.doc("feed/"+id).set({...d,uid:UID,t:Date.now()}).catch(()=>{});}
   function postPulls(cards){if(!limitOn()||$("force").value)return;
-    cards.filter(c=>TIER[c.rarity]>=2).forEach(c=>postFeed({kind:"pull",card:c.key,name:c.name.trim(),rarity:c.rarity}));}
+    cards.filter(c=>TIER[c.rarity]>=2).forEach(c=>postFeed({kind:"pull",rarity:c.rarity}));}
   const ago=t=>{const s=Math.max(0,(Date.now()-(+t||0))/1000);if(s<60)return "à l'instant";if(s<3600)return `il y a ${Math.floor(s/60)} min`;if(s<86400)return `il y a ${Math.floor(s/3600)} h`;return `il y a ${Math.floor(s/86400)} j`;};
   const rpill=r=>{const R=RARITIES[RIDX[r]];if(!R)return "";return `<span class="rpill" style="background:${R.rainbow?"linear-gradient(90deg,#f55,#fd5,#5f8,#5cf,#a6f)":R.a}">${esc(r)}</span>`;};
 
@@ -3461,9 +3461,9 @@ td.n{text-align:right}
     function item(x){const who=`<b>${esc(nameOf(x.uid))}</b>`;
       if(x.kind==="join")return `<div class="fitem"><span class="fi" aria-hidden="true">👋</span><p>${who} a rejoint la partie<br><small>${ago(x.t)}</small></p></div>`;
       if(x.kind==="offer"||x.kind==="trade"){const c=cardOfKey(x.card),g=x.gave&&cardOfKey(x.gave);if(!c)return "";
-        const t=x.kind==="offer"?`${who} propose <b>${esc(c.name.trim())}</b> ${rpill(c.rarity)} au Marché`:`${who} a échangé ${g?`<b>${esc(g.name.trim())}</b>`:"une carte"} contre <b>${esc(c.name.trim())}</b> avec <b>${esc(nameOf(x.with))}</b>`;
+        const t=x.kind==="offer"?`${who} propose une carte ${rpill(c.rarity)} au Marché`:`${who} a fait un échange ${rpill(c.rarity)} avec <b>${esc(nameOf(x.with))}</b>`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🔄</span><p>${t}<br><small>${ago(x.t)}</small></p></div>`;}
-      if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${ICON[x.rarity]||"🎴"}</span><p>${who} a tiré <b>${esc(String(x.name||"une carte"))}</b> ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p></div>`;
+      if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${ICON[x.rarity]||"🎴"}</span><p>${who} a tiré une carte ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p></div>`;
       return "";}
     function render(){badge();if(root.hidden)return;
       $("socFeedTab").classList.toggle("on",tab==="feed");$("socChatTab").classList.toggle("on",tab==="chat");
