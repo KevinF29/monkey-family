@@ -3021,6 +3021,11 @@ td.n{text-align:right}
           if(!g.img){g.img=new Image();g.img.onload=artRepaint;g.img.onerror=()=>{};{const im=g.img;MF_MEDIA.url(g.asset).then(u=>{im.src=u;},()=>{});}}
           e.forms[j+1]=g;});
         ART.set(d.id,e);});
+      // a card renamed in the Studio and since rebuilt under its new name: its artwork follows it
+      snap.docs.forEach(d=>{const v=d.data()||{};if(typeof v.title!=="string"||!v.title.trim())return;const nk="c-"+slug(v.title).slice(0,120);
+        if(nk===d.id||seen.has(nk)||!BUILT.has(slug(v.title)))return;ART.set(nk,ART.get(d.id));seen.add(nk);
+        if(ADMIN&&DB&&!window.__migr?.[d.id]){(window.__migr=window.__migr||{})[d.id]=1;
+          DB.doc("artworks/"+nk).set({...v,name:v.title.trim(),title:""}).then(()=>DB.doc("artworks/"+d.id).delete()).catch(()=>{});}});
       [...ART.keys()].forEach(k=>{if(!seen.has(k))ART.delete(k);});
       // renamed cards: the new name shows everywhere (booster, binder, shop, studio)
       CARDS.forEach(c=>{const a=ART.get(c.key);c.name=(a&&a.title)?a.title:c.orig;});

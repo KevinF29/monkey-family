@@ -37,7 +37,7 @@
     const d = document.createElement("div"); d.id = "mfadmin"; d.className = "shop"; d.hidden = true;
     d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-label", "Admin");
     d.innerHTML = `<div class="shopbox"><div class="shophead"><b>Admin</b><span class="shopbal" id="mfaCount"></span><button class="bbtn" id="mfaClose" type="button" aria-label="Fermer">✕</button></div>
-      <div class="stabs" role="tablist"><button type="button" role="tab" data-mt="players" aria-selected="true">Joueurs</button><button type="button" role="tab" data-mt="import" aria-selected="false">Importer les médias</button></div>
+      <div class="stabs" role="tablist"><button type="button" role="tab" data-mt="players" aria-selected="true">Joueurs</button><button type="button" role="tab" data-mt="import" aria-selected="false">Importer les médias</button><button type="button" role="tab" data-mt="export" aria-selected="false">Exporter pour Claude</button></div>
       <div class="shopbody" id="mfaBody"></div></div>`;
     document.body.appendChild(d);
     $("mfaClose").addEventListener("click", closeAdmin);
@@ -50,7 +50,7 @@
   function closeAdmin(){ $("mfadmin").hidden = true; document.body.style.overflow = ""; }
   function render(){
     const d = $("mfadmin"); d.querySelectorAll("[data-mt]").forEach(b => b.setAttribute("aria-selected", b.dataset.mt === tab));
-    if (tab === "players") renderPlayers(); else renderImport();
+    if (tab === "players") renderPlayers(); else if (tab === "import") renderImport(); else renderExport();
   }
   function linkBox(link, label){
     return `<div class="mflinkbox"><p class="shint">${label}</p><input class="mflink" readonly value="${esc(link)}"><button type="button" class="sbtn mfcopy">Copier le lien</button></div>`;
@@ -104,6 +104,24 @@
     };
     $("mfFiles").addEventListener("change", e => go([...e.target.files]));
     $("mfDir").addEventListener("change", e => go([...e.target.files]));
+  }
+
+  function renderExport(){
+    const body = $("mfaBody");
+    body.innerHTML = `<p class="shint">Après avoir ajouté des images, renommé ou créé des cartes dans le Studio : télécharge ce fichier et envoie-le à Claude. Il mettra à jour le Google Sheet et le jeu.</p>
+      <button type="button" class="sbtn big" id="mfExp">Télécharger le fichier</button><div id="mfExpOut"></div>`;
+    $("mfExp").addEventListener("click", async () => {
+      const out = $("mfExpOut"); out.innerHTML = `<p class="shint">Préparation…</p>`;
+      try{
+        const {data, error} = await MF_SB.from("docs").select("path,data,updated_at").in("coll", ["artworks", "newcards"]);
+        if (error) throw error;
+        const dump = {exported:new Date().toISOString(), docs:Object.fromEntries(data.map(r => [r.path, {...r.data, _updated:r.updated_at}]))};
+        const blob = new Blob([JSON.stringify(dump)], {type:"application/json"});
+        const name = "monkey-family-export-" + new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-") + ".json";
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        out.innerHTML = `<p class="shint"><b>${name}</b> téléchargé (${data.length} éléments). Envoie-le à Claude.</p>`;
+      }catch(err){ out.innerHTML = `<p class="shint mferr">${esc(err.message)}</p>`; }
+    });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addSettingsRows); else addSettingsRows();
