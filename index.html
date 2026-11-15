@@ -116,7 +116,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 .pack .hint{position:absolute;left:50%;bottom:-38px;translate:-50% 0;white-space:nowrap;font:600 14px var(--label);letter-spacing:.12em;text-transform:uppercase;color:var(--stage-fg);opacity:.75}
 
 .row{position:absolute;inset:0;z-index:4;perspective:1400px;pointer-events:none}
-.card{width:clamp(190px,40vw,320px);aspect-ratio:750/1050;position:absolute;left:50%;top:50%;translate:-50% -50%;opacity:0;cursor:pointer;touch-action:pan-y;pointer-events:auto;perspective:900px}
+.card{width:clamp(190px,40vw,320px);aspect-ratio:750/1050;position:absolute;left:50%;top:50%;opacity:0;cursor:pointer;touch-action:pan-y;pointer-events:auto;perspective:900px}
 .tilt{position:absolute;inset:0;transform-style:preserve-3d}
 .holo{position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .3s}
 .card[data-open] .holo{opacity:var(--holo,.0)}
@@ -147,6 +147,12 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 :root{--tabh:calc(64px + env(safe-area-inset-bottom,0px))}
 .wrap{padding-bottom:calc(var(--tabh) + 28px)!important}
 .openrow{display:grid;justify-items:center;gap:6px;margin-top:-4px}
+/* phones: the stage takes all the height above the button, so the pack and the cards can be bigger and the button sits just above the tab bar */
+@media (max-width:700px){
+  .stage{min-height:max(clamp(520px,68vw,680px),calc(100svh - var(--tabh) - 150px))}
+  .pack{width:clamp(250px,74vw,330px)}
+  .card{width:clamp(240px,72vw,330px)}
+}
 .bigopen{width:min(100%,420px);font-size:19px!important;padding:16px 22px!important;border-radius:14px!important;box-shadow:0 10px 26px rgba(75,63,184,.35)}
 .bigopen:disabled{opacity:1;background:var(--field)!important;color:var(--muted)!important;border-color:var(--line)!important;box-shadow:none}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:150;height:var(--tabh);padding-bottom:env(safe-area-inset-bottom,0px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
@@ -238,7 +244,7 @@ body.kb .social{bottom:auto}
 .check input{width:18px;height:18px;accent-color:var(--accent);margin:0}
 /* players only get the booster, its buttons and the pack timer; test tools appear for the page's editors */
 body:not(.admin) header,body:not(.admin) .grid,body.preview .adminbar,body:not(.admin) .adminonly,body.preview header,body.preview .grid,body.preview .adminonly{display:none!important}
-.pvexit{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:9998;display:none;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.pvexit{position:fixed;bottom:calc(var(--tabh) + 12px);left:50%;transform:translateX(-50%);z-index:9998;display:none;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 body.preview .pvexit{display:inline-flex}
 body.preview:has(.binder:not([hidden])) .pvexit,body.preview:has(.shop:not([hidden])) .pvexit,body.preview:has(.studio:not([hidden])) .pvexit{display:none}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:16px}
@@ -1897,7 +1903,7 @@ td.n{text-align:right}
     let W=1,H=1;
     function resize(){const r=cv.getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);renderer.setSize(W,H,false);
       if(typeof cc!=="undefined"){cc.width=W*renderer.getPixelRatio();cc.height=H*renderer.getPixelRatio();}camera.aspect=W/H;
-      const px=Math.min(300,Math.max(210,W*.32))*1.02;camera.position.z=(H/px)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)));camera.updateProjectionMatrix();}
+      const px=(innerWidth<=700?Math.min(330,Math.max(250,W*.78)):Math.min(300,Math.max(210,W*.32)))*1.02;camera.position.z=(H/px)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)));camera.updateProjectionMatrix();}
     window.addEventListener("resize",resize);
 
     /* interaction
@@ -2090,6 +2096,7 @@ td.n{text-align:right}
       const cv=el.querySelector(".front canvas");paint(cv,c,0);
       const tag=el.querySelector(".tag");tag.textContent=c.rarity;tag.style.color=RARITIES[c.r].rainbow?"#fff":RARITIES[c.r].tx;
       el.addEventListener("click",e=>{if(mode==="summary"){e.stopPropagation();zoom(c);}});
+      gsap.set(el,{xPercent:-50,yPercent:-50});// centring lives in GSAP, so every x/y below is an offset from the stage centre
       stack.appendChild(el);shown.push({el,cv,c,flip:el.querySelector(".flip"),aura:el.querySelector(".aura"),tilt:el.querySelector(".tilt"),lent:(LENTI.has(c.id)&&!artFor(c))?{t:1,cache:{}}:null});
     });
   }
