@@ -225,7 +225,8 @@ body.kb .social{bottom:auto}
 .soclist{overflow:auto;padding:4px 14px 14px;display:grid;align-content:start;gap:8px;overscroll-behavior:contain}
 .socempty{color:var(--muted);text-align:center;padding:30px 10px}
 .fitem{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
-.fitem .fi{font-size:22px}
+.fitem .fi{font-size:22px;display:grid;place-items:center;min-width:30px}
+.fitem .ficon{width:30px;height:30px;display:block}
 .fitem p{margin:0;line-height:1.35}
 .fitem small,.msg small{color:var(--muted);font-size:12px}
 .rpill{display:inline-block;padding:0 7px;border-radius:999px;font:700 11px/18px var(--ui);color:#fff;vertical-align:1px}
@@ -3587,12 +3588,19 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     function badge(){const f=unread("feed"),c=unread("chat"),n=f+c,b=$("socialBadge");b.hidden=!n||!root.hidden;b.textContent=n>99?"99+":String(n);
       $("feedN").hidden=!f||tab==="feed";$("feedN").textContent=f;$("chatN").hidden=!c||tab==="chat";$("chatN").textContent=c;}
     const ICON={"Épique":"✨","Légendaire":"🌟","Mythique":"🔥","Secret":"🤫","Originel":"🌈"};
+    /* the feed shows the rarity's own symbol, the one printed on the cards (triangle, star, pint, controller, monkey) */
+    const SYMI={};const OFF={circle:26,square:26,diamond:26,triangle:28,star:28,pint:26,controller:33,monkey:38};
+    function symIcon(name){if(name in SYMI)return SYMI[name];const R=RARITIES[RIDX[name]];if(!R)return SYMI[name]="";
+      try{const cv=document.createElement("canvas");cv.width=cv.height=96;const c=cv.getContext("2d");c.translate(48,48);c.scale(1.45,1.45);
+        gem(c,R,OFF[R.sym]||28,0,frameFill(c,R,-40,-40,80,80,120),R.rainbow?"#1b1030":undefined);SYMI[name]=cv.toDataURL();}catch(e){SYMI[name]="";}
+      return SYMI[name];}
+    const icon=r=>{const u=symIcon(r);return u?`<img class="ficon" src="${u}" alt="">`:(ICON[r]||"🎴");};
     function item(x){const who=`<b>${esc(nameOf(x.uid))}</b>`;
       if(x.kind==="join")return `<div class="fitem"><span class="fi" aria-hidden="true">👋</span><p>${who} a rejoint la partie<br><small>${ago(x.t)}</small></p></div>`;
       if(x.kind==="offer"||x.kind==="trade"){const c=cardOfKey(x.card),g=x.gave&&cardOfKey(x.gave);if(!c)return "";
         const t=x.kind==="offer"?`${who} propose une carte ${rpill(c.rarity)} au Marché`:`${who} a fait un échange ${rpill(c.rarity)} avec <b>${esc(nameOf(x.with))}</b>`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🔄</span><p>${t}<br><small>${ago(x.t)}</small></p></div>`;}
-      if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${ICON[x.rarity]||"🎴"}</span><p>${who} a tiré une carte ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${icon(String(x.rarity||""))}</span><p>${who} a tiré une carte ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       return "";}
     /* reactions under the news: one per player and per item, tap again to remove it */
