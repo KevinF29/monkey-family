@@ -3474,7 +3474,8 @@ td.n{text-align:right}
     normalizeS();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
     syncBananas();renderStats();renderPacks();try{BIND.repaint();}catch(e){}
     if(mode==="pack"||mode==="summary")shown.forEach(s=>paint(s.cv,s.c,0));}
-  function postFeed(d){if(!CLOUD||!DB||!UID)return;const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
+  function postFeed(d){if(!CLOUD||!DB||!UID||ADMIN)return;  // the admin stays out of the news feed
+const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     DB.doc("feed/"+id).set({...d,uid:UID,t:Date.now()}).catch(()=>{});}
   function postPulls(cards){if(!limitOn()||$("force").value)return;
     cards.filter(c=>TIER[c.rarity]>=2).forEach(c=>postFeed({kind:"pull",rarity:c.rarity}));}
