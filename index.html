@@ -2106,7 +2106,7 @@ td.n{text-align:right}
       {const r=packG.rotation.y;packG.rotation.y=r-Math.round(r/TAU)*TAU;}
       const tl=gsap.timeline();
       if(cut){ // already cut by the finger: a flash along the line and the strip falls straight away
-        st.trail=1.4;tl.add(()=>{burstL.color.set(0xffe7a8);gsap.fromTo(burstL,{intensity:3},{intensity:0,duration:D(.9)});
+        st.trail=1.4;tl.add(()=>{cb&&cb.onTear&&cb.onTear();burstL.color.set(0xffe7a8);gsap.fromTo(burstL,{intensity:3},{intensity:0,duration:D(.9)});
           const P=packRect();burst((P.L.x+P.R.x)/2,P.L.y,reduce?6:30,["#ffffff","#ffd75e","#c4a2ff"],4,{up:1.3,stars:.5,size:3});});
       }else
       tl.to(packG.rotation,{x:0,y:0,duration:D(.35),ease:"power2.out"})
@@ -2115,6 +2115,7 @@ td.n{text-align:right}
         .to(packG.position,{x:.025,duration:D(.045),repeat:9,yoyo:true,ease:"none"})
         .set(packG.position,{x:0})
         .add(()=>{
+          cb&&cb.onTear&&cb.onTear();  // the tearing sound starts with the tear itself, after the shake
           const L=screenOf(new T.Vector3(-PW/2,tearY,0).applyMatrix4(packG.matrixWorld)),R=screenOf(new T.Vector3(PW/2,tearY,0).applyMatrix4(packG.matrixWorld));
           const steps=reduce?3:9;for(let i=0;i<=steps;i++)setTimeout(()=>{const k=dir>0?i/steps:1-i/steps;burst(L.x+(R.x-L.x)*k,L.y,reduce?2:7,["#ffffff","#ffd75e","#c4a2ff"],3,{up:1.2,stars:.4,size:3});},D(i*28));
           burstL.color.set(0xffe7a8);gsap.fromTo(burstL,{intensity:3},{intensity:0,duration:D(.9)});
@@ -2208,17 +2209,16 @@ td.n{text-align:right}
       gsap.set(pack,{display:"none"});
       gsap.set(els,{y:60,scale:.62,opacity:0,rotation:0});
       setHint("");
-      SFX.play("tear");
-      P3.open({onTorn:()=>{
+      P3.open({onTear:()=>SFX.play("tear"),onTorn:()=>{
         gsap.timeline({onComplete:()=>{flipUp(shown[0],.5,()=>{busy=false;mode="stack";setHint("Touche ou glisse pour la carte suivante");setBtn("Carte suivante");});}})
           .fromTo(els.slice().reverse(),{y:70,scale:.62,opacity:0,rotation:0},{y:(i)=>(els.length-1-i)*10,rotation:(i)=>[0,-4,4,-3,3][els.length-1-i]||0,scale:(i)=>1-(els.length-1-i)*.04,opacity:1,duration:D(.7),stagger:D(.07),ease:"back.out(1.4)"},"+=.12");
       }},o&&o.cut?o:null);
       return;
     }
-    SFX.play("tear");
     const tl=gsap.timeline({onComplete:()=>{flipUp(shown[0],.5,()=>{busy=false;mode="stack";setHint("Touche ou glisse pour la carte suivante");setBtn("Carte suivante");});}});
     tl.to(pack,{x:"+=6",rotation:2,duration:D(.05),repeat:9,yoyo:true,ease:"none"})
       .to(pack,{x:0,rotation:0,duration:D(.05)})
+      .call(()=>SFX.play("tear"))
       .to(pack.querySelector(".top"),{y:-140,x:60,rotation:28,opacity:0,duration:D(.55),ease:"power2.in"})
       .to(pack.querySelector(".body"),{y:260,opacity:0,duration:D(.6),ease:"power2.in"},"-=.25")
       .set(pack,{display:"none"})
