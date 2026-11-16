@@ -2625,7 +2625,7 @@ td.n{text-align:right}
       book.classList.toggle("spread",B.spread);
     }
     function build(){
-      if(use3){layout();B.F=faces();B.cur=Math.min(B.cur,B.spread?B.F.length:B.F.length-1);G3.setup(B.F,B.spread,B.cur);B.cur=G3.cur();refresh();return;}
+      if(use3){layout();B.F=faces();B.cur=Math.min(B.cur,B.spread?B.F.length-(PAGES.length%2):B.F.length-1);G3.setup(B.F,B.spread,B.cur);B.cur=G3.cur();refresh();return;}
       layout();leavesEl.innerHTML="";B.leaves=[];
       const F=faces();B.F=F;
       F.forEach((pair,i)=>{const lf=document.createElement("div");lf.className="leaf";
@@ -2633,7 +2633,7 @@ td.n{text-align:right}
         leavesEl.appendChild(lf);B.leaves.push(lf);
         lf.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();goToPage(+b.dataset.page);}));
         lf.querySelectorAll(".slot.got").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();if(B.drag)return;bzoom(CARDS[+b.dataset.id]);}));});
-      B.cur=Math.min(B.cur,B.leaves.length);
+      B.cur=Math.min(B.cur,B.leaves.length-(B.spread&&PAGES.length%2?1:0));
       B.leaves.forEach((lf,i)=>{const fl=i<B.cur;gsap.set(lf,{rotationY:fl?-180:0,zIndex:fl?i+1:B.leaves.length-i,autoAlpha:(!B.spread&&fl)?0:1});});
       place(0);refresh();
     }
@@ -2660,14 +2660,14 @@ td.n{text-align:right}
       const vis=B.cur===0?[B.F[0][0]]:(B.spread?[B.F[B.cur-1][1],B.F[B.cur]&&B.F[B.cur][0]]:[B.F[B.cur][0]]);
       const names=vis.filter(Boolean).map(f=>f.type==="cover"?"Couverture":f.type==="toc"?"Sommaire":f.type==="page"?`p. ${f.i+1}`:"").filter(Boolean);
       pageLbl.textContent=(names.join(" · ")||"Fin du classeur")+(names.some(s=>s.startsWith("p."))?` / ${PAGES.length}`:"");
-      prevB.disabled=B.cur===0;nextB.disabled=B.spread?B.cur>=n:B.cur>=n-1;
+      prevB.disabled=B.cur===0;nextB.disabled=B.spread?B.cur>=n-(PAGES.length%2):B.cur>=n-1;
     }
     /* one page turn: the leaf hinges on the rings, with light sweeping across it */
     function flip(dirn,speed){
       if(use3)return G3.turn(dirn,speed).then(()=>{B.cur=G3.cur();refresh();});
       return new Promise(res=>{
         const n=B.leaves.length;
-        if(dirn>0&&(B.spread?B.cur>=n:B.cur>=n-1)){res();return;}
+        if(dirn>0&&(B.spread?B.cur>=n-(PAGES.length%2):B.cur>=n-1)){res();return;}
         if(dirn<0&&B.cur<=0){res();return;}
         const i=dirn>0?B.cur:B.cur-1,lf=B.leaves[i],d=(speed||1)*(reduce?.01:1);
         [i-1,i,i+1].forEach(j=>{if(B.leaves[j])hydrate(B.leaves[j]);});
@@ -2762,7 +2762,7 @@ td.n{text-align:right}
 
       /* --- state --- */
       const st={F:null,spread:true,cur:0,TW:768,cache:new Map(),dirty:true,run:false,turn:null,shift:0,foil:false,lastFoil:0,hover:{x:0,y:0,tx:0,ty:0},sel:null};
-      const n=()=>st.F?st.F.length:0, maxCur=()=>st.spread?n():n()-1;
+      const n=()=>st.F?st.F.length:0, maxCur=()=>st.spread?(st.F&&st.F[n()-1]&&st.F[n()-1][1]&&st.F[n()-1][1].type==="inside"?n()-1:n()):n()-1;
       const zR=rf=>{const N=n();if(rf>=N)return 0;return rf===0?TC+(N-1)*TP:(N-rf)*TP;};
       const zL=lt=>lt<=0?0:TC+(lt-1)*TP;
       const shiftFor=c=>st.spread&&c===0?-.5:0;
@@ -2773,7 +2773,7 @@ td.n{text-align:right}
         if(rf===0&&N>0)setBox(rCover,0,1.035,-.018,PH+.018,rpz,rpz+TC);else rCover.visible=false;
         if(lt>=1){setBox(lCover,-1.035,0,-.018,PH+.018,0,TC);setBox(lPaper,-.996,-.09,.004,PH-.004,TC,TC+(lt-1)*TP-.001);}else{lCover.visible=false;lPaper.visible=false;}
         const top=Math.max(zR(rf),zL(lt));
-        rings.forEach(g=>{if(lt<1){g.position.x=.028;g.position.z=zR(rf)-.004;g.scale.set(1,1.6,1);}else{g.position.x=0;g.position.z=0;g.scale.set(1,3.1,1);}});
+        rings.forEach(g=>{if(lt<1&&rf===0){g.position.x=.028;g.position.z=zR(rf)-.004;g.scale.set(1,1.6,1);}else{g.position.x=0;g.position.z=0;g.scale.set(1,3.1,1);}});
         if(lt<1)spine.visible=false;else setBox(spine,-.03,.03,PH*.06,PH*.94,-.012,-.0015);
         const w=st.spread?2.5:1.5;floor.scale.set(w,PH+.55,1);floor.position.x=st.spread?0:.5;}
 
