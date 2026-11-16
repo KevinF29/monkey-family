@@ -39,6 +39,12 @@ body:not(.admin) .mfadminrow{display:none!important}
 #mfInstallBtn,#mfAdminBtn{background:var(--accent);color:var(--accent-fg);border:0;padding:8px 14px;border-radius:10px;font:600 14px system-ui,sans-serif;opacity:1;cursor:pointer;flex:none}
 .mfbtns .sbtn{white-space:nowrap}
 #mfadmin .sitem{flex-wrap:wrap;gap:8px}
+.mfev{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px;padding:12px;border-radius:12px;background:rgba(255,255,255,.05)}
+.mfev label{display:grid;gap:4px;font:600 13px system-ui,sans-serif;color:#e7defa}
+.mfev label[hidden]{display:none}
+.mfev input,.mfev select{font:15px system-ui,sans-serif;padding:9px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#1f1830;color:#f3eee4;min-width:0;width:100%;box-sizing:border-box;color-scheme:dark}
+.mfev .full,.mfev p{grid-column:1/-1;margin:0}
+.mfh{font:600 13px system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#b3a7cc;margin:6px 0}
 </style>
 </head>
 <body>
@@ -155,7 +161,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 .openrow{display:grid;justify-items:center;gap:6px;margin-top:-4px}
 /* phones: the stage takes all the height above the button, so the pack and the cards can be bigger and the button sits just above the tab bar */
 @media (max-width:700px){
-  body:not(.admin) .stage,body.preview .stage{min-height:max(clamp(520px,68vw,680px),calc(100svh - var(--tabh) - 150px))}
+  body:not(.admin) .stage,body.preview .stage{min-height:max(clamp(440px,60vw,680px),calc(100svh - var(--tabh) - 150px - var(--evh,0px)))}
   .pack{width:clamp(190px,min(66vw,calc((100svh - 250px)*.42)),310px)}
   .card{width:clamp(240px,72vw,330px)}
 }
@@ -163,7 +169,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 @media (min-width:701px){
   body:not(.admin),body.preview{--tabh:calc(76px + env(safe-area-inset-bottom,0px))}
   body:not(.admin) .wrap,body.preview .wrap{max-width:1280px;padding-top:16px;padding-bottom:calc(var(--tabh) + 14px)!important;gap:14px}
-  body:not(.admin) .stage,body.preview .stage{min-height:max(560px,calc(100svh - var(--tabh) - 112px))}
+  body:not(.admin) .stage,body.preview .stage{min-height:max(480px,calc(100svh - var(--tabh) - 112px - var(--evh,0px)))}
   body:not(.admin) .pack,body.preview .pack{width:clamp(220px,min(calc((100svh - 200px)*.46),34vw),460px)}
   body:not(.admin) .card,body.preview .card{width:clamp(240px,min(46svh,30vw),440px)}
   body:not(.admin) .tab,body.preview .tab{font-size:14px;gap:4px}
@@ -358,6 +364,30 @@ td.n{text-align:right}
 .mkpick{display:grid;gap:6px;max-height:46vh;overflow:auto;padding-right:4px}
 .mkpick label{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer}
 .mkpick input{width:20px;height:20px;accent-color:#ffd98a;flex:none}
+/* ---- événements et cadeaux ---- */
+.evbar{display:grid;gap:6px;margin:0 0 4px}
+@media (max-width:700px){.evbar{padding-right:52px}}
+.evbar[hidden]{display:none}
+.evitem{display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:12px;background:linear-gradient(90deg,rgba(255,217,138,.22),rgba(255,217,138,.08));border:1px solid rgba(255,217,138,.5);color:#ffe7b0;font:600 14px/1.35 var(--ui)}
+.evitem .ei{font-size:20px;flex:none}
+.evitem small{display:block;color:#e7d9ff;font-weight:500;opacity:.85}
+.stage.special{box-shadow:inset 0 0 0 2px rgba(255,217,138,.75),inset 0 0 90px rgba(255,196,60,.28)}
+.packs b .spk{color:#ffd98a;opacity:1;padding-left:4px}
+.giftpop{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:20px;background:rgba(10,4,20,.82);backdrop-filter:blur(4px)}
+.giftpop[hidden]{display:none}
+.gpbox{width:min(420px,100%);display:grid;gap:12px;justify-items:center;text-align:center;padding:24px 20px;border-radius:20px;background:linear-gradient(180deg,#3b1f6e,#1a0f2e);border:1px solid rgba(255,217,138,.55);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 60px rgba(255,200,60,.2);color:#f3eee4}
+.gpico{font-size:56px;line-height:1}
+.gpbox h2{margin:0;font:400 24px/1.15 var(--display);color:#ffd98a;text-wrap:balance}
+.gpbox p{margin:0;font:500 16px/1.45 var(--ui);color:#e9e2f7}
+.gpcards{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.gpcards canvas{width:min(180px,40vw);aspect-ratio:750/1050;border-radius:6%/4.3%;box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 40px rgba(255,217,138,.35)}
+.stexcl{grid-column:1/-1;display:flex!important;gap:8px;align-items:flex-start;flex-direction:row!important}
+.slot.excl .sq{font-size:28px}
+.react{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.react button{appearance:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#f3eee4;border-radius:999px;padding:3px 9px;font:600 13px var(--ui);cursor:pointer;min-height:30px;touch-action:manipulation}
+.react button.on{background:rgba(255,217,138,.25);border-color:#ffd98a;color:#ffe7b0}
+.react button.zero{opacity:.55}
+.react button.zero:hover,.react button.zero:focus-visible{opacity:1}
 .mkmsg{margin:0;padding:10px 12px;border-radius:10px;background:rgba(255,217,138,.16);border:1px solid rgba(255,217,138,.45);color:#ffe7b0;font:600 14px var(--ui)}
 .mkh{font:600 13px var(--label);letter-spacing:.08em;text-transform:uppercase;color:#a59fb4;margin:8px 0 0}
 .bzrec{appearance:none;border:1px solid #ffd98a;background:rgba(255,217,138,.15);color:#ffe7b0;border-radius:10px;padding:9px 14px;font:700 14px var(--ui);cursor:pointer}
@@ -538,6 +568,7 @@ td.n{text-align:right}
     <p>Prototype jouable : sur ordinateur, clique sur le paquet pour l'ouvrir ; sur téléphone, coupe le haut du paquet en glissant le doigt sur le pointillé. Ensuite, touche ou glisse pour passer d'une carte à l'autre. 5 cartes par booster, les 2 dernières sont des cartes spéciales (presque toujours Rare ou mieux). Les tirages utilisent tes vraies cartes et tes taux de drop.</p>
   </header>
 
+  <div class="evbar" id="evBar" aria-live="polite" hidden></div>
   <section class="stage" id="stage" aria-label="Table d'ouverture">
     <div id="rays"></div>
     <canvas id="gl" class="off" role="button" aria-label="Booster en 3D : glisse pour le tourner, touche pour l'ouvrir"></canvas>
@@ -632,6 +663,7 @@ td.n{text-align:right}
         <label><span class="lab">Nom</span><input type="text" id="stNewName" maxlength="60" autocomplete="off" placeholder="Nom de la carte"></label>
         <label><span class="lab">Catégorie</span><select id="stNewCat"></select></label>
         <label><span class="lab">Rareté</span><select id="stNewRar"></select></label>
+        <label class="stexcl"><input type="checkbox" id="stNewExcl"> <span>Carte exclusive : récompense quand on complète la catégorie (jamais dans un booster)</span></label>
       </div>
       <div class="stnewfoot"><p class="shint" id="stNewNum" aria-live="polite"></p><button type="button" class="sbtn" id="stNewGo">Créer la carte</button></div>
       <p class="shint stnewmsg" id="stNewMsg" role="status"></p>
@@ -700,6 +732,10 @@ td.n{text-align:right}
     <div class="shophead"><b>Classement</b><span class="shopbal" id="rankSub"></span><button class="bbtn" id="rankClose" type="button" aria-label="Fermer le classement">✕</button></div>
     <div class="shopbody" id="rankBody"></div>
   </div>
+</div>
+
+<div id="giftpop" class="giftpop" role="dialog" aria-modal="true" aria-labelledby="gpTitle" hidden>
+  <div class="gpbox"><div class="gpico" id="gpIco" aria-hidden="true">🎁</div><h2 id="gpTitle"></h2><p id="gpText"></p><div class="gpcards" id="gpCards"></div><button type="button" class="sbtn big" id="gpOk">Super !</button></div>
 </div>
 
 <div id="market" class="shop" role="dialog" aria-modal="true" aria-label="Marché" hidden>
@@ -1541,10 +1577,10 @@ td.n{text-align:right}
   try{localStorage.setItem(NEWKEY+"-t","1");NEWCARDS=JSON.parse(localStorage.getItem(NEWKEY)||"[]");if(!Array.isArray(NEWCARDS))NEWCARDS=[];}catch(e){STORE_OK=false;NEWCARDS=[];}
   const extraOf=list=>list.filter(n=>n&&typeof n.name==="string"&&n.name.trim()&&RANK.includes(n.rarity)&&typeof n.cat==="string"&&!BUILT.has(slug(n.name)));
   {const have=new Set(BUILT);extraOf(NEWCARDS).forEach(n=>{const k=slug(n.name);if(have.has(k))return;have.add(k);
-    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.rarity,created:n.id});});}
+    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.rarity,created:n.id,excl:!!n.excl});});}
   function numberCards(list){
     const ci=c=>{const i=CAT_SEQ.indexOf(c.cat);return i<0?99:i;};
-    const out=list.map((c,i)=>[c,i]).sort((a,b)=>ci(a[0])-ci(b[0])||a[0].cat.localeCompare(b[0].cat)||RANK.indexOf(a[0].rarity)-RANK.indexOf(b[0].rarity)||a[1]-b[1]).map(x=>x[0]);
+    const out=list.map((c,i)=>[c,i]).sort((a,b)=>ci(a[0])-ci(b[0])||a[0].cat.localeCompare(b[0].cat)||(!!a[0].excl-!!b[0].excl)||RANK.indexOf(a[0].rarity)-RANK.indexOf(b[0].rarity)||a[1]-b[1]).map(x=>x[0]);
     const cnt={},nums=new Map();
     out.forEach(c=>{const p=CAT_PFX[c.cat]||((slug(c.cat)[0]||"x").toUpperCase());cnt[p]=(cnt[p]||0)+1;nums.set(c,p+String(cnt[p]).padStart(2,"0"));});
     return {out,nums};}
@@ -1615,11 +1651,13 @@ td.n{text-align:right}
     if(!st||typeof st!=="object")return;if(st.state)st=st.state;
     const off=Date.now()-(+st.now||Date.now()),owned={};
     Object.entries(st.owned||{}).forEach(([k,n])=>{const c=cardOfKey(k);if(c&&n>0)owned[c.id]=(owned[c.id]||0)+(+n);});
+    if(+st.packMs>0)PACK_MS=+st.packMs;S.special=+st.special||0;EVENTS=(st.events||[]).map(e=>({...e,ends:+e.ends+off}));
     S.owned=owned;S.opened=+st.opened||0;S.bananas=+st.bananas||0;S.stock=+st.stock;S.nextAt=+st.nextAt?(+st.nextAt+off):0;S.counts=st.counts||{};
     S.styles=[...new Set([0,...(st.styles||[]).map(n=>STYLES.findIndex(x=>x.name===n)).filter(i=>i>=0)])];S.style=Math.max(0,STYLES.findIndex(x=>x.name===st.style));
     if(st.pseudo&&st.pseudo!==PREFS.pseudo){PREFS.pseudo=st.pseudo;savePrefs();const pi=document.getElementById("pseudoIn");if(pi&&document.activeElement!==pi)pi.value=st.pseudo;}
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
-    try{syncBananas();renderStats();renderPacks();}catch(e){}try{BIND.repaint();}catch(e){}try{MARKET.badge();}catch(e){}
+    try{syncBananas();renderStats();renderPacks();renderEvents();}catch(e){}try{BIND.repaint();}catch(e){}try{MARKET.badge();}catch(e){}
+    if(Array.isArray(st.gifts)&&st.gifts.length)try{GIFTS.show(st.gifts);}catch(e){}
     try{if(mode==="pack"||mode==="summary")shown.forEach(s=>paint(s.cv,s.c,0));}catch(e){}}
   const SRV_MSG={no_pack:"Plus de booster pour le moment.",no_bananas:"Pas assez de bananes.",owned:"Tu as déjà cette carte.",no_cards:"Le catalogue n'est pas encore prêt : réessaie dans un instant.",not_member:"Ton accès est en pause."};
   let srvRefreshT=0;
@@ -1656,7 +1694,7 @@ td.n{text-align:right}
         case "Originel":tone(c,60,t,1.2,"sine",.35,35);[0,.18,.36].forEach((d,i)=>arp(c,t+.2+d,[523*(1+i*.25),659*(1+i*.25),784*(1+i*.25)],0,1.4,"sine",.07));noise(c,t+.3,1.5,.08,6000,12000,3);break;
         case "coin":tone(c,988,t,.09,"square",.05);tone(c,1319,t+.08,.22,"square",.05);break;
         case "pop":tone(c,700,t,.08,"sine",.08,1100);break;}}
-    function vib(k){if(!PREFS.vib||!navigator.vibrate)return;const P={rip:4,slide:10,tear:25,flip:8,Rare:20,"Épique":[30,40,30],"Légendaire":[40,40,60],"Mythique":[80,50,120,50,160],"Secret":[60,40,100,40,140],"Originel":[100,60,100,60,250]};
+    function vib(k){if(!PREFS.vib||!navigator.vibrate||(navigator.userActivation&&!navigator.userActivation.hasBeenActive))return;const P={rip:4,slide:10,tear:25,flip:8,Rare:20,"Épique":[30,40,30],"Légendaire":[40,40,60],"Mythique":[80,50,120,50,160],"Secret":[60,40,100,40,140],"Originel":[100,60,100,60,250]};
       if(P[k])try{navigator.vibrate(P[k]);}catch(e){}}
     return {play(k){try{play(k);}catch(e){}vib(k);}};})();
 
@@ -1848,8 +1886,8 @@ td.n{text-align:right}
     for(const [n,p] of w){if((x-=p)<0)return n;}return "Rare";
   }
   function pickCard(rname){
-    let pool=byR[RIDX[rname]];
-    if(!pool.length)pool=byR[RIDX.Mythique];
+    let pool=byR[RIDX[rname]].filter(c=>!c.excl);  // exclusive cards never come out of a booster
+    if(!pool.length)pool=byR[RIDX.Mythique].filter(c=>!c.excl);
     const c=pool[(Math.random()*pool.length)|0];
     return c;
   }
@@ -2194,7 +2232,7 @@ td.n{text-align:right}
   P3.onRip=()=>SFX.play("rip");
   if(location.protocol==="file:")window.__P3=P3;  // local tests only
   P3.onNudge=()=>{setHint("Glisse le doigt sur le pointillé pour ouvrir");};
-  function packHint(){let empty=false;try{empty=limitOn()&&S.stock<=0;}catch(e){}if(empty){setHint(use3d?"Reviens quand le prochain booster sera prêt":"");return;}setHint(use3d?(P3.coarse?"Glisse le doigt sur le pointillé pour ouvrir":"Découpe le pointillé à la souris ou clique pour ouvrir · glisse le paquet pour le tourner"):"");}
+  function packHint(){let empty=false;try{empty=limitOn()&&avail()<=0;}catch(e){}if(empty){setHint(use3d?"Reviens quand le prochain booster sera prêt":"");return;}setHint(use3d?(P3.coarse?"Glisse le doigt sur le pointillé pour ouvrir":"Découpe le pointillé à la souris ou clique pour ouvrir · glisse le paquet pour le tourner"):"");}
   function hidePack(){gsap.killTweensOf(pack);gsap.set(pack,{display:"none"});P3.hide();}
 
   function buildStack(cards){
@@ -2242,6 +2280,7 @@ td.n{text-align:right}
       got.sort((x,y)=>x.r-y.r);
       S.fresh=(res.fresh||[]).map(k=>{const c=cardOfKey(k);return c&&c.id;}).filter(i=>i!==undefined&&i!==null);
       got.forEach(c=>{if(TIER[c.rarity]>=3)S.log.unshift({b:(+res.state.opened)||0,name:c.name.trim(),rarity:c.rarity});});S.log=S.log.slice(0,30);
+      if(res.special)say("Booster spécial : meilleures chances sur les deux dernières cartes !");
       applyServer(res.state);deckCards=got;
     }else{deckCards=rollBooster();postPulls(deckCards);}
     save();idx=0;
@@ -2488,7 +2527,7 @@ td.n{text-align:right}
       gsap.to(s.el,{x:pos[i].x,y:pos[i].y,rotation:0,scale:sc,opacity:1,duration:D(.55),delay:D(i*.08),ease:"back.out(1.3)"});
       gsap.to(s.aura,{opacity:RARITIES[s.c.r].glow?.4:0,duration:.4});
       gsap.to(s.el.querySelector(".tag"),{opacity:1,duration:.3,delay:D(.4+i*.08)});});
-    setTimeout(()=>{busy=false;mode="summary";setHint("Touche une carte pour l'agrandir");tickPacks();setBtn(limitOn()&&S.stock<=0?"Terminer":"Ouvrir un autre booster");
+    setTimeout(()=>{busy=false;mode="summary";setHint("Touche une carte pour l'agrandir");tickPacks();setBtn(limitOn()&&avail()<=0?"Terminer":"Ouvrir un autre booster");if(SRV&&CLOUD)srvRefresh();
       say(`Booster n° ${S.opened} : ${deckCards.map(c=>c.name.trim()).join(", ")}.`);renderStats();},D(800));
   }
 
@@ -2615,7 +2654,7 @@ td.n{text-align:right}
           <div class="tocbody">${rows}<div class="rchips">${rar}</div><p class="tochint">Touche une catégorie pour y aller.</p></div></div>`;}
       if(f.type==="page"){const p=PAGES[f.i];
         const slots=p.cards.map(c=>{const n=S.owned[c.id]||0,R=RARITIES[c.r];
-          if(!n)return `<div class="slot empty"><span class="snum">${c.num}</span><span class="sq">?</span><span class="sdot" style="background:${colorOf(c.rarity)}"></span></div>`;
+          if(!n)return `<div class="slot empty${c.excl?" excl":""}"><span class="snum">${c.num}</span><span class="sq">${c.excl?"🏆":"?"}</span><span class="sdot" style="background:${colorOf(c.rarity)}"></span></div>`;
           return `<button type="button" class="slot got${R.foil?" foil":""}" data-id="${c.id}" aria-label="${c.name.trim()}, ${c.rarity}"><canvas width="240" height="336" data-id="${c.id}"></canvas>${n>1?`<span class="cnt">×${n}</span>`:""}${(S.fresh||[]).includes(c.id)?`<span class="new">Nouveau</span>`:""}</button>`;}).join("");
         const pad=Array.from({length:9-p.cards.length},()=>`<div class="slot none"></div>`).join("");
         return `<div class="sheet"><div class="phead"><span>${p.cat}${p.parts>1?` <small>${p.part}/${p.parts}</small>`:""}</span><span>p. ${f.i+1}</span></div><div class="pgrid">${slots}${pad}</div></div>`;}
@@ -2896,7 +2935,8 @@ td.n{text-align:right}
             const nOwn=S.owned[c.id]||0,R0=RARITIES[c.r];
             if(!nOwn){rr(x,sx,sy,sw,sh,rad);x.fillStyle="rgba(43,36,51,.05)";x.fill();x.setLineDash([W*.012,W*.008]);x.lineWidth=W*.0035;x.strokeStyle="rgba(43,36,51,.28)";x.stroke();x.setLineDash([]);
               x.textAlign="center";x.font=`700 ${W*.034}px ${F_L}`;x.fillStyle="#6a6274";x.fillText(c.num,sx+sw/2,sy+sh*.06+W*.03);
-              x.font=`400 ${W*.08}px ${F_D}`;x.fillStyle="rgba(43,36,51,.22)";x.fillText("?",sx+sw/2,sy+sh*.58);
+              if(c.excl){x.font=`400 ${W*.07}px ${F_U}`;x.globalAlpha=.75;x.fillText("🏆",sx+sw/2,sy+sh*.56);x.globalAlpha=1;x.font=`700 ${W*.022}px ${F_L}`;x.fillStyle="#8a6a12";x.fillText("RÉCOMPENSE",sx+sw/2,sy+sh*.72);}
+              else{x.font=`400 ${W*.08}px ${F_D}`;x.fillStyle="rgba(43,36,51,.22)";x.fillText("?",sx+sw/2,sy+sh*.58);}
               x.beginPath();x.arc(sx+sw/2,sy+sh*.9,W*.011,0,PI*2);x.globalAlpha=.85;x.fillStyle=fillColor(x,c.rarity,sx+sw/2,sy+sh*.9);x.fill();x.globalAlpha=1;continue;}
             x.save();x.shadowColor="rgba(0,0,0,.35)";x.shadowBlur=W*.012;x.shadowOffsetY=W*.004;rr(x,sx,sy,sw,sh,rad);x.fillStyle="#222";x.fill();x.restore();
             x.save();rr(x,sx,sy,sw,sh,rad);x.clip();x.drawImage(thumb(c,tw),sx,sy,sw,sh);
@@ -3168,9 +3208,9 @@ td.n{text-align:right}
     if(UID)cloudInit();
     DB.collection("newcards").onSnapshot(snap=>{
       const list=snap.docs.map(d=>({id:d.id,...(d.data()||{})})).sort((a,b)=>(+a.t||0)-(+b.t||0));
-      const sig=l=>JSON.stringify(extraOf(l).map(n=>[n.id,n.name.trim(),n.cat,n.rarity]));
+      const sig=l=>JSON.stringify(extraOf(l).map(n=>[n.id,n.name.trim(),n.cat,n.rarity,!!n.excl]));
       const changed=sig(list)!==sig(NEWCARDS);
-      try{localStorage.setItem(NEWKEY,JSON.stringify(list.map(n=>({id:n.id,name:n.name,cat:n.cat,rarity:n.rarity,t:n.t}))));}catch(e){}
+      try{localStorage.setItem(NEWKEY,JSON.stringify(list.map(n=>({id:n.id,name:n.name,cat:n.cat,rarity:n.rarity,excl:!!n.excl,t:n.t}))));}catch(e){}
       if(changed&&STORE_OK&&!window.__newcardReload)showReloadNote();
     },()=>{});
     DB.collection("artworks").onSnapshot(snap=>{
@@ -3344,12 +3384,12 @@ td.n{text-align:right}
     RANK.forEach(r=>{const o=document.createElement("option");o.value=r;o.textContent=r;$("stNewRar").appendChild(o);});
     const nameTaken=n=>{const k=slug(n);return !!k&&CARDS.some(c=>slug(c.name)===k||slug(c.orig)===k);};
     function previewNew(){const name=$("stNewName").value.trim(),cat=$("stNewCat").value,rarity=$("stNewRar").value;
-      const tmp={num:"",cat,name:name||"…",rarity};const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
+      const tmp={num:"",cat,name:name||"…",rarity,excl:$("stNewExcl").checked};const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
       const shifted=CARDS.filter(c=>c.cat===cat&&nums.get(c)!==c.num).length;
       $("stNewNum").textContent=`Elle sera la carte ${n}`+(shifted?` · ${shifted} carte${shifted>1?"s":""} de « ${cat} » ${shifted>1?"seront renumérotées":"sera renumérotée"} après elle.`:".");
       $("stNewGo").disabled=!name;}
-    ["input","change"].forEach(t=>["stNewName","stNewCat","stNewRar"].forEach(id=>$(id).addEventListener(t,()=>{$("stNewMsg").textContent="";previewNew();})));
-    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),cat=$("stNewCat").value,rarity=$("stNewRar").value;
+    ["input","change"].forEach(t=>["stNewName","stNewCat","stNewRar","stNewExcl"].forEach(id=>$(id).addEventListener(t,()=>{$("stNewMsg").textContent="";previewNew();})));
+    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),cat=$("stNewCat").value,rarity=$("stNewRar").value,excl=$("stNewExcl").checked;
       const msg=t=>$("stNewMsg").textContent=t;
       if(!name)return msg("Donne un nom à la carte.");
       if(!slug(name))return msg("Le nom doit contenir au moins une lettre ou un chiffre.");
@@ -3357,9 +3397,9 @@ td.n{text-align:right}
       if(!DB)return msg("Création impossible ici pour l'instant.");
       const id="n"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
       $("stNewGo").disabled=true;msg("Création…");
-      try{await DB.doc("newcards/"+id).set({name,cat,rarity,t:Date.now()});}
+      try{await DB.doc("newcards/"+id).set({name,cat,rarity,excl,t:Date.now()});}
       catch(e){$("stNewGo").disabled=false;return msg("Création impossible pour l'instant, réessaie.");}
-      const l=[...NEWCARDS.filter(n=>n.id!==id),{id,name,cat,rarity,t:Date.now()}];
+      const l=[...NEWCARDS.filter(n=>n.id!==id),{id,name,cat,rarity,excl,t:Date.now()}];
       try{localStorage.setItem(NEWKEY,JSON.stringify(l));sessionStorage.setItem("mf-open-card",slug(name));}catch(e){}
       window.__newcardReload=true;msg("Carte créée ! Rechargement…");setTimeout(()=>location.reload(),350);}
     $("stNewGo").addEventListener("click",createCard);
@@ -3401,7 +3441,7 @@ td.n{text-align:right}
     if(reduce){syncBananas();return;}
     const o={v:from};gsap.to(o,{v:S.bananas,duration:.6,ease:"power2.out",onUpdate:()=>{const t=fmt(Math.round(o.v));$("banCount").textContent=t;const sb=$("shopBal");if(sb)sb.textContent=t;}});
     gsap.fromTo([".banchip",".shopbal"],{scale:1},{scale:1.15,duration:.15,yoyo:true,repeat:1,ease:"power1.out"});}
-  const dupes=c=>Math.max(0,(S.owned[c.id]||0)-1);
+  const dupes=c=>c.excl?0:Math.max(0,(S.owned[c.id]||0)-1);
   function recycleCard(c,k){k=Math.min(k??dupes(c),dupes(c));if(!k)return 0;S.owned[c.id]-=k;const v=k*RECYCLE[c.rarity];return v;}
 
   const SHOP=(function(){
@@ -3462,7 +3502,8 @@ td.n{text-align:right}
     say(testStyle===null?"Retour à ton style de la boutique.":`Aperçu du style « ${STYLES[testStyle].name} » (test).`);});
 
   /* ---------- limite : 3 boosters par jour, un toutes les 8 h, stock de 3 au maximum ---------- */
-  const PACK_MS=8*3600*1000,PACK_MAX=3;
+  let PACK_MS=8*3600*1000;const PACK_MAX=3;  // the wait is shorter during a "speed" event (value sent by the server)
+  const avail=()=>(S.stock|0)+(S.special|0);
   const limitOn=()=>!ADMIN||PREVIEW||$("limit").checked;
   function tickPacks(){
     if(S.stock===undefined)S.stock=PACK_MAX;
@@ -3474,18 +3515,19 @@ td.n{text-align:right}
     if(S.stock>=PACK_MAX)S.nextAt=0;
     if(ch)save();
   }
-  function takePack(){if(!limitOn())return true;tickPacks();if(S.stock<=0)return false;S.stock--;if(!S.nextAt)S.nextAt=Date.now()+PACK_MS;save();renderPacks();return true;}
+  function takePack(){if(!limitOn())return true;tickPacks();if(avail()<=0)return false;if(S.special>0){S.special--;save();renderPacks();return true;}S.stock--;if(!S.nextAt)S.nextAt=Date.now()+PACK_MS;save();renderPacks();return true;}
   const hms=ms=>{const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h} h ${String(m).padStart(2,"0")}`:`${m} min ${String(x).padStart(2,"0")}`;};
   function renderPacks(){
     const el=$("packs");
     if(!limitOn()){el.innerHTML=`<b>Boosters illimités</b><span>mode test</span>`;stage.classList.remove("nopack");
       if(mode==="pack"&&!busy&&/Prochain/.test(openBtn.textContent))setBtn("Ouvrir le booster");return;}
     tickPacks();
-    el.innerHTML=`<b>Boosters ${S.stock}/${PACK_MAX}</b>`+(S.stock<PACK_MAX&&S.nextAt?`<span>+1 dans ${hms(S.nextAt-Date.now())}</span>`:`<span>stock plein</span>`);
-    const empty=S.stock<=0;stage.classList.toggle("nopack",empty);
+    el.innerHTML=`<b>Boosters ${S.stock}/${PACK_MAX}${S.special>0?` <span class="spk">+ ${S.special} spécia${S.special>1?"ux":"l"}</span>`:""}</b>`+(S.stock<PACK_MAX&&S.nextAt?`<span>+1 dans ${hms(S.nextAt-Date.now())}</span>`:`<span>stock plein</span>`);
+    const empty=avail()<=0;stage.classList.toggle("nopack",empty);stage.classList.toggle("special",S.special>0);
     {const ph=pack.querySelector(".hint");if(ph)ph.textContent=empty?"Plus de booster pour le moment":"Touche pour ouvrir";}
     if(mode==="pack"&&!busy){const want=empty?(use3d?"Reviens quand le prochain booster sera prêt":""):use3d?(P3.coarse?"Glisse le doigt sur le pointillé pour ouvrir":"Clique sur le paquet pour l'ouvrir · glisse pour le tourner"):"";if(hint.textContent!==want)setHint(want);}
-    if(mode==="pack"&&!busy){if(empty){setBtn("Prochain booster dans "+hms(S.nextAt-Date.now()),true);}else if(openBtn.disabled||/Prochain/.test(openBtn.textContent))setBtn("Ouvrir le booster");}
+    if(mode==="pack"&&!busy){const lbl=S.special>0?"Ouvrir le booster spécial":"Ouvrir le booster";
+      if(empty){setBtn("Prochain booster dans "+hms(S.nextAt-Date.now()),true);}else if(openBtn.disabled||/Prochain|Ouvrir le booster/.test(openBtn.textContent)&&openBtn.textContent!==lbl)setBtn(lbl);}
   }
   setInterval(renderPacks,1000);
   $("limit").addEventListener("change",()=>{try{localStorage.setItem(KEY+"-limit",$("limit").checked?"1":"0");}catch(e){}renderPacks();});
@@ -3496,7 +3538,7 @@ td.n{text-align:right}
   /* ---------- online save: load / merge ---------- */
   async function cloudInit(){
     if(SRV){try{
-      if(ADMIN){await window.MF_RPC("mf_sync_cards",{p_cards:CARDS.map(c=>({key:c.key,name:c.orig.trim(),cat:c.cat,rarity:c.rarity}))});}
+      if(ADMIN){await window.MF_RPC("mf_sync_cards",{p_cards:CARDS.map(c=>({key:c.key,name:c.orig.trim(),cat:c.cat,rarity:c.rarity,excl:!!c.excl}))});}
       const st=await window.MF_RPC("mf_state");CLOUD=true;
       if(!st.pseudo){let p=PREFS.pseudo;if(!p&&USER){try{const me=await USER.me();p=me&&me.name;}catch(e){}}
         if(p){try{applyServer(await window.MF_RPC("mf_pseudo",{p_pseudo:p}));}catch(e){applyServer(st);}}else applyServer(st);}
@@ -3550,8 +3592,20 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="offer"||x.kind==="trade"){const c=cardOfKey(x.card),g=x.gave&&cardOfKey(x.gave);if(!c)return "";
         const t=x.kind==="offer"?`${who} propose une carte ${rpill(c.rarity)} au Marché`:`${who} a fait un échange ${rpill(c.rarity)} avec <b>${esc(nameOf(x.with))}</b>`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🔄</span><p>${t}<br><small>${ago(x.t)}</small></p></div>`;}
-      if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${ICON[x.rarity]||"🎴"}</span><p>${who} a tiré une carte ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p></div>`;
+      if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${ICON[x.rarity]||"🎴"}</span><p>${who} a tiré une carte ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       return "";}
+    /* reactions under the news: one per player and per item, tap again to remove it */
+    const EMO=["🔥","😂","😮","😭","👏"];let reac={};
+    function reacts(x){if(!x.id||!UID)return "";const r=reac[x.id]||{};
+      return `<div class="react" role="group" aria-label="Réactions">${EMO.map(e=>{const n=(r[e]||[]).length,on=(r[e]||[]).includes(UID);
+        return `<button type="button" class="${on?"on":""}${n?"":" zero"}" data-f="${esc(x.id)}" data-e="${e}" aria-pressed="${on}" aria-label="${e} ${n}">${e}${n?" "+n:""}</button>`;}).join("")}</div>`;}
+    list.addEventListener("click",async ev=>{const b=ev.target.closest(".react button");if(!b||!DB||!UID)return;
+      const f=b.dataset.f,e=b.dataset.e,mine=((reac[f]||{})[e]||[]).includes(UID),ref=DB.doc("reactions/"+f+"~"+UID);
+      // instant feedback, the server confirms through the live update
+      Object.values(reac[f]=reac[f]||{}).forEach(a=>{const i=a.indexOf(UID);if(i>=0)a.splice(i,1);});
+      if(!mine)(reac[f][e]=reac[f][e]||[]).push(UID);render();
+      try{if(mine)await ref.delete();else await ref.set({uid:UID,f,e,t:Date.now()});}catch(err){say("Réaction impossible pour l'instant.");}});
     function render(){badge();if(root.hidden)return;
       $("socFeedTab").classList.toggle("on",tab==="feed");$("socChatTab").classList.toggle("on",tab==="chat");
       $("socFeedTab").setAttribute("aria-selected",tab==="feed");$("socChatTab").setAttribute("aria-selected",tab==="chat");
@@ -3568,6 +3622,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         const t=UID&&players[UID]&&+players[UID].t||0;if(SRV&&CLOUD&&myT&&t&&t!==myT)srvRefresh();if(t)myT=t;},()=>{});  // a gift or a trade changed my collection elsewhere
       DB.collection("feed").orderBy("t","desc").limit(50).onSnapshot(sn=>{feed=sn.docs.map(d=>({id:d.id,...(d.data()||{})}));resolve();render();
         const t=feed.filter(x=>x.kind==="offer"||x.kind==="trade").reduce((a,x)=>Math.max(a,+x.t||0),0);if(t!==mkT){mkT=t;MARKET.refresh();}},()=>{});
+      DB.collection("reactions").orderBy("t","desc").limit(400).onSnapshot(sn=>{const m={};sn.docs.forEach(d=>{const v=d.data()||{};if(!v.f||!EMO.includes(v.e))return;
+        ((m[v.f]=m[v.f]||{})[v.e]=m[v.f][v.e]||[]).push(v.uid);});reac=m;render();},()=>{});
       DB.collection("chat").orderBy("t","desc").limit(80).onSnapshot(sn=>{chat=sn.docs.map(d=>({id:d.id,...(d.data()||{})})).reverse();resolve();render();},()=>{});
       setInterval(()=>{if(!root.hidden)render();},30000);}
     function show(){closeOthers("social");root.hidden=false;$("socialBtn").setAttribute("aria-expanded","true");render();$("socClose").focus();}
@@ -3619,6 +3675,34 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     document.addEventListener("keydown",e=>{if(open&&e.key==="Escape")hide();});
     return {show,hide,update};
   })();
+
+  /* ---------- événements en cours (bandeau au-dessus du booster) ---------- */
+  let EVENTS=[];
+  function renderEvents(){const bar=$("evBar");if(!bar)return;const now=Date.now();const list=EVENTS.filter(e=>e.ends>now);
+    const until=t=>new Date(t).toLocaleString("fr-FR",{weekday:"long",hour:"2-digit",minute:"2-digit"});
+    const hh=h=>(+h%1?String(+h).replace(".",","):String(+h))+" h";
+    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":"🎁";
+      const what=e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
+      return `<div class="evitem"><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}<small>${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}</small></span></div>`;}).join("");
+    bar.hidden=!list.length;document.documentElement.style.setProperty("--evh",(list.length?bar.offsetHeight+10:0)+"px");}
+  setInterval(renderEvents,60000);
+  /* ---------- cadeaux reçus (événement, catégorie complète) ---------- */
+  const GIFTS=(function(){const root=$("giftpop");let q=[];
+    function next(){const g=q.shift();if(!g){root.hidden=true;return;}
+      const cards=(g.cards||[]).map(cardOfKey).filter(Boolean);
+      $("gpIco").textContent=g.kind==="collection"?"🏆":g.special?"✨":"🎁";
+      $("gpTitle").textContent=g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
+      $("gpText").innerHTML=g.kind==="collection"
+        ?`Tu as toutes les cartes de <b>${esc(g.cat)}</b>.<br>Tu gagnes <b>${g.boosters} boosters</b>${cards.length?` et ${cards.length>1?"les cartes exclusives":"la carte exclusive"} :`:"."}`
+        :`${g.message?esc(g.message)+"<br>":""}Tu reçois <b>${g.boosters} booster${g.boosters>1?"s":""}${g.special?` spécia${g.boosters>1?"ux":"l"}`:""}</b>${g.special?" : meilleures chances sur les dernières cartes":""}.`;
+      const box=$("gpCards");box.innerHTML="";
+      cards.forEach(c=>{const cv=document.createElement("canvas");cv.width=750*ZOOM_K;cv.height=1050*ZOOM_K;cv.setAttribute("role","img");cv.setAttribute("aria-label",c.name.trim());box.appendChild(cv);paint(cv,c,0);
+        setTimeout(()=>paint(cv,c,0),800);gsap.fromTo(cv,{rotationY:180,scale:.5,opacity:0},{rotationY:0,scale:1,opacity:1,duration:.8,ease:"back.out(1.4)",delay:.25});});
+      root.hidden=false;try{SFX.play(g.kind==="collection"?"coin":"flip");}catch(e){}try{if(PREFS.vib&&navigator.vibrate&&navigator.userActivation&&navigator.userActivation.hasBeenActive)navigator.vibrate([30,40,60]);}catch(e){}
+      gsap.fromTo(root.querySelector(".gpbox"),{scale:.8,opacity:0},{scale:1,opacity:1,duration:.4,ease:"back.out(1.6)"});$("gpOk").focus();}
+    $("gpOk").addEventListener("click",next);
+    root.addEventListener("keydown",e=>{if(e.key==="Escape")next();});
+    return {show(list){const was=q.length||!root.hidden;q.push(...list);if(!was)next();}};})();
 
   /* ---------- marché : échanges de doubles entre joueurs, carte contre carte, même rareté ---------- */
   const MARKET=(function(){let mkT=0;const mkSay=t=>{const e=$("mkMsg");if(!e)return;e.textContent=t||"";e.hidden=!t;clearTimeout(mkT);if(t)mkT=setTimeout(()=>{e.hidden=true;},6000);};const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[]},loaded=false,err="",busyMk=false,offerKey="",picked=[],showOwned=false;
@@ -3679,13 +3763,13 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         try{const res=await window.MF_RPC("mf_market_cancel",{p_id:+b.dataset.cancel});applyServer(res.state);mkSay("Annonce retirée : ta carte est revenue dans ta collection.");}
         catch(e){mkSay("Impossible de retirer l'annonce pour l'instant.");}busyMk=false;load();}));}
     function renderNew(){
-      const dbl=CARDS.filter(c=>nOf(c)>=2).sort((a,b)=>b.r-a.r||a.num.localeCompare(b.num,"fr",{numeric:true}));
+      const dbl=CARDS.filter(c=>!c.excl&&nOf(c)>=2).sort((a,b)=>b.r-a.r||a.num.localeCompare(b.num,"fr",{numeric:true}));
       const mineN=data.open.filter(mine).length;
       if(mineN>=5){body.innerHTML=`<p class="shint">Tu as déjà 5 annonces en cours : retires-en une dans « Mes annonces » pour en proposer une autre.</p>`;return;}
       if(!dbl.length){body.innerHTML=`<p class="shint">Tu n'as pas encore de double à échanger. Ouvre des boosters !</p>`;return;}
       if(!dbl.some(c=>c.key===offerKey)){offerKey=dbl[0].key;picked=[];}
       const off=cardOfKey(offerKey);
-      const pool=CARDS.filter(c=>c.rarity===off.rarity&&c.key!==off.key&&(showOwned||!nOf(c))).sort((a,b)=>(!!nOf(a)-!!nOf(b))||a.num.localeCompare(b.num,"fr",{numeric:true}));
+      const pool=CARDS.filter(c=>!c.excl&&c.rarity===off.rarity&&c.key!==off.key&&(showOwned||!nOf(c))).sort((a,b)=>(!!nOf(a)-!!nOf(b))||a.num.localeCompare(b.num,"fr",{numeric:true}));
       picked=picked.filter(k=>pool.some(c=>c.key===k));
       const groups=RARITIES.map(R=>({R,l:dbl.filter(c=>c.rarity===R.name)})).filter(g=>g.l.length).reverse();
       body.innerHTML=`<div class="mkform">

@@ -9,11 +9,40 @@
     const inst = document.createElement("div"); inst.className = "srow"; inst.id = "mfInstallRow";
     inst.innerHTML = `<span class="sl"><b>Appli</b><small id="mfInstallTxt">Ajoute Monkey Family sur ton écran d'accueil</small></span><button type="button" class="sbtn" id="mfInstallBtn">Installer</button>`;
     box.insertBefore(inst, save);
+    const nt = document.createElement("div"); nt.className = "srow"; nt.id = "mfPushRow";
+    nt.innerHTML = `<span class="sl"><b>Notifications</b><small id="mfPushTxt">Préviens-moi quand un booster est prêt</small></span><input type="checkbox" class="switch" id="mfPushOn" role="switch" aria-describedby="mfPushTxt">`;
+    box.insertBefore(nt, save);
     const adm = document.createElement("div"); adm.className = "srow mfadminrow";
     adm.innerHTML = `<span class="sl"><b>Admin</b><small>Joueurs, liens personnels et médias</small></span><button type="button" class="sbtn" id="mfAdminBtn">Gérer</button>`;
     box.insertBefore(adm, save);
     $("mfAdminBtn").addEventListener("click", openAdmin);
     setupInstall();
+    setupPush();
+  }
+
+  /* ---------- notifications ---------- */
+  async function setupPush(){
+    const sw = $("mfPushOn"), txt = $("mfPushTxt"), P = window.MF_PUSH;
+    const say = t => { txt.textContent = t; };
+    if (!P || !P.supported()){
+      sw.disabled = true;
+      say(P && P.ios() && !P.standalone() ? "Sur iPhone : installe d'abord l'appli sur l'écran d'accueil (ligne « Appli »), puis active-les depuis l'appli." : "Non disponibles sur ce navigateur.");
+      return;
+    }
+    const refresh = async () => { sw.checked = Notification.permission === "granted" && !!(await P.current()); };
+    await refresh();
+    if (Notification.permission === "denied") say("Bloquées dans les réglages du navigateur : autorise-les pour ce site.");
+    sw.addEventListener("change", async () => {
+      sw.disabled = true;
+      try{
+        if (sw.checked){ await P.enable(); say("Activées : tu seras prévenu quand un booster est prêt et pendant les événements."); }
+        else { await P.disable(); say("Désactivées sur cet appareil."); }
+      }catch(e){
+        const m = String(e && e.message || e);
+        say(m === "denied" ? "Refusées : autorise les notifications pour ce site dans les réglages du navigateur." : m === "dismissed" ? "Pas encore autorisées : réessaie et choisis « Autoriser »." : "Activation impossible pour l'instant, réessaie.");
+      }
+      await refresh(); sw.disabled = false;
+    });
   }
 
   /* ---------- installation (écran d'accueil) ---------- */
@@ -37,7 +66,7 @@
     const d = document.createElement("div"); d.id = "mfadmin"; d.className = "shop"; d.hidden = true;
     d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-label", "Admin");
     d.innerHTML = `<div class="shopbox"><div class="shophead"><b>Admin</b><span class="shopbal" id="mfaCount"></span><button class="bbtn" id="mfaClose" type="button" aria-label="Fermer">✕</button></div>
-      <div class="stabs" role="tablist"><button type="button" role="tab" data-mt="players" aria-selected="true">Joueurs</button><button type="button" role="tab" data-mt="import" aria-selected="false">Importer les médias</button><button type="button" role="tab" data-mt="export" aria-selected="false">Exporter pour Claude</button><button type="button" role="tab" data-mt="errs" aria-selected="false">Bugs</button></div>
+      <div class="stabs" role="tablist"><button type="button" role="tab" data-mt="players" aria-selected="true">Joueurs</button><button type="button" role="tab" data-mt="events" aria-selected="false">Événements</button><button type="button" role="tab" data-mt="import" aria-selected="false">Importer les médias</button><button type="button" role="tab" data-mt="export" aria-selected="false">Exporter pour Claude</button><button type="button" role="tab" data-mt="errs" aria-selected="false">Bugs</button></div>
       <div class="shopbody" id="mfaBody"></div></div>`;
     document.body.appendChild(d);
     $("mfaClose").addEventListener("click", closeAdmin);
@@ -50,7 +79,7 @@
   function closeAdmin(){ $("mfadmin").hidden = true; document.body.style.overflow = ""; }
   function render(){
     const d = $("mfadmin"); d.querySelectorAll("[data-mt]").forEach(b => b.setAttribute("aria-selected", b.dataset.mt === tab));
-    if (tab === "players") renderPlayers(); else if (tab === "import") renderImport(); else if (tab === "errs") renderErrs(); else renderExport();
+    if (tab === "players") renderPlayers(); else if (tab === "events") renderEvents(); else if (tab === "import") renderImport(); else if (tab === "errs") renderErrs(); else renderExport();
   }
   function linkBox(link, label){
     return `<div class="mflinkbox"><p class="shint">${label}</p><input class="mflink" readonly value="${esc(link)}"><button type="button" class="sbtn mfcopy">Copier le lien</button></div>`;
@@ -99,6 +128,58 @@
       b.disabled = true; try{ await MF_ADMIN.setActive(b.dataset.act, b.dataset.on === "1"); renderPlayers(); }catch(err){ b.disabled = false; }
     }));
   }
+  /* ---------- événements : boosters offerts, boosters spéciaux, attente réduite ---------- */
+  const KINDS = {gift:"🎁 Boosters offerts", special:"✨ Boosters spéciaux offerts", speed:"⚡ Attente réduite"};
+  const pad = n => String(n).padStart(2, "0");
+  const localInput = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  const fmt = t => new Date(t).toLocaleString("fr-FR", {weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"});
+  async function renderEvents(edit){
+    const body = $("mfaBody"); body.innerHTML = `<p class="shint">Chargement…</p>`;
+    let list = [];
+    try{ list = await window.MF_RPC("mf_events_admin"); }
+    catch(err){ body.innerHTML = /PGRST202|Could not find|does not exist/i.test(err.message) ? `<p class="shint mferr">Les événements ne sont pas encore installés : lance le script supabase-v3.sql dans Supabase.</p>` : `<p class="shint mferr">${esc(err.message)}</p>`; return; }
+    const e = edit || {};
+    const now = Date.now(), start = e.starts || now, end = e.ends || now + 2 * 86400000;
+    const state = x => x.ends <= now ? "Terminé" : x.starts > now ? "À venir" : "En cours";
+    body.innerHTML = `<form class="mfev" id="mfEvForm">
+        <p class="shint">${e.id ? "Modifier l'événement" : "Nouvel événement"} : les boosters offerts arrivent tout seuls chez chaque joueur à sa prochaine visite pendant l'événement (une fois par joueur).</p>
+        <label><span>Nom</span><input id="evTitle" maxlength="60" required value="${esc(e.title || "")}" placeholder="Noël, Week-end turbo…"></label>
+        <label><span>Type</span><select id="evKind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}" ${e.kind === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+        <label id="evBWrap"><span>Nombre de boosters</span><input id="evBoosters" type="number" min="1" max="20" value="${e.boosters || 2}"></label>
+        <label id="evHWrap"><span>Un booster toutes les… (heures)</span><input id="evHours" type="number" min="1" max="8" step="0.5" value="${e.hours || 4}"></label>
+        <label><span>Début</span><input id="evStart" type="datetime-local" required value="${localInput(start)}"></label>
+        <label><span>Fin</span><input id="evEnd" type="datetime-local" required value="${localInput(end)}"></label>
+        <label class="full"><span>Message (facultatif)</span><input id="evMsg" maxlength="200" value="${esc(e.message || "")}" placeholder="Joyeux Noël la famille !"></label>
+        <p class="shint full" id="evHelp"></p>
+        <div class="mfbtns full">${e.id ? `<button type="button" class="sbtn" id="evCancel">Annuler</button>` : ""}<button type="submit" class="sbtn">${e.id ? "Enregistrer" : "Créer l'événement"}</button></div>
+        <p class="shint full" id="evNote" role="status"></p>
+      </form>
+      <h3 class="mfh">Événements</h3>
+      ${list.length ? list.map(x => `<div class="sitem" style="display:grid;grid-template-columns:minmax(0,1fr)"><span class="sname">${esc(x.title)} <small style="display:block;line-height:1.45">${KINDS[x.kind]}${x.kind === "speed" ? ` · 1 toutes les ${x.hours} h` : ` · ${x.boosters} booster${x.boosters > 1 ? "s" : ""} · reçu par ${x.claims} joueur${x.claims > 1 ? "s" : ""}`}<br>${fmt(x.starts)} → ${fmt(x.ends)} · <b>${state(x)}</b>${x.message ? `<br>« ${esc(x.message)} »` : ""}</small></span>
+        <span class="mfbtns"><button class="sbtn" data-ed="${x.id}">Modifier</button><button class="sbtn" data-del="${x.id}">Supprimer</button></span></div>`).join("") : `<p class="shint">Aucun événement pour l'instant.</p>`}`;
+    const kind = $("evKind");
+    const sync = () => { const sp = kind.value === "speed"; $("evBWrap").hidden = sp; $("evHWrap").hidden = !sp;
+      $("evHelp").textContent = sp ? "Pendant l'événement, chaque joueur reçoit un booster plus souvent (au lieu de toutes les 8 h). Le stock reste limité à 3."
+        : kind.value === "special" ? "Booster spécial : les deux dernières cartes ont de bien meilleures chances (Épique minimum sur la dernière). Il passe avant les boosters normaux."
+        : "Les boosters s'ajoutent au stock du joueur, même s'il est déjà plein."; };
+    kind.addEventListener("change", sync); sync();
+    if ($("evCancel")) $("evCancel").addEventListener("click", () => renderEvents());
+    $("evStart").addEventListener("change", () => { if (new Date($("evEnd").value) <= new Date($("evStart").value)) $("evEnd").value = localInput(new Date($("evStart").value).getTime() + 86400000); });
+    $("mfEvForm").addEventListener("submit", async ev => {
+      ev.preventDefault();
+      const p = {id:e.id || null, title:$("evTitle").value.trim(), kind:kind.value, boosters:+$("evBoosters").value || 0, hours:+$("evHours").value || 8,
+        starts:new Date($("evStart").value).getTime(), ends:new Date($("evEnd").value).getTime(), message:$("evMsg").value.trim()};
+      if (!(p.ends > p.starts)){ $("evNote").innerHTML = `<span class="mferr">La fin doit être après le début.</span>`; return; }
+      try{ await window.MF_RPC("mf_event_save", {p}); renderEvents(); }
+      catch(err){ $("evNote").innerHTML = `<span class="mferr">${esc(err.message)}</span>`; }
+    });
+    body.querySelectorAll("[data-ed]").forEach(b => b.addEventListener("click", () => renderEvents(list.find(x => String(x.id) === b.dataset.ed))));
+    body.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
+      if (b.dataset.sure !== "1"){ b.dataset.sure = "1"; b.textContent = "Confirmer"; return; }
+      b.disabled = true; try{ await window.MF_RPC("mf_event_delete", {p_id:+b.dataset.del}); }catch(err){} renderEvents();
+    }));
+  }
+
   function renderImport(){
     const body = $("mfaBody");
     body.innerHTML = `<p class="shint">Choisis tout le contenu du dossier « media » que Claude t'a envoyé (les images, les sons et le fichier artworks.json). Les fichiers déjà en ligne sont ignorés : tu peux relancer l'import sans risque.</p>

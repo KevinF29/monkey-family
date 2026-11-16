@@ -283,5 +283,30 @@
     return data;
   };
 
+  /* ---------- notifications (booster prêt, événements) ---------- */
+  const b64ToU8 = s => { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from([...b].map(ch => ch.charCodeAt(0))); };
+  window.MF_PUSH = {
+    supported: () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && !!CFG.vapid,
+    ios: () => /iphone|ipad|ipod/i.test(navigator.userAgent),
+    standalone: () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true,
+    async current(){ try{ const r = await navigator.serviceWorker.ready; return await r.pushManager.getSubscription(); }catch(e){ return null; } },
+    async enable(){
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") throw new Error(perm === "denied" ? "denied" : "dismissed");
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToU8(CFG.vapid)});
+      await window.MF_RPC("mf_push_save", {p_sub:sub.toJSON()});
+      return true;
+    },
+    async disable(){
+      const sub = await this.current(); if (!sub) return;
+      try{ await window.MF_RPC("mf_push_delete", {p_endpoint:sub.endpoint}); }catch(e){}
+      await sub.unsubscribe();
+    }
+  };
+  // keeps the server copy up to date (a browser can renew the subscription)
+  ready.then(async () => { try{ if (!window.MF_PUSH.supported() || Notification.permission !== "granted") return; const s = await window.MF_PUSH.current(); if (s) await window.MF_RPC("mf_push_save", {p_sub:s.toJSON()}); }catch(e){} });
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
