@@ -618,7 +618,7 @@ td.n{text-align:right}
       <h2>Réglages du test</h2>
       <div class="field">
         <label class="check" for="limit"><input type="checkbox" id="limit" checked> Limite : 3 boosters par jour (1 toutes les 8 h)</label>
-        <div class="bar"><button class="btn sm" id="refill" type="button">Recharger les boosters</button><button class="btn sm" id="giveBan" type="button">+500 🍌</button></div>
+        <div class="bar"><button class="btn sm" id="refill" type="button">Recharger les boosters</button><button class="btn sm" id="giveBan" type="button">+500 🍌</button><button class="btn sm" id="unlockEx" type="button">Débloquer les cartes exclusives</button></div>
         <p class="hint">Décoche la limite pour tester sans attendre.</p>
       </div>
       <div class="field">
@@ -3631,6 +3631,12 @@ td.n{text-align:right}
   setInterval(renderPacks,1000);
   $("limit").addEventListener("change",()=>{try{localStorage.setItem(KEY+"-limit",$("limit").checked?"1":"0");}catch(e){}renderPacks();});
   try{if(localStorage.getItem(KEY+"-limit")==="0")$("limit").checked=false;}catch(e){}
+  $("unlockEx").addEventListener("click",async()=>{const ex=CARDS.filter(c=>c.excl);if(!ex.length){say("Aucune carte exclusive pour l'instant : crée-les dans le Studio.");return;}
+    if(!SRV){ex.forEach(c=>{if(!S.owned[c.id])S.owned[c.id]=1;});save();renderStats();try{BIND.repaint();}catch(e){}say(`${ex.length} carte${ex.length>1?"s":""} exclusive${ex.length>1?"s":""} débloquée${ex.length>1?"s":""} (test).`);return;}
+    const b=$("unlockEx");b.disabled=true;
+    try{const r=await window.MF_RPC("mf_admin_unlock_excl",{});applyServer(r);const n=+r.added||0;say(n?`${n} carte${n>1?"s":""} exclusive${n>1?"s":""} débloquée${n>1?"s":""} : regarde dans ton classeur.`:"Tu as déjà toutes les cartes exclusives.");}
+    catch(e){say(/PGRST202|Could not find|does not exist/i.test(String(e&&e.message||e))?"Lance d'abord le script supabase-v6.sql dans Supabase.":"Impossible de débloquer les cartes : "+String(e&&e.message||e));}
+    b.disabled=false;});
   $("giveBan").addEventListener("click",()=>{addBananas(500);say("+500 bananes (test).");serverDo("mf_admin_bananas",{p_n:500}).catch(()=>{});});
   $("refill").addEventListener("click",()=>{S.stock=PACK_MAX;S.nextAt=0;save();renderPacks();say("Boosters rechargés (test).");serverDo("mf_admin_refill").catch(()=>{});});
 
