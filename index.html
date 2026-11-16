@@ -153,6 +153,18 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
   .pack{width:clamp(250px,74vw,330px)}
   .card{width:clamp(240px,72vw,330px)}
 }
+/* computers: the stage fills the screen down to the tab bar, bigger pack and cards, slightly bigger tab bar */
+@media (min-width:701px){
+  body:not(.admin),body.preview{--tabh:calc(76px + env(safe-area-inset-bottom,0px))}
+  body:not(.admin) .wrap,body.preview .wrap{max-width:1280px;padding-top:16px;padding-bottom:calc(var(--tabh) + 14px)!important;gap:14px}
+  body:not(.admin) .stage,body.preview .stage{min-height:max(560px,calc(100svh - var(--tabh) - 112px))}
+  body:not(.admin) .pack,body.preview .pack{width:clamp(260px,min(44svh,34vw),460px)}
+  body:not(.admin) .card,body.preview .card{width:clamp(240px,min(46svh,30vw),440px)}
+  body:not(.admin) .tab,body.preview .tab{font-size:14px;gap:4px}
+  body:not(.admin) .tab .ti,body.preview .tab .ti{height:32px}
+  body:not(.admin) .tab .ti .ic,body.preview .tab .ti .ic{width:30px;height:30px}
+  body:not(.admin) .tabbar,body.preview .tabbar{padding-inline:max(0px,calc((100% - 760px)/2))}
+}
 .bigopen{width:min(100%,420px);font-size:19px!important;padding:16px 22px!important;border-radius:14px!important;box-shadow:0 10px 26px rgba(75,63,184,.35)}
 .bigopen:disabled{opacity:1;background:var(--field)!important;color:var(--muted)!important;border-color:var(--line)!important;box-shadow:none}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:150;height:var(--tabh);padding-bottom:env(safe-area-inset-bottom,0px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
@@ -1958,7 +1970,7 @@ td.n{text-align:right}
     let W=1,H=1;
     function resize(){const r=cv.getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);renderer.setSize(W,H,false);
       if(typeof cc!=="undefined"){cc.width=W*renderer.getPixelRatio();cc.height=H*renderer.getPixelRatio();}camera.aspect=W/H;
-      const px=(innerWidth<=700?Math.min(330,Math.max(250,W*.78)):Math.min(300,Math.max(210,W*.32)))*1.02;camera.position.z=(H/px)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)));camera.updateProjectionMatrix();}
+      const big=!document.body.classList.contains("admin")||document.body.classList.contains("preview");const px=(innerWidth<=700?Math.min(330,Math.max(250,W*.78)):big?Math.min(460,Math.max(260,Math.min(innerHeight*.44,innerWidth*.34))):Math.min(300,Math.max(210,W*.32)))*1.02;camera.position.z=(H/px)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)));camera.updateProjectionMatrix();}
     window.addEventListener("resize",resize);
 
     /* interaction
