@@ -2639,11 +2639,12 @@ td.n{text-align:right}
     const CAT_ORDER=["Lieux mémorables", "Heures perdues", "Répliques Cultes", "Running gags", "Objets Cultes", "Moments légendaires", "Personnages", EXCL_CAT];
     const bcat=c=>c.excl?EXCL_CAT:c.cat;
     const nat=s=>parseInt(String(s).replace(/\D/g,""),10)||0;
-    const cats=[...CAT_ORDER.filter(c=>CARDS.some(x=>bcat(x)===c)),...[...new Set(CARDS.map(bcat))].filter(c=>!CAT_ORDER.includes(c))];
+    const cats=[...CAT_ORDER.filter(c=>c===EXCL_CAT||CARDS.some(x=>bcat(x)===c)),...[...new Set(CARDS.map(bcat))].filter(c=>!CAT_ORDER.includes(c))];
     // pages: each category starts on a fresh page, 9 sleeves per page
     const PAGES=[];
     cats.forEach(cat=>{const ci=c=>CAT_ORDER.indexOf(c.cat);const list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
-      const n=Math.ceil(list.length/9);for(let i=0;i<n;i++)PAGES.push({cat,part:i+1,parts:n,cards:list.slice(i*9,i*9+9)});});
+      const n=cat===EXCL_CAT?Math.max(2,Math.ceil(list.length/9)):Math.ceil(list.length/9);  // 2 pages kept ready for the exclusive cards to come
+      for(let i=0;i<n;i++)PAGES.push({cat,part:i+1,parts:n,cards:list.slice(i*9,i*9+9)});});
     const B={leaves:[],cur:0,spread:true,anim:false,open:false,pw:0};
     const scratch=document.createElement("canvas");scratch.width=750;scratch.height=1050;const sx=scratch.getContext("2d");
     const ownedN=()=>Object.keys(S.owned).length;
