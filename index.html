@@ -430,6 +430,9 @@ td.n{text-align:right}
 .btop{display:flex;justify-content:space-between;align-items:center;font:400 20px var(--display);letter-spacing:.06em;color:#ffd98a}
 .bbtn{appearance:none;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;width:44px;height:44px;font:600 22px/1 var(--ui);cursor:pointer;display:grid;place-items:center}
 .bbtn:disabled{opacity:.3;cursor:default}
+.bbtn{touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s,background .12s}
+.bbtn.press{transform:scale(.88);background:rgba(255,217,138,.3)}
+#bprev,#bnext{width:52px;height:52px;font-size:26px}
 .bbtn:focus-visible{outline:3px solid #ffd98a;outline-offset:2px}
 .bnav{display:flex;justify-content:center;align-items:center;gap:18px;font:600 15px var(--label);letter-spacing:.1em;text-transform:uppercase}
 .bnav span{min-width:150px;text-align:center}
@@ -2640,7 +2643,7 @@ td.n{text-align:right}
     function layout(){
       const vw=root.clientWidth,vh=root.clientHeight-(window.innerWidth<600?118:132);
       B.spread=vw>=820;
-      const pw=Math.floor(Math.min((vw-32)/(B.spread?2:1),vh/1.47,520));B.pw=pw;
+      const pw=Math.floor(Math.min(B.spread?(vw-32)/2:vw-(vw<600?8:32),vh/1.47,B.spread?520:560));B.pw=pw;
       book.style.setProperty("--pw",pw+"px");book.style.setProperty("--ph",Math.round(pw*1.47)+"px");
       book.classList.toggle("spread",B.spread);
     }
@@ -2696,7 +2699,7 @@ td.n{text-align:right}
         gsap.set(lf,{zIndex:200,force3D:true});
         requestAnimationFrame(()=>requestAnimationFrame(()=>{
         B.cur+=dirn;refresh();
-        const tl=gsap.timeline({defaults:{force3D:true},onComplete:()=>{gsap.set(lf,{zIndex:dirn>0?i+1:n-i});lf.classList.remove("live");if(!B.anim||B.last)book.classList.remove("turning");res();}});
+        const tl=gsap.timeline({defaults:{force3D:true},onComplete:()=>{B.tl=null;gsap.set(lf,{zIndex:dirn>0?i+1:n-i});lf.classList.remove("live");if(!B.anim||B.last)book.classList.remove("turning");res();}});
         if(dirn>0){
           tl.fromTo(lf,{rotationY:0},{rotationY:-180,duration:.85*d,ease:"power2.inOut"})
             .fromTo(fs,{opacity:0},{opacity:.55,duration:.42*d,ease:"power1.in"},0).fromTo(bs,{opacity:.55},{opacity:0,duration:.43*d,ease:"power1.out"},.42*d)
@@ -2708,11 +2711,16 @@ td.n{text-align:right}
             .fromTo(bs,{opacity:0},{opacity:.55,duration:.42*d,ease:"power1.in"},0).fromTo(fs,{opacity:.55},{opacity:0,duration:.43*d,ease:"power1.out"},.42*d)
             .to(lf,{skewY:2,duration:.425*d,yoyo:true,repeat:1,ease:"sine.inOut"},0);
         }
-        place(.85*d);
+        B.tl=tl;place(.85*d);
         }));
       });
     }
-    async function go(dirn){if(B.anim)return;B.anim=true;await flip(dirn);B.anim=false;book.classList.remove("turning");}
+    async function go(dirn){
+      // a tap during a turn is not lost: the current turn speeds up and the next one follows straight away
+      if(B.anim){B.q=Math.max(-4,Math.min(4,(B.q||0)+dirn));if(use3)G3.hurry&&G3.hurry();else if(B.tl)B.tl.timeScale(2.4);return;}
+      B.anim=true;B.q=0;await flip(dirn,use3?1:.72);
+      while(B.q){const d=Math.sign(B.q);B.q-=d;const before=B.cur;await flip(d,.5);if(B.cur===before){B.q=0;break;}}
+      B.anim=false;book.classList.remove("turning");}
     async function goToLeaf(target){if(B.anim)return;B.anim=true;
       while(B.cur!==target){const before=B.cur;await flip(target>B.cur?1:-1,.45);if(B.cur===before)break;}B.anim=false;book.classList.remove("turning");}
     function goToPage(pi){goToLeaf(B.spread?(pi%2?(pi+3)/2:pi/2+1):pi+2);}
@@ -2939,10 +2947,10 @@ td.n{text-align:right}
         const host=cv.parentNode;if(!host)return;vw=Math.max(1,host.clientWidth);vh=Math.max(1,host.clientHeight);
         const hr=host.getBoundingClientRect(),ar=api.area?api.area():hr;const nx0=(ar.left-hr.left)/vw*2-1,nx1=(ar.right-hr.left)/vw*2-1,ny1=1-(ar.top-hr.top)/vh*2,ny0=1-(ar.bottom-hr.top)/vh*2;
         R.setSize(vw,vh,false);cam.aspect=vw/vh;
-        const cx=st.spread?0:.5,x0=st.spread?-1.06:-.025,x1=st.spread?1.06:1.04,tilt=st.spread?.24:.17;
+        const cx=st.spread?0:.5,x0=st.spread?-1.06:-.025,x1=st.spread?1.06:1.04,tilt=st.spread?.24:(vw<600?.1:.17),mx=vw<600?.004:.02;
         const pts=[];[x0,x1].forEach(px=>[-PH/2-.04,PH/2+.04].forEach(py=>[0,.06].forEach(pz=>pts.push(new T.Vector3(px,py,pz)))));
         const place=D=>{cam.position.set(cx,-D*Math.sin(tilt),D*Math.cos(tilt));cam.up.set(0,1,0);cam.lookAt(cx,-.015,0);cam.updateProjectionMatrix();cam.updateMatrixWorld(true);};
-        let lo=.5,hi=30;for(let i=0;i<26;i++){const D=(lo+hi)/2;place(D);const ok=pts.every(p=>{const q=p.clone().project(cam);return q.x>nx0+.02&&q.x<nx1-.02&&q.y>ny0+.01&&q.y<ny1-.01;});if(ok)hi=D;else lo=D;}
+        let lo=.5,hi=30;for(let i=0;i<26;i++){const D=(lo+hi)/2;place(D);const ok=pts.every(p=>{const q=p.clone().project(cam);return q.x>nx0+mx&&q.x<nx1-mx&&q.y>ny0+.01&&q.y<ny1-.01;});if(ok)hi=D;else lo=D;}
         place(hi);const mid=(ny0+ny1)/2;if(Math.abs(mid)>.005){cam.setViewOffset(vw,vh,0,mid*vh/2,vw,vh);cam.updateProjectionMatrix();}else cam.clearViewOffset();st.camBase=cam.position.clone();st.camTarget=new T.Vector3(cx,-.015,0);
         const a=new T.Vector3(0,0,0).project(cam),b=new T.Vector3(1,0,0).project(cam);
         const px=Math.abs(b.x-a.x)/2*vw*R.getPixelRatio();
@@ -2987,9 +2995,10 @@ td.n{text-align:right}
             const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;grp.position.x=st.shift=s0+(s1-s0)*e;st.dirty=true;},
           end(done){Tp.visible=false;tCover.visible=false;if(done)st.cur=c+dir;[Lp,Rp].forEach(m=>m.material.uniforms.uShA.value=0);sync();st.turn=null;prune();preload();}};
         st.turn=ctl;ctl.set(0);return ctl;}
-      function animateTo(ctl,to,dur,ease){return new Promise(res=>{const o={p:ctl.p};gsap.to(o,{p:to,duration:dur,ease:ease||"power2.inOut",onUpdate:()=>ctl.set(o.p),onComplete:()=>{ctl.set(to);ctl.end(to>=1);res(to>=1);}});});}
+      function animateTo(ctl,to,dur,ease){return new Promise(res=>{const o={p:ctl.p};st.tw=gsap.to(o,{p:to,duration:dur,ease:ease||"power2.inOut",onUpdate:()=>ctl.set(o.p),onComplete:()=>{ctl.set(to);ctl.end(to>=1);res(to>=1);}});});}
       api.turn=function(dir,speed){const ctl=startTurn(dir);if(!ctl)return Promise.resolve(false);
-        const d=(speed||1)*(reduce?.01:1);return animateTo(ctl,1,(ctl.dir&&st.cur===0?.95:.85)*d);};
+        const d=(speed||1)*(reduce?.01:1);return animateTo(ctl,1,(ctl.dir&&st.cur===0?.75:.62)*d);};
+      api.hurry=function(k){if(st.tw)st.tw.timeScale(k||2.4);};
 
       /* --- idle-time preparation of the neighbouring pages (drawing + GPU upload) --- */
       const idle=window.requestIdleCallback||(f=>setTimeout(f,120));let tok=0;
@@ -3039,7 +3048,7 @@ td.n{text-align:right}
       return api;
     })();
     const use3=G3.ok;
-    if(use3){root.classList.add("g3");root.insertBefore(G3.canvas,root.firstChild);G3.area=()=>book.parentNode.getBoundingClientRect();
+    if(use3){root.classList.add("g3");root.insertBefore(G3.canvas,root.firstChild);G3.area=()=>{const r=book.parentNode.getBoundingClientRect();if(innerWidth>=600)return r;const h=root.getBoundingClientRect();return {left:h.left+4,right:h.right-4,top:r.top,bottom:r.bottom};};  // phones: the binder uses the full width
       G3.busy=()=>B.anim;
       G3.onDragStart=()=>{B.anim=true;};
       G3.onDragEnd=()=>{B.anim=false;B.cur=G3.cur();refresh();};
@@ -3112,7 +3121,10 @@ td.n{text-align:right}
       gsap.to(root,{opacity:0,duration:.25,onComplete:()=>{root.hidden=true;leavesEl.innerHTML="";if(use3)G3.stop();root.querySelectorAll(".bzoom").forEach(z=>z.remove());}});
       document.body.style.overflow="";$("binderBtn").focus();}
 
-    prevB.addEventListener("click",()=>go(-1));nextB.addEventListener("click",()=>go(1));
+    // pointerdown: the page starts turning as soon as the finger touches the button; click stays for the keyboard
+    [[prevB,-1],[nextB,1]].forEach(([b,d])=>{b.addEventListener("pointerdown",e=>{if(e.button>0||b.disabled)return;e.preventDefault();b.classList.add("press");go(d);});
+      ["pointerup","pointercancel","pointerleave"].forEach(ev=>b.addEventListener(ev,()=>b.classList.remove("press")));
+      b.addEventListener("click",e=>{if(e.detail===0)go(d);});});
     $("bclose").addEventListener("click",closeBinder);
     book.addEventListener("click",e=>{if(B.cur===0&&!B.drag)go(1);});
     let px=null,py=0;B.drag=false;
