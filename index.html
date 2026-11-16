@@ -1552,7 +1552,9 @@ td.n{text-align:right}
     titleBlock(c,o,R,{x:40,y:42,w:W-80,h:116},{ink:"#ffffff",glow:S.edge==="neon"?glowOf(R,ph):"rgba(0,0,0,.85)",gemFill:frameFill(c,R,600,80,90,60,ph+120)});
   }
   /* full-art exclusive cards: the illustration covers the card, inside a decorative frame */
-  const FRAMES={gold:"Doré",candy:"Sucre d'orge",frost:"Givré"};
+  const FRAMES={gold:"Doré",candy:"Sucre d'orge",frost:"Givré",banana:"Bananes"};
+  /* the banana frame (collection rewards) is Kévin's painted artwork, laid over the picture */
+  let FRAME_BAN=null;const banFrame=()=>{if(!FRAME_BAN){FRAME_BAN=new Image();FRAME_BAN.decoding="async";FRAME_BAN.onload=()=>{try{repaintAll();}catch(e){}};FRAME_BAN.src="packs/frame-bananes.webp";}return FRAME_BAN.complete&&FRAME_BAN.naturalWidth?FRAME_BAN:null;};
   function frameBand(c,kind,ph){
     if(kind==="candy"){
       c.save();rr(c,0,0,W,H,40);c.clip();c.fillStyle="#fff7f2";c.fillRect(0,0,W,H);
@@ -1569,14 +1571,16 @@ td.n{text-align:right}
       rr(c,0,0,W,H,40);c.fillStyle=g;c.fill();}
   }
   function drawFrameArt(c,o,R,ph,kind){
-    frameBand(c,kind,ph);
-    const A={x:44,y:44,w:W-88,h:H-88,r:22};
+    const ban=kind==="banana";
+    if(ban){rr(c,0,0,W,H,40);c.fillStyle="#2a1250";c.fill();}else frameBand(c,kind,ph);
+    const A=ban?{x:64,y:80,w:W-128,h:H-160,r:64}:{x:44,y:44,w:W-88,h:H-88,r:22};
     artImage(c,o,A,FULL,{empty:"#14151f",lines:"rgba(255,255,255,.06)",hint:"rgba(255,255,255,.6)"});
     // name at the bottom, on a soft dark fade so it reads on any picture
     c.save();shape(c,A);c.clip();const g=c.createLinearGradient(0,H-330,0,H-30);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.78)");c.fillStyle=g;c.fillRect(A.x,H-330,A.w,300);c.restore();
     const title=(o.title||"").trim();c.save();c.textAlign="center";c.textBaseline="alphabetic";
-    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText("CARTE EXCLUSIVE",W/2,H-142);
-    c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;const sf=CARD_FONT,sw=CARD_W;if(kind==="candy"){CARD_FONT=CANDY_FONT;CARD_W="";}c.font=`${CARD_W||400} 60px ${CARD_FONT}`;fitText(c,title,W-140,64,30);c.textBaseline="middle";fillTextSafe(c,title,W/2,H-104,"center");CARD_FONT=sf;CARD_W=sw;c.restore();
+    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText("CARTE EXCLUSIVE",W/2,ban?H-176:H-142);
+    c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;const sf=CARD_FONT,sw=CARD_W;if(kind==="candy"){CARD_FONT=CANDY_FONT;CARD_W="";}c.font=`${CARD_W||400} 60px ${CARD_FONT}`;fitText(c,title,ban?W-210:W-140,64,30);c.textBaseline="middle";fillTextSafe(c,title,W/2,ban?H-134:H-104,"center");CARD_FONT=sf;CARD_W=sw;c.restore();
+    if(ban){const f=banFrame();if(f)c.drawImage(f,0,0,W,H);else{c.save();shape(c,A);c.lineWidth=26;c.strokeStyle="#f2c230";c.stroke();c.restore();}return;}
     // inner edge of the frame
     c.save();shape(c,A);c.lineWidth=5;c.strokeStyle=kind==="candy"?"#ffffff":kind==="frost"?"rgba(255,255,255,.95)":"#5c3a08";c.stroke();c.restore();
     c.save();rr(c,2,2,W-4,H-4,39);c.lineWidth=4;c.strokeStyle=kind==="candy"?"#8c1018":kind==="frost"?"#3d86b8":"#6b4510";c.stroke();c.restore();
@@ -1627,7 +1631,7 @@ td.n{text-align:right}
   try{localStorage.setItem(NEWKEY+"-t","1");NEWCARDS=JSON.parse(localStorage.getItem(NEWKEY)||"[]");if(!Array.isArray(NEWCARDS))NEWCARDS=[];}catch(e){STORE_OK=false;NEWCARDS=[];}
   const extraOf=list=>list.filter(n=>n&&typeof n.name==="string"&&n.name.trim()&&RANK.includes(n.rarity)&&typeof n.cat==="string"&&!BUILT.has(slug(n.name)));
   {const have=new Set(BUILT);extraOf(NEWCARDS).forEach(n=>{const k=slug(n.name);if(have.has(k))return;have.add(k);
-    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.excl?"Exclusive":n.rarity,created:n.id,excl:!!n.excl,frame:n.excl?(n.frame||"gold"):"",ev:n.cat==="Événements"});});}
+    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.excl?"Exclusive":n.rarity,created:n.id,excl:!!n.excl,frame:n.excl?(n.cat==="Événements"?(n.frame||"gold"):"banana"):"",ev:n.cat==="Événements"});});}
   function numberCards(list){
     const ci=c=>{const i=CAT_SEQ.indexOf(c.cat);return i<0?99:i;};
     const out=list.map((c,i)=>[c,i]).sort((a,b)=>ci(a[0])-ci(b[0])||a[0].cat.localeCompare(b[0].cat)||(!!a[0].excl-!!b[0].excl)||RANK.indexOf(a[0].rarity)-RANK.indexOf(b[0].rarity)||a[1]-b[1]).map(x=>x[0]);
@@ -3463,17 +3467,17 @@ td.n{text-align:right}
     allCats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;$("stNewCat").appendChild(o);});
     RANK.filter(r=>r!=="Exclusive").forEach(r=>{const o=document.createElement("option");o.value=r;o.textContent=r;$("stNewRar").appendChild(o);});
     const exSync=()=>{const on=$("stNewExcl").checked,ev=on&&$("stNewEk").value==="event";$("stNewRar").disabled=on;$("stNewCat").disabled=ev;
-      document.querySelectorAll(".stexo").forEach(e=>e.hidden=!on);$("stNewCat").previousElementSibling.textContent=on&&!ev?"Récompense de la catégorie":"Catégorie";};
+      document.querySelectorAll(".stexo").forEach(e=>e.hidden=!on);$("stNewFrame").parentElement.hidden=!ev;$("stNewCat").previousElementSibling.textContent=on&&!ev?"Récompense de la catégorie":"Catégorie";};
     ["stNewExcl","stNewEk"].forEach(id=>$(id).addEventListener("change",exSync));
     const nameTaken=n=>{const k=slug(n);return !!k&&CARDS.some(c=>slug(c.name)===k||slug(c.orig)===k);};
     function previewNew(){const name=$("stNewName").value.trim(),cat=$("stNewCat").value,rarity=$("stNewRar").value;
       const tmp={num:"",cat,name:name||"…",rarity,excl:$("stNewExcl").checked};if(tmp.excl){const ev=$("stNewEk").value==="event";
-        $("stNewNum").textContent=ev?`Carte d'événement (contour ${FRAMES[$("stNewFrame").value]}) : à offrir depuis Admin → Événements.`:`Carte exclusive, récompense de « ${cat} » (contour ${FRAMES[$("stNewFrame").value]}).`;$("stNewGo").disabled=!name;return;}const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
+        $("stNewNum").textContent=ev?`Carte d'événement (contour ${FRAMES[$("stNewFrame").value]}) : à offrir depuis Admin → Événements.`:`Carte exclusive, récompense de « ${cat} » (contour Bananes).`;$("stNewGo").disabled=!name;return;}const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
       const shifted=CARDS.filter(c=>c.cat===cat&&nums.get(c)!==c.num).length;
       $("stNewNum").textContent=`Elle sera la carte ${n}`+(shifted?` · ${shifted} carte${shifted>1?"s":""} de « ${cat} » ${shifted>1?"seront renumérotées":"sera renumérotée"} après elle.`:".");
       $("stNewGo").disabled=!name;}
     ["input","change"].forEach(t=>["stNewName","stNewCat","stNewRar","stNewExcl","stNewEk","stNewFrame"].forEach(id=>$(id).addEventListener(t,()=>{$("stNewMsg").textContent="";previewNew();})));
-    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),excl=$("stNewExcl").checked,cat=excl&&$("stNewEk").value==="event"?"Événements":$("stNewCat").value,rarity=excl?"Exclusive":$("stNewRar").value,frame=excl?$("stNewFrame").value:"";
+    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),excl=$("stNewExcl").checked,cat=excl&&$("stNewEk").value==="event"?"Événements":$("stNewCat").value,rarity=excl?"Exclusive":$("stNewRar").value,frame=excl?(cat==="Événements"?$("stNewFrame").value:"banana"):"";
       const msg=t=>$("stNewMsg").textContent=t;
       if(!name)return msg("Donne un nom à la carte.");
       if(!slug(name))return msg("Le nom doit contenir au moins une lettre ou un chiffre.");
@@ -3939,6 +3943,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   if(document.fonts&&document.fonts.load){let rT=0;const again=()=>{clearTimeout(rT);rT=setTimeout(()=>shown.forEach(s=>paint(s.cv,s.c,0)),60);};
     STYLES.forEach(s=>document.fonts.load(`${s.weight||""} 40px ${s.font}`.trim()).then(again).catch(()=>{}));
     document.fonts.load(`40px ${CANDY_FONT}`).then(()=>{again();try{BIND.repaint();}catch(e){}}).catch(()=>{});}
+  function repaintAll(){shown.forEach(s=>paint(s.cv,s.c,0));try{BIND.repaint();}catch(e){}}
+  if(CARDS.some(c=>c.frame==="banana"))banFrame();
 })();
 </script>
 
