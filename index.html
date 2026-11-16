@@ -374,6 +374,16 @@ td.n{text-align:right}
 .evitem small{display:block;color:#e7d9ff;font-weight:500;opacity:.85}
 .stage.special{box-shadow:inset 0 0 0 2px rgba(255,217,138,.75),inset 0 0 90px rgba(255,196,60,.28)}
 .packs b .spk{color:#ffd98a;opacity:1;padding-left:4px}
+.packs b .xpk{color:#ff8f8a;opacity:1;padding-left:4px}
+.stage.xmas{box-shadow:inset 0 0 0 2px rgba(232,50,47,.75),inset 0 0 90px rgba(232,50,47,.3)}
+.stage.xmas::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.6;
+  background-image:radial-gradient(2.5px 2.5px at 20px 30px,#fff 50%,transparent 60%),radial-gradient(2px 2px at 90px 120px,#fff 50%,transparent 60%),radial-gradient(3px 3px at 150px 60px,#fff 50%,transparent 60%),radial-gradient(1.8px 1.8px at 60px 160px,#fff 50%,transparent 60%),radial-gradient(2.2px 2.2px at 130px 170px,#fff 50%,transparent 60%);
+  background-size:180px 180px;animation:mfsnow 14s linear infinite}
+@keyframes mfsnow{to{background-position:30px 180px}}
+@media (prefers-reduced-motion:reduce){.stage.xmas::after{animation:none}}
+.gpcards img.gppack{width:min(170px,40vw);height:auto;filter:drop-shadow(0 14px 26px rgba(0,0,0,.55)) drop-shadow(0 0 30px rgba(232,50,47,.35))}
+.mfev #evXWrap{display:grid;gap:8px}.mfev #evXWrap[hidden]{display:none}
+.evxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .giftpop{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:20px;background:rgba(10,4,20,.82);backdrop-filter:blur(4px)}
 .giftpop[hidden]{display:none}
 .gpbox{width:min(420px,100%);display:grid;gap:12px;justify-items:center;text-align:center;padding:24px 20px;border-radius:20px;background:linear-gradient(180deg,#3b1f6e,#1a0f2e);border:1px solid rgba(255,217,138,.55);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 60px rgba(255,200,60,.2);color:#f3eee4}
@@ -1690,7 +1700,7 @@ td.n{text-align:right}
     if(!st||typeof st!=="object")return;if(st.state)st=st.state;
     const off=Date.now()-(+st.now||Date.now()),owned={};
     Object.entries(st.owned||{}).forEach(([k,n])=>{const c=cardOfKey(k);if(c&&n>0)owned[c.id]=(owned[c.id]||0)+(+n);});
-    if(+st.packMs>0)PACK_MS=+st.packMs;S.special=+st.special||0;EVENTS=(st.events||[]).map(e=>({...e,ends:+e.ends+off}));
+    if(+st.packMs>0)PACK_MS=+st.packMs;S.special=+st.special||0;S.xpacks=Array.isArray(st.xpacks)?st.xpacks:[];EVENTS=(st.events||[]).map(e=>({...e,ends:+e.ends+off}));
     S.owned=owned;S.opened=+st.opened||0;S.bananas=+st.bananas||0;S.stock=+st.stock;S.nextAt=+st.nextAt?(+st.nextAt+off):0;S.counts=st.counts||{};
     S.styles=[...new Set([0,...(st.styles||[]).map(n=>STYLES.findIndex(x=>x.name===n)).filter(i=>i>=0)])];S.style=Math.max(0,STYLES.findIndex(x=>x.name===st.style));
     if(st.pseudo&&st.pseudo!==PREFS.pseudo){PREFS.pseudo=st.pseudo;savePrefs();const pi=document.getElementById("pseudoIn");if(pi&&document.activeElement!==pi)pi.value=st.pseudo;}
@@ -1965,6 +1975,7 @@ td.n{text-align:right}
 
   /* ---------- opening sequence: Pocket-style stack, one card at a time ---------- */
   const stage=$("stage"),stack=$("row"),pack=$("pack"),openBtn=$("open"),hint=$("stackhint");
+  let XP=null;  // the exclusive booster being opened (null for a normal one)
   let busy=false,mode="pack",foilRaf=0,shown=[],idx=0,deckCards=[],swiped=false,auraTw=null;
   const D=x=>x*($("fast").checked?.35:1.4); // normal speed slowed down a little (pack tear, cards coming out, flips)
   // centring lives in GSAP (xPercent/yPercent) so resetting x/y after an opening never shifts the 2D pack
@@ -1976,7 +1987,12 @@ td.n{text-align:right}
   const PACK_IMG=PACK_SRC.map(u=>{const i=new Image();i.decoding="async";i.src=u;return i;});
   const PACK_READY=Promise.all(PACK_IMG.map(i=>i.decode?i.decode().catch(()=>{}):new Promise(r=>{i.onload=i.onerror=r;})));
   pack.style.setProperty("--packimg",`url(${PACK_SRC[0]})`);pack.classList.add("art");
-  const PACK_AR=1226/720, PACK_TEAR=.93;  // height/width of the wrapper; the tear line sits just under the top crimp
+  const PACK_AR=1226/720, PACK_TEAR=.93;
+  /* exclusive boosters (event): their own wrapper, same size as the normal one */
+  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël"}};
+  const skinImgs={};
+  function skinLoad(k){if(!SKINS[k])return null;if(!skinImgs[k]){const imgs=SKINS[k].src.map(u=>{const i=new Image();i.decoding="async";i.src=u;return i;});
+    skinImgs[k]={imgs,ready:Promise.all(imgs.map(i=>i.decode?i.decode().catch(()=>{}):new Promise(r=>{i.onload=i.onerror=r;})))};}return skinImgs[k];}  // height/width of the wrapper; the tear line sits just under the top crimp
   const P3=(function(){
     const api={ok:false,show(){},hide(){},open(){return false;},pulse(){},setEnabled(){}};
     const T=window.THREE;if(!T)return api;
@@ -2004,8 +2020,9 @@ td.n{text-align:right}
 
     /* pack artwork, painted on 2D canvases (front and back) */
     const PW=1,PH=PACK_AR,TEAR=PACK_TEAR;
+    let skinI=null;
     function art(back){
-      const im=PACK_IMG[back?1:0];
+      const si=skinI&&skinI[back?1:0],im=si&&si.complete&&si.naturalWidth?si:PACK_IMG[back?1:0];
       if(im.complete&&im.naturalWidth){const c=document.createElement("canvas");c.width=720;c.height=1226;const x=c.getContext("2d");x.drawImage(im,0,0,720,1226);
         if(!back){x.setLineDash([16,11]);x.lineCap="round";x.strokeStyle="rgba(255,255,255,.85)";x.lineWidth=4;x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=4;
           x.beginPath();x.moveTo(30,1226*(1-TEAR));x.lineTo(690,1226*(1-TEAR));x.stroke();}
@@ -2038,6 +2055,7 @@ td.n{text-align:right}
     const tex=arts.map(c=>{const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;});
     const reart=()=>{[art(false),art(true)].forEach((c,i)=>{tex[i].image=c;tex[i].needsUpdate=true;});};
     logoReady.then(reart);PACK_READY.then(reart);
+    api.skin=function(sk){skinI=sk?sk.imgs:null;reart();if(sk)sk.ready.then(()=>{if(skinI===sk.imgs)reart();});};
     const bump=(function(){const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");x.fillStyle="#808080";x.fillRect(0,0,256,256);
       x.filter="blur(3px)";for(let i=0;i<40;i++){const v=Math.random()<.5?255:0;x.strokeStyle=`rgba(${v},${v},${v},.10)`;x.lineWidth=2+Math.random()*4;x.beginPath();const a=Math.random()*256,b=Math.random()*256;x.moveTo(a,b);x.quadraticCurveTo(a+(Math.random()-.5)*120,b+(Math.random()-.5)*120,a+(Math.random()-.5)*200,b+(Math.random()-.5)*200);x.stroke();}x.filter="none";
       const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;return t;})();
@@ -2260,6 +2278,9 @@ td.n{text-align:right}
     return api;
   })();
 
+  let curSkin="";
+  function setSkin(k){k=SKINS[k]?k:"";if(k===curSkin)return;curSkin=k;pack.style.setProperty("--packimg",`url(${k?SKINS[k].src[0]:PACK_SRC[0]})`);
+    if(k)skinLoad(k);P3.skin&&P3.skin(k?skinLoad(k):null);stage.classList.toggle("xmas",k==="noel");}
   let use3d=P3.ok;
   try{if(localStorage.getItem(KEY+"-3d")==="0")use3d=false;}catch(e){}
   $("three3d").checked=use3d;$("three3d").disabled=!P3.ok;
@@ -2300,7 +2321,9 @@ td.n{text-align:right}
     if(LENTI.has(c.id)){const cache={};z.addEventListener("pointermove",e=>{const r=cv.getBoundingClientRect();lentRender(cv,c,0,lentT((e.clientX-r.left)/r.width),cache);});}
     z.addEventListener("click",e=>{e.stopPropagation();z.remove();});stage.appendChild(z);}
   function foilLoop(){cancelAnimationFrame(foilRaf);if(reduce)return;const t0=performance.now();
-    const step=()=>{const ph=((performance.now()-t0)/40)%360;shown.forEach(s=>{if(!s.el.dataset.open)return;
+    let fr=0;const step=()=>{const ph=((performance.now()-t0)/40)%360,sum=mode==="summary";fr++;
+      if(sum&&shown.length>5&&fr%2){foilRaf=requestAnimationFrame(step);return;}  // 9 cards on screen: half the frame rate is plenty
+      shown.forEach((s,j)=>{if(!s.el.dataset.open)return;if(!sum&&j<idx)return;  // cards already swiped away are off screen
       if(s.lent)lentRender(s.cv,s.c,Math.round(ph/1.6)*1.6,s.lent.t,s.lent.cache); // both pictures redrawn every few frames, blend every frame
       else if(RARITIES[s.c.r].foil||formsOf(s.c))paint(s.cv,s.c,ph);});foilRaf=requestAnimationFrame(step);};
     foilRaf=requestAnimationFrame(step);}
@@ -2308,17 +2331,20 @@ td.n{text-align:right}
 
   async function open(o){
     if(busy||mode!=="pack")return;
-    if(!takePack()){if(use3d)P3.show(false);setHint("Plus de booster : le prochain arrive dans "+hms(S.nextAt-Date.now()));renderPacks();return;}
+    const xp=XPK();XP=xp;
+    if(!xp&&!takePack()){if(use3d)P3.show(false);setHint("Plus de booster : le prochain arrive dans "+hms(S.nextAt-Date.now()));renderPacks();return;}
     busy=true;mode="opening";say("");setBtn("Ouverture…",true);
     if(SRV){let res;
-      try{res=await window.MF_RPC("mf_open",{p_free:!limitOn(),p_force:$("force").value||null});}
+      try{res=xp?await window.MF_RPC("mf_open_xpack",{}):await window.MF_RPC("mf_open",{p_free:!limitOn(),p_force:$("force").value||null});}
       catch(e){const m=String(e&&e.message||e);const k=Object.keys(SRV_MSG).find(x=>m.includes(x));say(k?SRV_MSG[k]:"Connexion impossible : le booster n'a pas été ouvert, réessaie.");
         busy=false;mode="pack";if(use3d)P3.show(false);else gsap.set(pack,{display:"block",opacity:1});srvRefresh();renderPacks();if(!/Prochain/.test(openBtn.textContent))setBtn("Ouvrir le booster");return;}
       const got=(res.cards||[]).map(cardOfKey).filter(Boolean);
-      if(got.length<5){location.reload();return;}  // a card unknown to this (older) page: reload to get the new list
-      got.sort((x,y)=>x.r-y.r);
+      if(got.length<(res.cards||[]).length||(!xp&&got.length<5)){location.reload();return;}  // a card unknown to this (older) page: reload to get the new list
+      if(xp&&!got.length){applyServer(res.state);busy=false;mode="pack";XP=null;if(use3d)P3.show(false);else gsap.set(pack,{display:"block",opacity:1});say("Ce booster exclusif était vide.");renderPacks();return;}
+      if(!xp)got.sort((x,y)=>x.r-y.r);
       S.fresh=(res.fresh||[]).map(k=>{const c=cardOfKey(k);return c&&c.id;}).filter(i=>i!==undefined&&i!==null);
       got.forEach(c=>{if(TIER[c.rarity]>=3)S.log.unshift({b:(+res.state.opened)||0,name:c.name.trim(),rarity:c.rarity});});S.log=S.log.slice(0,30);
+      if(xp)say("");
       if(res.special)say("Booster spécial : meilleures chances sur les deux dernières cartes !");
       applyServer(res.state);deckCards=got;
     }else{deckCards=rollBooster();postPulls(deckCards);}
@@ -2337,13 +2363,13 @@ td.n{text-align:right}
         const clip=()=>{const y=P3.mouthY()-sr.top;stack.style.clipPath=y<sr.height-2?`inset(-200px -200px ${Math.max(0,sr.height-y)}px -200px)`:"";};
         clip();gsap.ticker.add(clip);
         SFX.play("slide");
-        gsap.timeline({onComplete:()=>{gsap.ticker.remove(clip);stack.style.clipPath="";flipUp(shown[0],.5,()=>{busy=false;mode="stack";setHint("Touche ou glisse pour la carte suivante");setBtn("Carte suivante");});}})
+        gsap.timeline({onComplete:()=>{gsap.ticker.remove(clip);stack.style.clipPath="";flipUp(shown[0],.5,firstUp);}})
           .fromTo(els.slice().reverse(),{x:dx,y:startY,scale:.86,opacity:1,rotation:0},{x:0,y:(i)=>(els.length-1-i)*10,rotation:(i)=>[0,-4,4,-3,3][els.length-1-i]||0,scale:(i)=>1-(els.length-1-i)*.04,duration:D(.95),stagger:D(.05),ease:"power3.out"},"+=.05")
           .add(()=>{},"+=.35");
       }},o&&o.cut?o:null);
       return;
     }
-    const tl=gsap.timeline({onComplete:()=>{flipUp(shown[0],.5,()=>{busy=false;mode="stack";setHint("Touche ou glisse pour la carte suivante");setBtn("Carte suivante");});}});
+    const tl=gsap.timeline({onComplete:()=>{flipUp(shown[0],.5,firstUp);}});
     tl.to(pack,{x:"+=6",rotation:2,duration:D(.05),repeat:9,yoyo:true,ease:"none"})
       .to(pack,{x:0,rotation:0,duration:D(.05)})
       .call(()=>SFX.play("tear"))
@@ -2353,6 +2379,15 @@ td.n{text-align:right}
       .fromTo(els.slice().reverse(),{y:160,scale:.55,opacity:0,rotation:0},{y:(i)=>(els.length-1-i)*10,rotation:(i)=>[0,-4,4,-3,3][els.length-1-i]||0,scale:(i)=>1-(els.length-1-i)*.04,opacity:1,duration:D(.6),stagger:D(.07),ease:"back.out(1.5)"},"-=.4");
   }
 
+  function firstUp(){busy=false;mode="stack";setHint("Touche ou glisse pour la carte suivante");setBtn("Carte suivante");
+    if(XP){xmasReveal(shown[0],shown.length===1);if(shown.length===1)toRecap(900);}}
+  function toRecap(wait){mode="revealed";setTimeout(()=>{setHint("Touche pour voir le récap");setBtn("Voir le récap");},wait||0);}
+  /* exclusive booster: every card is flipped with a festive burst, the last one with the big finish */
+  function xmasReveal(s,last){const p=center(s.el),k=shown.indexOf(s)+1;
+    try{SFX.play(last?"Légendaire":"Épique");}catch(e){}
+    burst(p.x,p.y,last?130:55,["#ffffff","#ff4b45","#ffd75e","#3fcf72"],last?7:4.5,{up:1.2,stars:.6});
+    if(last){rays("#ffd75e",2.6);setTimeout(()=>burst(p.x,p.y,90,["#ffffff","#dff3ff"],5,{ring:true,g:.02,stars:.8}),300);banner(curSkin==="noel"?"JOYEUX NOËL !":"EXCLUSIVE !",curSkin==="noel"?"#ff3b30":"#ffd75e");}
+    if(!last)setHint(`Carte exclusive ${k}/${shown.length} · touche pour la suivante`);}
   function next(dir){
     if(busy)return;
     if(mode==="stack"||(mode==="revealed"&&idx<shown.length-1)){
@@ -2361,6 +2396,7 @@ td.n{text-align:right}
       gsap.to(s.el,{x:dir*Math.max(500,stage.clientWidth*.8),y:-40,rotation:dir*28,opacity:0,duration:D(.45),ease:"power2.in"});
       idx++;layoutStack(.35);
       const n=shown[idx];
+      if(XP){const last=idx===shown.length-1;setTimeout(()=>flipUp(n,.45,()=>{busy=false;xmasReveal(n,last);if(last)toRecap(900);}),D(250));return;}
       if(idx>=shown.length-SPECIAL&&n.c.r>=RIDX.Rare){ // a special card: stays face down and glows
         setTimeout(()=>{busy=false;mode="special";armSpecial(n);},D(380));
       }else{const last=idx===shown.length-1;setTimeout(()=>flipUp(n,.45,()=>{busy=false;
@@ -2551,7 +2587,7 @@ td.n{text-align:right}
     cancelAnimationFrame(foilRaf);hidePack();
     gsap.set("#dim",{opacity:0});ov.innerHTML="";bov.innerHTML="";stage.querySelectorAll(".zoom").forEach(z=>z.remove());parts=[];
     const pool=byR[RIDX[rname]];const c=pool[(Math.random()*pool.length)|0];
-    deckCards=[c];buildStack([c]);idx=0;gsap.set(shown[0].el,{opacity:1,x:0,y:0,scale:1,rotation:0});
+    XP=null;deckCards=[c];buildStack([c]);idx=0;gsap.set(shown[0].el,{opacity:1,x:0,y:0,scale:1,rotation:0});
     mode="special";armSpecial(shown[0]);busy=true;setTimeout(()=>{busy=false;revealSpecial();},450);
     stage.scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});
   }
@@ -2559,15 +2595,17 @@ td.n{text-align:right}
     busy=true;setHint("");
     const w=shown[0].el.offsetWidth,n=shown.length,SW=stage.clientWidth*.94,SH=stage.clientHeight;
     let sc=Math.min(.74,SW/(w*(1+(n-1)*1.08))),rows=[shown.map((_,i)=>i)];
-    if(n>3&&sc<.45){rows=[[0,1,2],[3,4].slice(0,n-3)];sc=Math.min(.74,SW/(w*3.16),(SH*.86)/(w*1.4*2.12));}
+    if(n>5){const fit=nr=>Math.min(.74,SW/(w*(Math.ceil(n/nr)+.16)*1.04),(SH*.82)/(w*1.4*nr*1.1));  // as many rows as gives the biggest cards
+      let nr=2;for(let r=3;r<=4;r++)if(fit(r)>fit(nr)*1.02)nr=r;const cols=Math.ceil(n/nr);rows=[];for(let i=0;i<n;i+=cols)rows.push(shown.slice(i,i+cols).map((_,k)=>i+k));sc=fit(nr);}
+    else if(n>3&&sc<.45){rows=[[0,1,2],[3,4].slice(0,n-3)];sc=Math.min(.74,SW/(w*3.16),(SH*.86)/(w*1.4*2.12));}
     const gap=w*sc*1.08,rowH=w*1.4*sc*1.1,pos=[];
-    rows.forEach((r,ri)=>{const mid=(r.length-1)/2;r.forEach((i,k)=>{pos[i]={x:(k-mid)*gap,y:rows.length>1?(ri-.5)*rowH:0};});});
+    rows.forEach((r,ri)=>{const mid=(r.length-1)/2;r.forEach((i,k)=>{pos[i]={x:(k-mid)*gap,y:(ri-(rows.length-1)/2)*rowH+(rows.length>2?SH*.03:0)};});});
     shown.forEach((s,i)=>{s.el.style.zIndex=10+i;
       gsap.to(s.el,{x:pos[i].x,y:pos[i].y,rotation:0,scale:sc,opacity:1,duration:D(.55),delay:D(i*.08),ease:"back.out(1.3)"});
       gsap.to(s.aura,{opacity:RARITIES[s.c.r].glow?.4:0,duration:.4});
       gsap.to(s.el.querySelector(".tag"),{opacity:1,duration:.3,delay:D(.4+i*.08)});});
     setTimeout(()=>{busy=false;mode="summary";setHint("Touche une carte pour l'agrandir");tickPacks();setBtn(limitOn()&&avail()<=0?"Terminer":"Ouvrir un autre booster");if(SRV&&CLOUD)srvRefresh();
-      say(`Booster n° ${S.opened} : ${deckCards.map(c=>c.name.trim()).join(", ")}.`);renderStats();},D(800));
+      say(XP?`${XP.title} : ${deckCards.map(c=>c.name.trim()).join(", ")}.`:`Booster n° ${S.opened} : ${deckCards.map(c=>c.name.trim()).join(", ")}.`);renderStats();},D(800));
   }
 
   function reveal(c,el,tier){
@@ -2592,7 +2630,7 @@ td.n{text-align:right}
     gsap.killTweensOf(b);gsap.timeline().fromTo(b,{opacity:0,scale:.6},{opacity:1,scale:1,duration:.4,ease:"back.out(2)"}).to(b,{opacity:0,y:-20,duration:.6,delay:1.2}).set(b,{y:0});}
 
   function backToPack(){
-    VOICE.stop();cancelAnimationFrame(foilRaf);stack.innerHTML="";stack.style.clipPath="";shown=[];idx=0;parts=[];
+    XP=null;VOICE.stop();cancelAnimationFrame(foilRaf);stack.innerHTML="";stack.style.clipPath="";shown=[];idx=0;parts=[];
     gsap.set("#dim",{opacity:0});ov.innerHTML="";bov.innerHTML="";stage.querySelectorAll(".zoom").forEach(z=>z.remove());
     if(use3d){P3.show(true);mode="pack";packHint();setBtn("Ouvrir le booster");renderPacks();return;}
     gsap.set(pack,{display:"block",x:0,y:0,rotation:0});gsap.set(pack.querySelectorAll(".top,.body"),{x:0,y:0,rotation:0,opacity:1});
@@ -3548,7 +3586,8 @@ td.n{text-align:right}
 
   /* ---------- limite : 3 boosters par jour, un toutes les 8 h, stock de 3 au maximum ---------- */
   let PACK_MS=8*3600*1000;const PACK_MAX=3;  // the wait is shorter during a "speed" event (value sent by the server)
-  const avail=()=>(S.stock|0)+(S.special|0);
+  const avail=()=>(S.stock|0)+(S.special|0)+((SRV&&S.xpacks)||[]).length;
+  const XPK=()=>SRV&&S.xpacks&&S.xpacks.length?S.xpacks[0]:null;  // an exclusive booster waiting: it is opened first
   const limitOn=()=>!ADMIN||PREVIEW||$("limit").checked;
   function tickPacks(){
     if(S.stock===undefined)S.stock=PACK_MAX;
@@ -3563,16 +3602,18 @@ td.n{text-align:right}
   function takePack(){if(!limitOn())return true;tickPacks();if(avail()<=0)return false;if(S.special>0){S.special--;save();renderPacks();return true;}S.stock--;if(!S.nextAt)S.nextAt=Date.now()+PACK_MS;save();renderPacks();return true;}
   const hms=ms=>{const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h} h ${String(m).padStart(2,"0")}`:`${m} min ${String(x).padStart(2,"0")}`;};
   function renderPacks(){
-    const el=$("packs");
-    if(!limitOn()){el.innerHTML=`<b>Boosters illimités</b><span>mode test</span>`;stage.classList.remove("nopack");
-      if(mode==="pack"&&!busy&&/Prochain/.test(openBtn.textContent))setBtn("Ouvrir le booster");return;}
+    const el=$("packs"),xp=XPK(),nx=((SRV&&S.xpacks)||[]).length;
+    if(mode==="pack"&&!busy)try{setSkin(xp?xp.skin:"");}catch(e){}
+    const xLbl="Ouvrir le booster exclusif",xTag=nx?` <span class="xpk">+ ${nx} exclusi${nx>1?"fs":"f"}</span>`:"";
+    if(!limitOn()){el.innerHTML=`<b>Boosters illimités${xTag}</b><span>mode test</span>`;stage.classList.remove("nopack");
+      if(mode==="pack"&&!busy){const l=xp?xLbl:"Ouvrir le booster";if(/Prochain|^Ouvrir le booster/.test(openBtn.textContent)&&openBtn.textContent!==l)setBtn(l);}return;}
     tickPacks();
-    el.innerHTML=`<b>Boosters ${S.stock}/${PACK_MAX}${S.special>0?` <span class="spk">+ ${S.special} spécia${S.special>1?"ux":"l"}</span>`:""}</b>`+(S.stock<PACK_MAX&&S.nextAt?`<span>+1 dans ${hms(S.nextAt-Date.now())}</span>`:`<span>stock plein</span>`);
-    const empty=avail()<=0;stage.classList.toggle("nopack",empty);stage.classList.toggle("special",S.special>0);
+    el.innerHTML=`<b>Boosters ${S.stock}/${PACK_MAX}${S.special>0?` <span class="spk">+ ${S.special} spécia${S.special>1?"ux":"l"}</span>`:""}${xTag}</b>`+(S.stock<PACK_MAX&&S.nextAt?`<span>+1 dans ${hms(S.nextAt-Date.now())}</span>`:`<span>stock plein</span>`);
+    const empty=avail()<=0;stage.classList.toggle("nopack",empty);stage.classList.toggle("special",S.special>0&&!xp);
     {const ph=pack.querySelector(".hint");if(ph)ph.textContent=empty?"Plus de booster pour le moment":"Touche pour ouvrir";}
     if(mode==="pack"&&!busy){const want=empty?(use3d?"Reviens quand le prochain booster sera prêt":""):use3d?(P3.coarse?"Glisse le doigt sur le pointillé pour ouvrir":"Clique sur le paquet pour l'ouvrir · glisse pour le tourner"):"";if(hint.textContent!==want)setHint(want);}
-    if(mode==="pack"&&!busy){const lbl=S.special>0?"Ouvrir le booster spécial":"Ouvrir le booster";
-      if(empty){setBtn("Prochain booster dans "+hms(S.nextAt-Date.now()),true);}else if(openBtn.disabled||/Prochain|Ouvrir le booster/.test(openBtn.textContent)&&openBtn.textContent!==lbl)setBtn(lbl);}
+    if(mode==="pack"&&!busy){const lbl=xp?xLbl:S.special>0?"Ouvrir le booster spécial":"Ouvrir le booster";
+      if(empty){setBtn("Prochain booster dans "+hms(S.nextAt-Date.now()),true);}else if(openBtn.disabled||/Prochain|^Ouvrir le booster/.test(openBtn.textContent)&&openBtn.textContent!==lbl)setBtn(lbl);}
   }
   setInterval(renderPacks,1000);
   $("limit").addEventListener("change",()=>{try{localStorage.setItem(KEY+"-limit",$("limit").checked?"1":"0");}catch(e){}renderPacks();});
@@ -3734,8 +3775,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   function renderEvents(){const bar=$("evBar");if(!bar)return;const now=Date.now();const list=EVENTS.filter(e=>e.ends>now);
     const until=t=>new Date(t).toLocaleString("fr-FR",{weekday:"long",hour:"2-digit",minute:"2-digit"});
     const hh=h=>(+h%1?String(+h).replace(".",","):String(+h))+" h";
-    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":e.kind==="card"?"🃏":"🎁";const cd=e.card&&cardOfKey(e.card);
-      const what=e.kind==="card"?`Carte exclusive offerte${cd?` : ${esc(cd.name.trim())}`:""}`:e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
+    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":e.kind==="card"?"🃏":e.kind==="xpack"?"🎄":"🎁";const cd=e.card&&cardOfKey(e.card);
+      const what=e.kind==="xpack"?`Booster exclusif offert : ${e.n} carte${e.n>1?"s":""} exclusive${e.n>1?"s":""}`:e.kind==="card"?`Carte exclusive offerte${cd?` : ${esc(cd.name.trim())}`:""}`:e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
       return `<div class="evitem"><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}${cd&&e.kind!=="card"?` + la carte exclusive ${esc(cd.name.trim())}`:""}<small>${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}</small></span></div>`;}).join("");
     bar.hidden=!list.length;document.documentElement.style.setProperty("--evh",(list.length?bar.offsetHeight+10:0)+"px");}
   setInterval(renderEvents,60000);
@@ -3743,12 +3784,15 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   const GIFTS=(function(){const root=$("giftpop");let q=[];
     function next(){const g=q.shift();if(!g){root.hidden=true;return;}
       const cards=(g.cards||[]).map(cardOfKey).filter(Boolean);
-      $("gpIco").textContent=g.kind==="collection"?"🏆":g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
+      const xk=+g.xpack||0,sk=SKINS[g.skin]||SKINS.noel;
+      $("gpIco").textContent=g.kind==="collection"?"🏆":xk?"🎄":g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
       $("gpTitle").textContent=g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
       $("gpText").innerHTML=g.kind==="collection"
         ?`Tu as toutes les cartes de <b>${esc(g.cat)}</b>.<br>Tu gagnes <b>${g.boosters} boosters</b>${cards.length?` et ${cards.length>1?"les cartes exclusives":"la carte exclusive"} :`:"."}`
+        :xk?`${g.message?esc(g.message)+"<br>":""}Tu reçois <b>${xk>1?xk+" boosters exclusifs":"un booster exclusif"}</b> avec ${g.n} carte${g.n>1?"s":""} exclusive${g.n>1?"s":""} à découvrir${cards.length?` et la carte exclusive <b>${esc(cards[0].name.trim())}</b>`:""} !`
         :`${g.message?esc(g.message)+"<br>":""}Tu reçois ${g.boosters>0?`<b>${g.boosters} booster${g.boosters>1?"s":""}${g.special?` spécia${g.boosters>1?"ux":"l"}`:""}</b>${g.special?" (meilleures chances sur les dernières cartes)":""}`:""}${g.boosters>0&&cards.length?" et ":""}${cards.length?`la carte exclusive <b>${esc(cards[0].name.trim())}</b> :`:"."}`;
       const box=$("gpCards");box.innerHTML="";
+      if(xk){const im=document.createElement("img");im.className="gppack";im.src=sk.src[0];im.alt=sk.name;box.appendChild(im);gsap.fromTo(im,{scale:.5,rotation:-8,opacity:0},{scale:1,rotation:0,opacity:1,duration:.8,ease:"back.out(1.6)",delay:.2});}
       cards.forEach(c=>{const cv=document.createElement("canvas");cv.width=750*ZOOM_K;cv.height=1050*ZOOM_K;cv.setAttribute("role","img");cv.setAttribute("aria-label",c.name.trim());box.appendChild(cv);paint(cv,c,0);
         setTimeout(()=>paint(cv,c,0),800);gsap.fromTo(cv,{rotationY:180,scale:.5,opacity:0},{rotationY:0,scale:1,opacity:1,duration:.8,ease:"back.out(1.4)",delay:.25});});
       root.hidden=false;try{SFX.play(g.kind==="collection"?"coin":"flip");}catch(e){}try{if(PREFS.vib&&navigator.vibrate&&navigator.userActivation&&navigator.userActivation.hasBeenActive)navigator.vibrate([30,40,60]);}catch(e){}
