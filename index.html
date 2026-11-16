@@ -3584,7 +3584,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     function render(){
       const me=UID?{id:UID,...publicStats(),...(players[UID]||{}),...publicStats()}:null;
       const rows=Object.entries(players).map(([id,v])=>({id,...v})).filter(v=>typeof v.unique==="number"&&v.id!==UID);
-      if(me)rows.push(me);
+      if(me&&!ADMIN)rows.push(me);  // the admin is not ranked, even on their own screen
       rows.sort((a,b)=>b.unique-a.unique||(b.cards||0)-(a.cards||0)||(b.opened||0)-(a.opened||0));
       $("rankSub").textContent=rows.length?`${rows.length} joueur${rows.length>1?"s":""}`:"";
       const B=$("rankBody");
