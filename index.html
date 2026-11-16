@@ -358,6 +358,7 @@ td.n{text-align:right}
 .mkpick{display:grid;gap:6px;max-height:46vh;overflow:auto;padding-right:4px}
 .mkpick label{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer}
 .mkpick input{width:20px;height:20px;accent-color:#ffd98a;flex:none}
+.mkmsg{margin:0;padding:10px 12px;border-radius:10px;background:rgba(255,217,138,.16);border:1px solid rgba(255,217,138,.45);color:#ffe7b0;font:600 14px var(--ui)}
 .mkh{font:600 13px var(--label);letter-spacing:.08em;text-transform:uppercase;color:#a59fb4;margin:8px 0 0}
 .bzrec{appearance:none;border:1px solid #ffd98a;background:rgba(255,217,138,.15);color:#ffe7b0;border-radius:10px;padding:9px 14px;font:700 14px var(--ui);cursor:pointer}
 /* ---- studio des artworks ---- */
@@ -705,6 +706,7 @@ td.n{text-align:right}
   <div class="shopbox">
     <div class="shophead"><b>Marché</b><span class="shopbal" id="mkSub"></span><button class="bbtn" id="mkClose" type="button" aria-label="Fermer le marché">✕</button></div>
     <div class="stabs" role="tablist"><button type="button" role="tab" data-mk="all">Annonces</button><button type="button" role="tab" data-mk="mine">Mes annonces</button><button type="button" role="tab" data-mk="new">Proposer</button></div>
+    <p class="mkmsg" id="mkMsg" role="status" aria-live="polite" hidden></p>
     <div class="shopbody" id="mkBody"></div>
   </div>
 </div>
@@ -1962,7 +1964,7 @@ td.n{text-align:right}
     const bump=(function(){const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");x.fillStyle="#808080";x.fillRect(0,0,256,256);
       x.filter="blur(3px)";for(let i=0;i<40;i++){const v=Math.random()<.5?255:0;x.strokeStyle=`rgba(${v},${v},${v},.10)`;x.lineWidth=2+Math.random()*4;x.beginPath();const a=Math.random()*256,b=Math.random()*256;x.moveTo(a,b);x.quadraticCurveTo(a+(Math.random()-.5)*120,b+(Math.random()-.5)*120,a+(Math.random()-.5)*200,b+(Math.random()-.5)*200);x.stroke();}x.filter="none";
       const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;return t;})();
-    const mat=(m)=>new T.MeshStandardMaterial({map:m,emissive:0xffffff,emissiveMap:m,emissiveIntensity:.62,metalness:.3,roughness:.34,envMap,envMapIntensity:.7,bumpMap:bump,bumpScale:.004,transparent:true});
+    const mat=(m)=>new T.MeshStandardMaterial({map:m,emissive:0xffffff,emissiveMap:m,emissiveIntensity:.3,metalness:.12,roughness:.5,envMap,envMapIntensity:.3,toneMapped:false,bumpMap:bump,bumpScale:.004,transparent:true});
 
     /* pillow-shaped surface: bulges in the middle, flat at the crimped ends and at the sides */
     function surf(v0,v1,segY){
@@ -3619,7 +3621,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   })();
 
   /* ---------- marché : échanges de doubles entre joueurs, carte contre carte, même rareté ---------- */
-  const MARKET=(function(){const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[]},loaded=false,err="",busyMk=false,offerKey="",picked=[],showOwned=false;
+  const MARKET=(function(){let mkT=0;const mkSay=t=>{const e=$("mkMsg");if(!e)return;e.textContent=t||"";e.hidden=!t;clearTimeout(mkT);if(t)mkT=setTimeout(()=>{e.hidden=true;},6000);};const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[]},loaded=false,err="",busyMk=false,offerKey="",picked=[],showOwned=false;
     const mine=x=>x.uid===UID;
     const nOf=c=>c?(S.owned[c.id]||0):0;
     const label=c=>`<b>${esc(c.name.trim())}</b> <span class="mktag">${c.num}</span>`;
@@ -3659,8 +3661,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       busyMk=true;b.disabled=true;
       try{const res=await window.MF_RPC("mf_market_take",{p_id:id,p_give:give});const fresh=!nOf(c);applyServer(res.state);
         if(fresh)S.fresh=[...new Set([...(S.fresh||[]),c.id])];
-        SFX.play("coin");say(`Échange réussi : tu as reçu ${c.name.trim()} contre ${g.name.trim()}.`);zoom(c);}
-      catch(e){const m=String(e&&e.message||e);say(/gone/.test(m)?"Trop tard : cette annonce n'est plus disponible.":/no_double/.test(m)?"Il te faut un double de cette carte.":"Échange impossible pour l'instant, réessaie.");}
+        SFX.play("coin");mkSay(`Échange réussi : tu as reçu ${c.name.trim()} contre ${g.name.trim()}.`);zoom(c);}
+      catch(e){const m=String(e&&e.message||e);mkSay(/gone/.test(m)?"Trop tard : cette annonce n'est plus disponible.":/no_double/.test(m)?"Il te faut un double de cette carte.":"Échange impossible pour l'instant, réessaie.");}
       busyMk=false;load();}
     function renderMine(){
       const list=data.open.filter(mine);
@@ -3674,8 +3676,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
             :`Échange avec <b>${esc(x.pseudo||SOCIAL.nameOf(x.uid))}</b> : tu as reçu ${label(c)} et donné ${g?label(g):"une carte"}`;
           return `<div class="sitem" style="grid-template-columns:minmax(0,1fr)"><span class="sname">${t}<small>${ago(x.t)}</small></span></div>`;}).join("")}</div>`:""}`;
       body.querySelectorAll("[data-cancel]").forEach(b=>b.addEventListener("click",async()=>{if(busyMk)return;busyMk=true;b.disabled=true;
-        try{const res=await window.MF_RPC("mf_market_cancel",{p_id:+b.dataset.cancel});applyServer(res.state);say("Annonce retirée : ta carte est revenue dans ta collection.");}
-        catch(e){say("Impossible de retirer l'annonce pour l'instant.");}busyMk=false;load();}));}
+        try{const res=await window.MF_RPC("mf_market_cancel",{p_id:+b.dataset.cancel});applyServer(res.state);mkSay("Annonce retirée : ta carte est revenue dans ta collection.");}
+        catch(e){mkSay("Impossible de retirer l'annonce pour l'instant.");}busyMk=false;load();}));}
     function renderNew(){
       const dbl=CARDS.filter(c=>nOf(c)>=2).sort((a,b)=>b.r-a.r||a.num.localeCompare(b.num,"fr",{numeric:true}));
       const mineN=data.open.filter(mine).length;
@@ -3699,8 +3701,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       body.querySelectorAll(".mkpick input").forEach(i=>i.addEventListener("change",()=>{picked=i.checked?[...new Set([...picked,i.value])].slice(0,3):picked.filter(k=>k!==i.value);
         body.querySelectorAll(".mkpick input").forEach(j=>j.disabled=!j.checked&&picked.length>=3);$("mkPost").disabled=!picked.length;}));
       $("mkPost").addEventListener("click",async()=>{if(busyMk||!picked.length)return;busyMk=true;$("mkPost").disabled=true;
-        try{const res=await window.MF_RPC("mf_market_post",{p_offer:offerKey,p_wants:picked});applyServer(res.state);picked=[];tab="mine";say("Annonce publiée : tes potes peuvent la voir dans le Marché.");}
-        catch(e){const m=String(e&&e.message||e);say(/too_many/.test(m)?"Tu as déjà 5 annonces en cours.":/no_double/.test(m)?"Il te faut un double de cette carte.":/same_rarity/.test(m)?"Les cartes demandées doivent être de la même rareté.":"Publication impossible pour l'instant, réessaie.");}
+        try{const res=await window.MF_RPC("mf_market_post",{p_offer:offerKey,p_wants:picked});applyServer(res.state);picked=[];tab="mine";mkSay("Annonce publiée : tes potes peuvent la voir dans le Marché.");}
+        catch(e){const m=String(e&&e.message||e);mkSay(/too_many/.test(m)?"Tu as déjà 5 annonces en cours.":/no_double/.test(m)?"Il te faut un double de cette carte.":/same_rarity/.test(m)?"Les cartes demandées doivent être de la même rareté.":"Publication impossible pour l'instant, réessaie.");}
         busyMk=false;load();});}
     function show(t){if(t)tab=t;if(open){render();return;}closeOthers("market");open=true;root.hidden=false;document.querySelector(".wrap").style.display="none";document.body.style.overflow="hidden";P3.pause&&P3.pause(true);cancelAnimationFrame(foilRaf);
       render();load();gsap.fromTo(root.querySelector(".shopbox"),{y:30,opacity:0},{y:0,opacity:1,duration:.35,ease:"power2.out"});$("mkClose").focus();}
