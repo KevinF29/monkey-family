@@ -676,7 +676,7 @@ td.n{text-align:right}
         <label><span class="lab">Catégorie</span><select id="stNewCat"></select></label>
         <label><span class="lab">Rareté</span><select id="stNewRar"></select></label>
         <label class="stexcl"><input type="checkbox" id="stNewExcl"> <span>Carte exclusive (full art) : rangée à la fin du classeur dans « Cartes Exclusives », sans numéro ni rareté, jamais dans un booster.</span></label>
-        <label class="stexo" hidden><span class="lab">Elle est offerte…</span><select id="stNewEk"><option value="reward">quand on complète une catégorie</option><option value="event">pendant un événement (Noël…)</option></select></label>
+        <label class="stexo" hidden><span class="lab">Elle est offerte…</span><select id="stNewEk"><option value="reward">quand on complète une catégorie</option><option value="event">pendant un événement (Noël…)</option><option value="ultimate">quand on a toutes les cartes du jeu (carte ultime)</option></select></label>
         <label class="stexo" hidden><span class="lab">Contour</span><select id="stNewFrame"><option value="gold">Doré</option><option value="candy">Sucre d'orge</option><option value="frost">Givré</option></select></label>
       </div>
       <div class="stnewfoot"><p class="shint" id="stNewNum" aria-live="polite"></p><button type="button" class="sbtn" id="stNewGo">Créer la carte</button></div>
@@ -815,6 +815,7 @@ td.n{text-align:right}
   ];
   let CARD_FONT=FONTS[0].css,CARD_W="";
   const CANDY_FONT="'Berkshire Swash', Georgia, serif";
+  const ULT_FONT="'Cinzel', Georgia, serif";  // the ultimate card: gold letters
   const BANANA_FONT="'Titan One', 'Arial Black', sans-serif";  // collection rewards with the banana frame  // Christmas cards with the candy-cane frame always use this title font
   const FULL={x:22,y:22,w:706,h:1006,r:26};
 
@@ -1553,9 +1554,11 @@ td.n{text-align:right}
     titleBlock(c,o,R,{x:40,y:42,w:W-80,h:116},{ink:"#ffffff",glow:S.edge==="neon"?glowOf(R,ph):"rgba(0,0,0,.85)",gemFill:frameFill(c,R,600,80,90,60,ph+120)});
   }
   /* full-art exclusive cards: the illustration covers the card, inside a decorative frame */
-  const FRAMES={gold:"Doré",candy:"Sucre d'orge",frost:"Givré",banana:"Bananes"};
+  const FRAMES={gold:"Doré",candy:"Sucre d'orge",frost:"Givré",banana:"Bananes",goldbanana:"Bananes en or"};
+  const ULT_CAT="Collection complète";  // the ultimate card: given when a player owns every booster card
   /* the banana frame (collection rewards) is Kévin's painted artwork, laid over the picture */
-  let FRAME_BAN=null;const banFrame=()=>{if(!FRAME_BAN){FRAME_BAN=new Image();FRAME_BAN.decoding="async";FRAME_BAN.onload=()=>{try{repaintAll();}catch(e){}};FRAME_BAN.src="packs/frame-bananes.webp";}return FRAME_BAN.complete&&FRAME_BAN.naturalWidth?FRAME_BAN:null;};
+  const FRAME_IMG={},FRAME_SRC={banana:"packs/frame-bananes.webp",goldbanana:"packs/frame-or.webp"};
+  const banFrame=(k="banana")=>{let f=FRAME_IMG[k];if(!f){f=FRAME_IMG[k]=new Image();f.decoding="async";f.onload=()=>{try{repaintAll();}catch(e){}};f.src=FRAME_SRC[k];}return f.complete&&f.naturalWidth?f:null;};
   function frameBand(c,kind,ph){
     if(kind==="candy"){
       c.save();rr(c,0,0,W,H,40);c.clip();c.fillStyle="#fff7f2";c.fillRect(0,0,W,H);
@@ -1572,16 +1575,20 @@ td.n{text-align:right}
       rr(c,0,0,W,H,40);c.fillStyle=g;c.fill();}
   }
   function drawFrameArt(c,o,R,ph,kind){
-    const ban=kind==="banana";
+    const ban=kind==="banana"||kind==="goldbanana",ult=kind==="goldbanana";
     if(ban){rr(c,0,0,W,H,40);c.fillStyle="#2a1250";c.fill();}else frameBand(c,kind,ph);
     const A=ban?{x:64,y:80,w:W-128,h:H-160,r:64}:{x:44,y:44,w:W-88,h:H-88,r:22};
     artImage(c,o,A,FULL,{empty:"#14151f",lines:"rgba(255,255,255,.06)",hint:"rgba(255,255,255,.6)"});
     // name at the bottom, on a soft dark fade so it reads on any picture
     c.save();shape(c,A);c.clip();const g=c.createLinearGradient(0,H-330,0,H-30);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.78)");c.fillStyle=g;c.fillRect(A.x,H-330,A.w,300);c.restore();
     const title=(o.title||"").trim();c.save();c.textAlign="center";c.textBaseline="alphabetic";
-    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText("CARTE EXCLUSIVE",W/2,ban?H-176:H-142);
-    c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;const sf=CARD_FONT,sw=CARD_W;if(kind==="candy"||kind==="banana"){CARD_FONT=kind==="candy"?CANDY_FONT:BANANA_FONT;CARD_W="";}c.font=`${CARD_W||400} 60px ${CARD_FONT}`;fitText(c,title,ban?W-210:W-140,64,30);c.textBaseline="middle";fillTextSafe(c,title,W/2,ban?H-134:H-104,"center");CARD_FONT=sf;CARD_W=sw;c.restore();
-    if(ban){const f=banFrame();if(f)c.drawImage(f,0,0,W,H);else{c.save();shape(c,A);c.lineWidth=26;c.strokeStyle="#f2c230";c.stroke();c.restore();}return;}
+    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText(ult?"CARTE ULTIME":"CARTE EXCLUSIVE",W/2,ban?H-176:H-142);
+    c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;const sf=CARD_FONT,sw=CARD_W;if(kind==="candy"||kind==="banana"){CARD_FONT=kind==="candy"?CANDY_FONT:BANANA_FONT;CARD_W="";}if(ult){CARD_FONT=ULT_FONT;CARD_W="900";}c.font=`${CARD_W||400} 60px ${CARD_FONT}`;const fsz=fitText(c,title,ban?W-210:W-140,ult?58:64,30);c.textBaseline="middle";
+    if(ult){const ty=H-134;// gold letters: dark outline glow, then a metallic gradient, then a thin light rim
+      c.shadowColor="rgba(60,30,0,.95)";c.shadowBlur=10;c.fillStyle="#5a3400";fillTextSafe(c,title,W/2,ty+2,"center");c.shadowColor="rgba(255,200,60,.55)";c.shadowBlur=18;
+      const g=c.createLinearGradient(0,ty-fsz*.55,0,ty+fsz*.5);[["#fffbe0",0],["#ffe27a",.28],["#d79a1e",.5],["#fff1a8",.62],["#b8740c",1]].forEach(([k,t])=>g.addColorStop(t,k));c.fillStyle=g;fillTextSafe(c,title,W/2,ty,"center");}
+    else fillTextSafe(c,title,W/2,ban?H-134:H-104,"center");CARD_FONT=sf;CARD_W=sw;c.restore();
+    if(ban){const f=banFrame(kind);if(f)c.drawImage(f,0,0,W,H);else{c.save();shape(c,A);c.lineWidth=26;c.strokeStyle="#f2c230";c.stroke();c.restore();}return;}
     // inner edge of the frame
     c.save();shape(c,A);c.lineWidth=5;c.strokeStyle=kind==="candy"?"#ffffff":kind==="frost"?"rgba(255,255,255,.95)":"#5c3a08";c.stroke();c.restore();
     c.save();rr(c,2,2,W-4,H-4,39);c.lineWidth=4;c.strokeStyle=kind==="candy"?"#8c1018":kind==="frost"?"#3d86b8":"#6b4510";c.stroke();c.restore();
@@ -1632,7 +1639,7 @@ td.n{text-align:right}
   try{localStorage.setItem(NEWKEY+"-t","1");NEWCARDS=JSON.parse(localStorage.getItem(NEWKEY)||"[]");if(!Array.isArray(NEWCARDS))NEWCARDS=[];}catch(e){STORE_OK=false;NEWCARDS=[];}
   const extraOf=list=>list.filter(n=>n&&typeof n.name==="string"&&n.name.trim()&&RANK.includes(n.rarity)&&typeof n.cat==="string"&&!BUILT.has(slug(n.name)));
   {const have=new Set(BUILT);extraOf(NEWCARDS).forEach(n=>{const k=slug(n.name);if(have.has(k))return;have.add(k);
-    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.excl?"Exclusive":n.rarity,created:n.id,excl:!!n.excl,frame:n.excl?(n.cat==="Événements"?(n.frame||"gold"):"banana"):"",ev:n.cat==="Événements"});});}
+    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.excl?"Exclusive":n.rarity,created:n.id,excl:!!n.excl,frame:n.excl?(n.cat==="Événements"?(n.frame||"gold"):n.cat===ULT_CAT?"goldbanana":"banana"):"",ev:n.cat==="Événements"});});}
   function numberCards(list){
     const ci=c=>{const i=CAT_SEQ.indexOf(c.cat);return i<0?99:i;};
     const out=list.map((c,i)=>[c,i]).sort((a,b)=>ci(a[0])-ci(b[0])||a[0].cat.localeCompare(b[0].cat)||(!!a[0].excl-!!b[0].excl)||RANK.indexOf(a[0].rarity)-RANK.indexOf(b[0].rarity)||a[1]-b[1]).map(x=>x[0]);
@@ -3464,21 +3471,21 @@ td.n{text-align:right}
     STYLES.forEach((s,i)=>{const o=document.createElement("option");o.value=i;o.textContent=s.name;$("stStyle").appendChild(o);});
     $("stStyle").addEventListener("change",e=>{styleIdx=e.target.value===""?null:+e.target.value;drawCard();});
     /* ---- create a card right here: name + category + rarity, the number follows automatically ---- */
-    const allCats=[...new Set([...CAT_SEQ,...CARDS.map(c=>c.cat)])].filter(c=>c!=="Événements");
+    const allCats=[...new Set([...CAT_SEQ,...CARDS.map(c=>c.cat)])].filter(c=>c!=="Événements"&&c!==ULT_CAT);
     allCats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;$("stNewCat").appendChild(o);});
     RANK.filter(r=>r!=="Exclusive").forEach(r=>{const o=document.createElement("option");o.value=r;o.textContent=r;$("stNewRar").appendChild(o);});
-    const exSync=()=>{const on=$("stNewExcl").checked,ev=on&&$("stNewEk").value==="event";$("stNewRar").disabled=on;$("stNewCat").disabled=ev;
-      document.querySelectorAll(".stexo").forEach(e=>e.hidden=!on);$("stNewFrame").parentElement.hidden=!ev;$("stNewCat").previousElementSibling.textContent=on&&!ev?"Récompense de la catégorie":"Catégorie";};
+    const exSync=()=>{const on=$("stNewExcl").checked,ev=on&&$("stNewEk").value==="event",ult=on&&$("stNewEk").value==="ultimate";$("stNewRar").disabled=on;$("stNewCat").disabled=ev||ult;
+      document.querySelectorAll(".stexo").forEach(e=>e.hidden=!on);$("stNewFrame").parentElement.hidden=!ev;$("stNewCat").previousElementSibling.textContent=on&&!ev&&!ult?"Récompense de la catégorie":"Catégorie";};
     ["stNewExcl","stNewEk"].forEach(id=>$(id).addEventListener("change",exSync));
     const nameTaken=n=>{const k=slug(n);return !!k&&CARDS.some(c=>slug(c.name)===k||slug(c.orig)===k);};
     function previewNew(){const name=$("stNewName").value.trim(),cat=$("stNewCat").value,rarity=$("stNewRar").value;
       const tmp={num:"",cat,name:name||"…",rarity,excl:$("stNewExcl").checked};if(tmp.excl){const ev=$("stNewEk").value==="event";
-        $("stNewNum").textContent=ev?`Carte d'événement (contour ${FRAMES[$("stNewFrame").value]}) : à offrir depuis Admin → Événements.`:`Carte exclusive, récompense de « ${cat} » (contour Bananes).`;$("stNewGo").disabled=!name;return;}const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
+        $("stNewNum").textContent=$("stNewEk").value==="ultimate"?"Carte ultime (contour Bananes en or, lettres d'or) : offerte quand un joueur a toutes les cartes des boosters.":ev?`Carte d'événement (contour ${FRAMES[$("stNewFrame").value]}) : à offrir depuis Admin → Événements.`:`Carte exclusive, récompense de « ${cat} » (contour Bananes).`;$("stNewGo").disabled=!name;return;}const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
       const shifted=CARDS.filter(c=>c.cat===cat&&nums.get(c)!==c.num).length;
       $("stNewNum").textContent=`Elle sera la carte ${n}`+(shifted?` · ${shifted} carte${shifted>1?"s":""} de « ${cat} » ${shifted>1?"seront renumérotées":"sera renumérotée"} après elle.`:".");
       $("stNewGo").disabled=!name;}
     ["input","change"].forEach(t=>["stNewName","stNewCat","stNewRar","stNewExcl","stNewEk","stNewFrame"].forEach(id=>$(id).addEventListener(t,()=>{$("stNewMsg").textContent="";previewNew();})));
-    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),excl=$("stNewExcl").checked,cat=excl&&$("stNewEk").value==="event"?"Événements":$("stNewCat").value,rarity=excl?"Exclusive":$("stNewRar").value,frame=excl?(cat==="Événements"?$("stNewFrame").value:"banana"):"";
+    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),excl=$("stNewExcl").checked,cat=excl&&$("stNewEk").value==="event"?"Événements":excl&&$("stNewEk").value==="ultimate"?ULT_CAT:$("stNewCat").value,rarity=excl?"Exclusive":$("stNewRar").value,frame=excl?(cat==="Événements"?$("stNewFrame").value:cat===ULT_CAT?"goldbanana":"banana"):"";
       const msg=t=>$("stNewMsg").textContent=t;
       if(!name)return msg("Donne un nom à la carte.");
       if(!slug(name))return msg("Le nom doit contenir au moins une lettre ou un chiffre.");
@@ -3692,6 +3699,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         const t=x.kind==="offer"?`${who} propose une carte ${rpill(c.rarity)} au Marché`:`${who} a fait un échange ${rpill(c.rarity)} avec <b>${esc(nameOf(x.with))}</b>`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🔄</span><p>${t}<br><small>${ago(x.t)}</small></p></div>`;}
       if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${icon(String(x.rarity||""))}</span><p>${who} a tiré une carte ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="complete"&&x.cat===ULT_CAT)return `<div class="fitem"><span class="fi" aria-hidden="true">👑</span><p>${who} a complété <b>toute la collection</b> et décroché la carte ultime !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       return "";}
     /* reactions under the news: one per player and per item, tap again to remove it */
@@ -3790,10 +3798,11 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   const GIFTS=(function(){const root=$("giftpop");let q=[];
     function next(){const g=q.shift();if(!g){root.hidden=true;return;}
       const cards=(g.cards||[]).map(cardOfKey).filter(Boolean);
-      const xk=+g.xpack||0,sk=SKINS[g.skin]||SKINS.noel;
-      $("gpIco").textContent=g.kind==="collection"?"🏆":xk?"🎄":g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
-      $("gpTitle").textContent=g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
-      $("gpText").innerHTML=g.kind==="collection"
+      const xk=+g.xpack||0,sk=SKINS[g.skin]||SKINS.noel,ul=g.kind==="collection"&&(g.ultimate||g.cat===ULT_CAT);
+      $("gpIco").textContent=ul?"👑":g.kind==="collection"?"🏆":xk?"🎄":g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
+      $("gpTitle").textContent=ul?"Collection complète !":g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
+      $("gpText").innerHTML=ul?`Tu as <b>toutes les cartes du jeu</b> !<br>Voici ta récompense, ${cards.length>1?"les cartes ultimes":"la carte ultime"} :`
+        :g.kind==="collection"
         ?`Tu as toutes les cartes de <b>${esc(g.cat)}</b>.<br>Tu gagnes <b>${g.boosters} boosters</b>${cards.length?` et ${cards.length>1?"les cartes exclusives":"la carte exclusive"} :`:"."}`
         :xk?`${g.message?esc(g.message)+"<br>":""}Tu reçois <b>${xk>1?xk+" boosters exclusifs":"un booster exclusif"}</b> avec ${g.n} carte${g.n>1?"s":""} exclusive${g.n>1?"s":""} à découvrir${cards.length?` et la carte exclusive <b>${esc(cards[0].name.trim())}</b>`:""} !`
         :`${g.message?esc(g.message)+"<br>":""}Tu reçois ${g.boosters>0?`<b>${g.boosters} booster${g.boosters>1?"s":""}${g.special?` spécia${g.boosters>1?"ux":"l"}`:""}</b>${g.special?" (meilleures chances sur les dernières cartes)":""}`:""}${g.boosters>0&&cards.length?" et ":""}${cards.length?`la carte exclusive <b>${esc(cards[0].name.trim())}</b> :`:"."}`;
@@ -3946,7 +3955,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     document.fonts.load(`40px ${BANANA_FONT}`).then(()=>{again();try{BIND.repaint();}catch(e){}}).catch(()=>{});
     document.fonts.load(`40px ${CANDY_FONT}`).then(()=>{again();try{BIND.repaint();}catch(e){}}).catch(()=>{});}
   function repaintAll(){shown.forEach(s=>paint(s.cv,s.c,0));try{BIND.repaint();}catch(e){}}
-  if(CARDS.some(c=>c.frame==="banana"))banFrame();
+  if(CARDS.some(c=>c.frame==="banana"))banFrame();if(CARDS.some(c=>c.frame==="goldbanana"))banFrame("goldbanana");
 })();
 </script>
 
