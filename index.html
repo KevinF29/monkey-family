@@ -382,6 +382,7 @@ td.n{text-align:right}
 .gpbox p{margin:0;font:500 16px/1.45 var(--ui);color:#e9e2f7}
 .gpcards{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .gpcards canvas{width:min(180px,40vw);aspect-ratio:750/1050;border-radius:6%/4.3%;box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 40px rgba(255,217,138,.35)}
+.stexo[hidden]{display:none!important}
 .stexcl{grid-column:1/-1;display:flex!important;gap:8px;align-items:flex-start;flex-direction:row!important}
 .slot.excl .sq{font-size:28px}
 .react{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
@@ -664,7 +665,9 @@ td.n{text-align:right}
         <label><span class="lab">Nom</span><input type="text" id="stNewName" maxlength="60" autocomplete="off" placeholder="Nom de la carte"></label>
         <label><span class="lab">Catégorie</span><select id="stNewCat"></select></label>
         <label><span class="lab">Rareté</span><select id="stNewRar"></select></label>
-        <label class="stexcl"><input type="checkbox" id="stNewExcl"> <span>Carte exclusive : offerte quand on complète la catégorie choisie ci-dessus. Rangée à la fin du classeur, dans « Cartes Exclusives », sans numéro ni rareté, jamais dans un booster.</span></label>
+        <label class="stexcl"><input type="checkbox" id="stNewExcl"> <span>Carte exclusive (full art) : rangée à la fin du classeur dans « Cartes Exclusives », sans numéro ni rareté, jamais dans un booster.</span></label>
+        <label class="stexo" hidden><span class="lab">Elle est offerte…</span><select id="stNewEk"><option value="reward">quand on complète une catégorie</option><option value="event">pendant un événement (Noël…)</option></select></label>
+        <label class="stexo" hidden><span class="lab">Contour</span><select id="stNewFrame"><option value="gold">Doré</option><option value="candy">Sucre d'orge</option><option value="frost">Givré</option></select></label>
       </div>
       <div class="stnewfoot"><p class="shint" id="stNewNum" aria-live="polite"></p><button type="button" class="sbtn" id="stNewGo">Créer la carte</button></div>
       <p class="shint stnewmsg" id="stNewMsg" role="status"></p>
@@ -1537,13 +1540,44 @@ td.n{text-align:right}
     if(S.rim)S.rim(c,R,ph);
     titleBlock(c,o,R,{x:40,y:42,w:W-80,h:116},{ink:"#ffffff",glow:S.edge==="neon"?glowOf(R,ph):"rgba(0,0,0,.85)",gemFill:frameFill(c,R,600,80,90,60,ph+120)});
   }
+  /* full-art exclusive cards: the illustration covers the card, inside a decorative frame */
+  const FRAMES={gold:"Doré",candy:"Sucre d'orge",frost:"Givré"};
+  function frameBand(c,kind,ph){
+    if(kind==="candy"){
+      c.save();rr(c,0,0,W,H,40);c.clip();c.fillStyle="#fff7f2";c.fillRect(0,0,W,H);
+      c.translate(W/2,H/2);c.rotate(-Math.PI/4);const sw=30,span=W+H,off=(ph*.6)%(sw*2);
+      for(let x=-span;x<span;x+=sw*2){c.fillStyle="#d9232e";c.fillRect(x+off,-span,sw,span*2);c.fillStyle="#2f9e44";c.fillRect(x+off+sw-6,-span,6,span*2);}
+      c.restore();
+      c.save();rr(c,0,0,W,H,40);c.clip();const g=c.createLinearGradient(0,0,W,0);g.addColorStop(0,"rgba(0,0,0,.25)");g.addColorStop(.12,"rgba(255,255,255,.22)");g.addColorStop(.5,"rgba(255,255,255,0)");g.addColorStop(.88,"rgba(255,255,255,.22)");g.addColorStop(1,"rgba(0,0,0,.25)");c.fillStyle=g;c.fillRect(0,0,W,H);c.restore();
+    }else if(kind==="frost"){
+      const g=c.createLinearGradient(0,0,W,H);[["#e9f6ff",0],["#9fd3f5",.3],["#ffffff",.5],["#7fbfe8",.75],["#e3f3ff",1]].forEach(([k,t])=>g.addColorStop(t,k));
+      rr(c,0,0,W,H,40);c.fillStyle=g;c.fill();
+      c.save();rr(c,0,0,W,H,40);c.clip();c.fillStyle="rgba(255,255,255,.9)";for(let i=0;i<70;i++){const x=(i*137.5)%W,y=(i*263.1)%H,rd=1.5+(i%4);c.beginPath();c.arc(x,y,rd,0,Math.PI*2);c.fill();}c.restore();
+    }else{
+      const g=c.createLinearGradient(0,0,W,H);[["#fff3c4",0],["#d9a637",.25],["#8a5a12",.45],["#ffe08a",.6],["#b07a1c",.8],["#fff0b8",1]].forEach(([k,t])=>g.addColorStop(t,k));
+      rr(c,0,0,W,H,40);c.fillStyle=g;c.fill();}
+  }
+  function drawFrameArt(c,o,R,ph,kind){
+    frameBand(c,kind,ph);
+    const A={x:44,y:44,w:W-88,h:H-88,r:22};
+    artImage(c,o,A,FULL,{empty:"#14151f",lines:"rgba(255,255,255,.06)",hint:"rgba(255,255,255,.6)"});
+    // name at the bottom, on a soft dark fade so it reads on any picture
+    c.save();shape(c,A);c.clip();const g=c.createLinearGradient(0,H-330,0,H-30);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.78)");c.fillStyle=g;c.fillRect(A.x,H-330,A.w,300);c.restore();
+    const title=(o.title||"").trim();c.save();c.textAlign="center";c.textBaseline="alphabetic";
+    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText("CARTE EXCLUSIVE",W/2,H-142);
+    c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;c.font=`${CARD_W||400} 60px ${CARD_FONT}`;fitText(c,title,W-140,64,30);c.textBaseline="middle";fillTextSafe(c,title,W/2,H-104,"center");c.restore();
+    // inner edge of the frame
+    c.save();shape(c,A);c.lineWidth=5;c.strokeStyle=kind==="candy"?"#ffffff":kind==="frost"?"rgba(255,255,255,.95)":"#5c3a08";c.stroke();c.restore();
+    c.save();rr(c,2,2,W-4,H-4,39);c.lineWidth=4;c.strokeStyle=kind==="candy"?"#8c1018":kind==="frost"?"#3d86b8":"#6b4510";c.stroke();c.restore();
+  }
   const slotFor=o=>{const m=modeOf(o),S=STYLES[o.style];return m==="full"?FULL:m==="half"?S.half:S.art;};
   function draw(c,opts){
     const R=RARITIES[opts.rarity],S=STYLES[opts.style],ph=opts.phase||0,m=modeOf(opts);
     /* font: the style's own font, unless a font was picked by hand (opts.font >= 0) */
     const F=(opts.font!=null&&opts.font>=0)?FONTS[opts.font]:null;CARD_FONT=F?F.css:(S.font||FONTS[0].css);CARD_W=F?"":(S.weight||"");
     c.save();c.clearRect(0,0,W,H);
-    if(m==="full")drawFull(c,opts,R,S,ph);else if(m==="half")drawHalf(c,opts,R,S,ph);else S.draw(c,opts,R,ph);
+    if(opts.frame)drawFrameArt(c,opts,R,ph,opts.frame);
+    else if(m==="full")drawFull(c,opts,R,S,ph);else if(m==="half")drawHalf(c,opts,R,S,ph);else S.draw(c,opts,R,ph);
     sheen(c,R,ph,()=>rr(c,0,0,W,H,36));
     if(R.glow)highlight(c,R,ph);
     c.restore();
@@ -1582,7 +1616,7 @@ td.n{text-align:right}
   try{localStorage.setItem(NEWKEY+"-t","1");NEWCARDS=JSON.parse(localStorage.getItem(NEWKEY)||"[]");if(!Array.isArray(NEWCARDS))NEWCARDS=[];}catch(e){STORE_OK=false;NEWCARDS=[];}
   const extraOf=list=>list.filter(n=>n&&typeof n.name==="string"&&n.name.trim()&&RANK.includes(n.rarity)&&typeof n.cat==="string"&&!BUILT.has(slug(n.name)));
   {const have=new Set(BUILT);extraOf(NEWCARDS).forEach(n=>{const k=slug(n.name);if(have.has(k))return;have.add(k);
-    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.excl?"Exclusive":n.rarity,created:n.id,excl:!!n.excl});});}
+    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.excl?"Exclusive":n.rarity,created:n.id,excl:!!n.excl,frame:n.excl?(n.frame||"gold"):"",ev:n.cat==="Événements"});});}
   function numberCards(list){
     const ci=c=>{const i=CAT_SEQ.indexOf(c.cat);return i<0?99:i;};
     const out=list.map((c,i)=>[c,i]).sort((a,b)=>ci(a[0])-ci(b[0])||a[0].cat.localeCompare(b[0].cat)||(!!a[0].excl-!!b[0].excl)||RANK.indexOf(a[0].rarity)-RANK.indexOf(b[0].rarity)||a[1]-b[1]).map(x=>x[0]);
@@ -1736,7 +1770,7 @@ td.n{text-align:right}
   /* ---------- drawing ---------- */
   let testStyle=null; // "Essayer un style": preview only, never saved
   const cardOpts=(c,ph,form)=>{const st=testStyle??S.style;
-    const o={style:st,font:-1,rarity:c.r,title:c.name.trim(),subtitle:"",num:c.num,img:null,zoom:1,ox:0,oy:0,fill:"plain",phase:ph||0,forExport:true};
+    const o={style:st,font:-1,rarity:c.r,title:c.name.trim(),subtitle:"",num:c.num,img:null,zoom:1,ox:0,oy:0,fill:"plain",phase:ph||0,forExport:true,frame:c.frame||""};
     let a=null;try{a=artOpts(c,st,form);}catch(e){}
     if(a)Object.assign(o,a);else if(typeof LENTI!=="undefined"&&LENTI.has(c.id))o.img=LENTI.get(c.id).B;
     return o;};
@@ -2642,7 +2676,7 @@ td.n{text-align:right}
     const cats=[...CAT_ORDER.filter(c=>c===EXCL_CAT||CARDS.some(x=>bcat(x)===c)),...[...new Set(CARDS.map(bcat))].filter(c=>!CAT_ORDER.includes(c))];
     // pages: each category starts on a fresh page, 9 sleeves per page
     const PAGES=[];
-    cats.forEach(cat=>{const ci=c=>CAT_ORDER.indexOf(c.cat);const list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
+    cats.forEach(cat=>{const ci=c=>{const i=CAT_ORDER.indexOf(c.cat);return i<0?99:i;};const list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
       const n=cat===EXCL_CAT?Math.max(2,Math.ceil(list.length/9)):Math.ceil(list.length/9);  // 2 pages kept ready for the exclusive cards to come
       for(let i=0;i<n;i++)PAGES.push({cat,part:i+1,parts:n,cards:list.slice(i*9,i*9+9)});});
     const B={leaves:[],cur:0,spread:true,anim:false,open:false,pw:0};
@@ -3215,9 +3249,9 @@ td.n{text-align:right}
     if(UID)cloudInit();
     DB.collection("newcards").onSnapshot(snap=>{
       const list=snap.docs.map(d=>({id:d.id,...(d.data()||{})})).sort((a,b)=>(+a.t||0)-(+b.t||0));
-      const sig=l=>JSON.stringify(extraOf(l).map(n=>[n.id,n.name.trim(),n.cat,n.rarity,!!n.excl]));
+      const sig=l=>JSON.stringify(extraOf(l).map(n=>[n.id,n.name.trim(),n.cat,n.rarity,!!n.excl,n.frame||""]));
       const changed=sig(list)!==sig(NEWCARDS);
-      try{localStorage.setItem(NEWKEY,JSON.stringify(list.map(n=>({id:n.id,name:n.name,cat:n.cat,rarity:n.rarity,excl:!!n.excl,t:n.t}))));}catch(e){}
+      try{localStorage.setItem(NEWKEY,JSON.stringify(list.map(n=>({id:n.id,name:n.name,cat:n.cat,rarity:n.rarity,excl:!!n.excl,frame:n.frame||"",t:n.t}))));}catch(e){}
       if(changed&&STORE_OK&&!window.__newcardReload)showReloadNote();
     },()=>{});
     DB.collection("artworks").onSnapshot(snap=>{
@@ -3386,18 +3420,21 @@ td.n{text-align:right}
     STYLES.forEach((s,i)=>{const o=document.createElement("option");o.value=i;o.textContent=s.name;$("stStyle").appendChild(o);});
     $("stStyle").addEventListener("change",e=>{styleIdx=e.target.value===""?null:+e.target.value;drawCard();});
     /* ---- create a card right here: name + category + rarity, the number follows automatically ---- */
-    const allCats=[...new Set([...CAT_SEQ,...CARDS.map(c=>c.cat)])];
+    const allCats=[...new Set([...CAT_SEQ,...CARDS.map(c=>c.cat)])].filter(c=>c!=="Événements");
     allCats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;$("stNewCat").appendChild(o);});
     RANK.filter(r=>r!=="Exclusive").forEach(r=>{const o=document.createElement("option");o.value=r;o.textContent=r;$("stNewRar").appendChild(o);});
-    $("stNewExcl").addEventListener("change",()=>{const on=$("stNewExcl").checked;$("stNewRar").disabled=on;$("stNewCat").previousElementSibling.textContent=on?"Récompense de la catégorie":"Catégorie";});
+    const exSync=()=>{const on=$("stNewExcl").checked,ev=on&&$("stNewEk").value==="event";$("stNewRar").disabled=on;$("stNewCat").disabled=ev;
+      document.querySelectorAll(".stexo").forEach(e=>e.hidden=!on);$("stNewCat").previousElementSibling.textContent=on&&!ev?"Récompense de la catégorie":"Catégorie";};
+    ["stNewExcl","stNewEk"].forEach(id=>$(id).addEventListener("change",exSync));
     const nameTaken=n=>{const k=slug(n);return !!k&&CARDS.some(c=>slug(c.name)===k||slug(c.orig)===k);};
     function previewNew(){const name=$("stNewName").value.trim(),cat=$("stNewCat").value,rarity=$("stNewRar").value;
-      const tmp={num:"",cat,name:name||"…",rarity,excl:$("stNewExcl").checked};if(tmp.excl){$("stNewNum").textContent=`Carte exclusive, récompense de « ${cat} » : sans numéro, à la fin du classeur.`;$("stNewGo").disabled=!name;return;}const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
+      const tmp={num:"",cat,name:name||"…",rarity,excl:$("stNewExcl").checked};if(tmp.excl){const ev=$("stNewEk").value==="event";
+        $("stNewNum").textContent=ev?`Carte d'événement (contour ${FRAMES[$("stNewFrame").value]}) : à offrir depuis Admin → Événements.`:`Carte exclusive, récompense de « ${cat} » (contour ${FRAMES[$("stNewFrame").value]}).`;$("stNewGo").disabled=!name;return;}const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
       const shifted=CARDS.filter(c=>c.cat===cat&&nums.get(c)!==c.num).length;
       $("stNewNum").textContent=`Elle sera la carte ${n}`+(shifted?` · ${shifted} carte${shifted>1?"s":""} de « ${cat} » ${shifted>1?"seront renumérotées":"sera renumérotée"} après elle.`:".");
       $("stNewGo").disabled=!name;}
-    ["input","change"].forEach(t=>["stNewName","stNewCat","stNewRar","stNewExcl"].forEach(id=>$(id).addEventListener(t,()=>{$("stNewMsg").textContent="";previewNew();})));
-    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),cat=$("stNewCat").value,excl=$("stNewExcl").checked,rarity=excl?"Exclusive":$("stNewRar").value;
+    ["input","change"].forEach(t=>["stNewName","stNewCat","stNewRar","stNewExcl","stNewEk","stNewFrame"].forEach(id=>$(id).addEventListener(t,()=>{$("stNewMsg").textContent="";previewNew();})));
+    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),excl=$("stNewExcl").checked,cat=excl&&$("stNewEk").value==="event"?"Événements":$("stNewCat").value,rarity=excl?"Exclusive":$("stNewRar").value,frame=excl?$("stNewFrame").value:"";
       const msg=t=>$("stNewMsg").textContent=t;
       if(!name)return msg("Donne un nom à la carte.");
       if(!slug(name))return msg("Le nom doit contenir au moins une lettre ou un chiffre.");
@@ -3405,9 +3442,9 @@ td.n{text-align:right}
       if(!DB)return msg("Création impossible ici pour l'instant.");
       const id="n"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
       $("stNewGo").disabled=true;msg("Création…");
-      try{await DB.doc("newcards/"+id).set({name,cat,rarity,excl,t:Date.now()});}
+      try{await DB.doc("newcards/"+id).set({name,cat,rarity,excl,frame,t:Date.now()});}
       catch(e){$("stNewGo").disabled=false;return msg("Création impossible pour l'instant, réessaie.");}
-      const l=[...NEWCARDS.filter(n=>n.id!==id),{id,name,cat,rarity,excl,t:Date.now()}];
+      const l=[...NEWCARDS.filter(n=>n.id!==id),{id,name,cat,rarity,excl,frame,t:Date.now()}];
       try{localStorage.setItem(NEWKEY,JSON.stringify(l));sessionStorage.setItem("mf-open-card",slug(name));}catch(e){}
       window.__newcardReload=true;msg("Carte créée ! Rechargement…");setTimeout(()=>location.reload(),350);}
     $("stNewGo").addEventListener("click",createCard);
@@ -3691,25 +3728,26 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     return {show,hide,update};
   })();
 
+  window.MF_EXCL_CARDS=()=>CARDS.filter(c=>c.excl).map(c=>({key:c.key,name:c.name.trim(),ev:!!c.ev,cat:c.cat,frame:c.frame}));
   /* ---------- événements en cours (bandeau au-dessus du booster) ---------- */
   let EVENTS=[];
   function renderEvents(){const bar=$("evBar");if(!bar)return;const now=Date.now();const list=EVENTS.filter(e=>e.ends>now);
     const until=t=>new Date(t).toLocaleString("fr-FR",{weekday:"long",hour:"2-digit",minute:"2-digit"});
     const hh=h=>(+h%1?String(+h).replace(".",","):String(+h))+" h";
-    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":"🎁";
-      const what=e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
-      return `<div class="evitem"><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}<small>${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}</small></span></div>`;}).join("");
+    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":e.kind==="card"?"🃏":"🎁";const cd=e.card&&cardOfKey(e.card);
+      const what=e.kind==="card"?`Carte exclusive offerte${cd?` : ${esc(cd.name.trim())}`:""}`:e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
+      return `<div class="evitem"><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}${cd&&e.kind!=="card"?` + la carte exclusive ${esc(cd.name.trim())}`:""}<small>${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}</small></span></div>`;}).join("");
     bar.hidden=!list.length;document.documentElement.style.setProperty("--evh",(list.length?bar.offsetHeight+10:0)+"px");}
   setInterval(renderEvents,60000);
   /* ---------- cadeaux reçus (événement, catégorie complète) ---------- */
   const GIFTS=(function(){const root=$("giftpop");let q=[];
     function next(){const g=q.shift();if(!g){root.hidden=true;return;}
       const cards=(g.cards||[]).map(cardOfKey).filter(Boolean);
-      $("gpIco").textContent=g.kind==="collection"?"🏆":g.special?"✨":"🎁";
+      $("gpIco").textContent=g.kind==="collection"?"🏆":g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
       $("gpTitle").textContent=g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
       $("gpText").innerHTML=g.kind==="collection"
         ?`Tu as toutes les cartes de <b>${esc(g.cat)}</b>.<br>Tu gagnes <b>${g.boosters} boosters</b>${cards.length?` et ${cards.length>1?"les cartes exclusives":"la carte exclusive"} :`:"."}`
-        :`${g.message?esc(g.message)+"<br>":""}Tu reçois <b>${g.boosters} booster${g.boosters>1?"s":""}${g.special?` spécia${g.boosters>1?"ux":"l"}`:""}</b>${g.special?" : meilleures chances sur les dernières cartes":""}.`;
+        :`${g.message?esc(g.message)+"<br>":""}Tu reçois ${g.boosters>0?`<b>${g.boosters} booster${g.boosters>1?"s":""}${g.special?` spécia${g.boosters>1?"ux":"l"}`:""}</b>${g.special?" (meilleures chances sur les dernières cartes)":""}`:""}${g.boosters>0&&cards.length?" et ":""}${cards.length?`la carte exclusive <b>${esc(cards[0].name.trim())}</b> :`:"."}`;
       const box=$("gpCards");box.innerHTML="";
       cards.forEach(c=>{const cv=document.createElement("canvas");cv.width=750*ZOOM_K;cv.height=1050*ZOOM_K;cv.setAttribute("role","img");cv.setAttribute("aria-label",c.name.trim());box.appendChild(cv);paint(cv,c,0);
         setTimeout(()=>paint(cv,c,0),800);gsap.fromTo(cv,{rotationY:180,scale:.5,opacity:0},{rotationY:0,scale:1,opacity:1,duration:.8,ease:"back.out(1.4)",delay:.25});});

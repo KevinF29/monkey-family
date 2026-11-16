@@ -129,7 +129,7 @@
     }));
   }
   /* ---------- événements : boosters offerts, boosters spéciaux, attente réduite ---------- */
-  const KINDS = {gift:"🎁 Boosters offerts", special:"✨ Boosters spéciaux offerts", speed:"⚡ Attente réduite"};
+  const KINDS = {gift:"🎁 Boosters offerts", special:"✨ Boosters spéciaux offerts", card:"🃏 Carte exclusive offerte", speed:"⚡ Attente réduite"};
   const pad = n => String(n).padStart(2, "0");
   const localInput = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   const fmt = t => new Date(t).toLocaleString("fr-FR", {weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"});
@@ -139,6 +139,8 @@
     try{ list = await window.MF_RPC("mf_events_admin"); }
     catch(err){ body.innerHTML = /PGRST202|Could not find|does not exist/i.test(err.message) ? `<p class="shint mferr">Les événements ne sont pas encore installés : lance le script supabase-v3.sql dans Supabase.</p>` : `<p class="shint mferr">${esc(err.message)}</p>`; return; }
     const e = edit || {};
+    const ex = (window.MF_EXCL_CARDS ? window.MF_EXCL_CARDS() : []).sort((a, b) => (b.ev - a.ev) || a.name.localeCompare(b.name, "fr"));
+    const exName = k => { const c = ex.find(x => x.key === k); return c ? c.name : k; };
     const now = Date.now(), start = e.starts || now, end = e.ends || now + 2 * 86400000;
     const state = x => x.ends <= now ? "Terminé" : x.starts > now ? "À venir" : "En cours";
     body.innerHTML = `<form class="mfev" id="mfEvForm">
@@ -146,6 +148,7 @@
         <label><span>Nom</span><input id="evTitle" maxlength="60" required value="${esc(e.title || "")}" placeholder="Noël, Week-end turbo…"></label>
         <label><span>Type</span><select id="evKind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}" ${e.kind === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
         <label id="evBWrap"><span>Nombre de boosters</span><input id="evBoosters" type="number" min="1" max="20" value="${e.boosters || 2}"></label>
+        <label id="evCWrap"><span id="evCLab">Carte exclusive offerte</span><select id="evCard"></select></label>
         <label id="evHWrap"><span>Un booster toutes les… (heures)</span><input id="evHours" type="number" min="1" max="8" step="0.5" value="${e.hours || 4}"></label>
         <label><span>Début</span><input id="evStart" type="datetime-local" required value="${localInput(start)}"></label>
         <label><span>Fin</span><input id="evEnd" type="datetime-local" required value="${localInput(end)}"></label>
@@ -155,11 +158,15 @@
         <p class="shint full" id="evNote" role="status"></p>
       </form>
       <h3 class="mfh">Événements</h3>
-      ${list.length ? list.map(x => `<div class="sitem" style="display:grid;grid-template-columns:minmax(0,1fr)"><span class="sname">${esc(x.title)} <small style="display:block;line-height:1.45">${KINDS[x.kind]}${x.kind === "speed" ? ` · 1 toutes les ${x.hours} h` : ` · ${x.boosters} booster${x.boosters > 1 ? "s" : ""} · reçu par ${x.claims} joueur${x.claims > 1 ? "s" : ""}`}<br>${fmt(x.starts)} → ${fmt(x.ends)} · <b>${state(x)}</b>${x.message ? `<br>« ${esc(x.message)} »` : ""}</small></span>
+      ${list.length ? list.map(x => `<div class="sitem" style="display:grid;grid-template-columns:minmax(0,1fr)"><span class="sname">${esc(x.title)} <small style="display:block;line-height:1.45">${KINDS[x.kind]}${x.kind === "speed" ? ` · 1 toutes les ${x.hours} h` : `${x.kind === "card" ? "" : ` · ${x.boosters} booster${x.boosters > 1 ? "s" : ""}`}${x.card ? ` · 🃏 ${esc(exName(x.card))}` : ""} · reçu par ${x.claims} joueur${x.claims > 1 ? "s" : ""}`}<br>${fmt(x.starts)} → ${fmt(x.ends)} · <b>${state(x)}</b>${x.message ? `<br>« ${esc(x.message)} »` : ""}</small></span>
         <span class="mfbtns"><button class="sbtn" data-ed="${x.id}">Modifier</button><button class="sbtn" data-del="${x.id}">Supprimer</button></span></div>`).join("") : `<p class="shint">Aucun événement pour l'instant.</p>`}`;
     const kind = $("evKind");
-    const sync = () => { const sp = kind.value === "speed"; $("evBWrap").hidden = sp; $("evHWrap").hidden = !sp;
+    const fillCards = () => { const need = kind.value === "card";
+      $("evCard").innerHTML = (need ? "" : `<option value="">Aucune</option>`) + (ex.length ? ex.map(c => `<option value="${c.key}" ${e.card === c.key ? "selected" : ""}>${esc(c.name)}${c.ev ? "" : " (récompense « " + esc(c.cat) + " »)"}</option>`).join("") : `<option value="">Crée d'abord une carte exclusive dans le Studio</option>`);
+      $("evCLab").textContent = need ? "Carte exclusive offerte" : "Carte exclusive en plus (facultatif)"; };
+    const sync = () => { const sp = kind.value === "speed", cd = kind.value === "card"; $("evBWrap").hidden = sp || cd; $("evHWrap").hidden = !sp; $("evCWrap").hidden = sp; fillCards();
       $("evHelp").textContent = sp ? "Pendant l'événement, chaque joueur reçoit un booster plus souvent (au lieu de toutes les 8 h). Le stock reste limité à 3."
+        : cd ? "Chaque joueur reçoit la carte une fois, à sa prochaine visite pendant l'événement (avec une notification au début)."
         : kind.value === "special" ? "Booster spécial : les deux dernières cartes ont de bien meilleures chances (Épique minimum sur la dernière). Il passe avant les boosters normaux."
         : "Les boosters s'ajoutent au stock du joueur, même s'il est déjà plein."; };
     kind.addEventListener("change", sync); sync();
@@ -168,7 +175,8 @@
     $("mfEvForm").addEventListener("submit", async ev => {
       ev.preventDefault();
       const p = {id:e.id || null, title:$("evTitle").value.trim(), kind:kind.value, boosters:+$("evBoosters").value || 0, hours:+$("evHours").value || 8,
-        starts:new Date($("evStart").value).getTime(), ends:new Date($("evEnd").value).getTime(), message:$("evMsg").value.trim()};
+        starts:new Date($("evStart").value).getTime(), ends:new Date($("evEnd").value).getTime(), message:$("evMsg").value.trim(), card:$("evCard").value || null};
+      if (p.kind === "card" && !p.card){ $("evNote").innerHTML = `<span class="mferr">Choisis la carte à offrir.</span>`; return; }
       if (!(p.ends > p.starts)){ $("evNote").innerHTML = `<span class="mferr">La fin doit être après le début.</span>`; return; }
       try{ await window.MF_RPC("mf_event_save", {p}); renderEvents(); }
       catch(err){ $("evNote").innerHTML = `<span class="mferr">${esc(err.message)}</span>`; }
