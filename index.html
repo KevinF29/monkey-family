@@ -1629,6 +1629,8 @@ td.n{text-align:right}
     function play(k){const c=ctx();if(!c)return;const t=c.currentTime+.01;
       switch(k){
         case "tear":noise(c,t,.42,.5,900,5200,.8);noise(c,t+.05,.3,.25,2500,7000,2);break;
+        case "rip":noise(c,t,.07,.16,1500+Math.random()*900,5200+Math.random()*1800,1.1);break;
+        case "slide":noise(c,t,.32,.1,500,2600,.7);break;
         case "flip":noise(c,t,.09,.22,1800,4200,1.4);tone(c,520,t,.07,"triangle",.05,760);break;
         case "Rare":arp(c,t,[660,880],.08,.35,"triangle",.12);break;
         case "Épique":arp(c,t,[523,659,784,1047],.07,.45,"triangle",.12);noise(c,t+.25,.5,.08,6000,9000,3);break;
@@ -1638,7 +1640,7 @@ td.n{text-align:right}
         case "Originel":tone(c,60,t,1.2,"sine",.35,35);[0,.18,.36].forEach((d,i)=>arp(c,t+.2+d,[523*(1+i*.25),659*(1+i*.25),784*(1+i*.25)],0,1.4,"sine",.07));noise(c,t+.3,1.5,.08,6000,12000,3);break;
         case "coin":tone(c,988,t,.09,"square",.05);tone(c,1319,t+.08,.22,"square",.05);break;
         case "pop":tone(c,700,t,.08,"sine",.08,1100);break;}}
-    function vib(k){if(!PREFS.vib||!navigator.vibrate)return;const P={tear:25,flip:8,Rare:20,"Épique":[30,40,30],"Légendaire":[40,40,60],"Mythique":[80,50,120,50,160],"Secret":[60,40,100,40,140],"Originel":[100,60,100,60,250]};
+    function vib(k){if(!PREFS.vib||!navigator.vibrate)return;const P={rip:4,slide:10,tear:25,flip:8,Rare:20,"Épique":[30,40,30],"Légendaire":[40,40,60],"Mythique":[80,50,120,50,160],"Secret":[60,40,100,40,140],"Originel":[100,60,100,60,250]};
       if(P[k])try{navigator.vibrate(P[k]);}catch(e){}}
     return {play(k){try{play(k);}catch(e){}vib(k);}};})();
 
@@ -1990,18 +1992,19 @@ td.n{text-align:right}
       const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
       try{cv.setPointerCapture(e.pointerId);}catch(_){}
       st.sx=e.clientX;st.sy=e.clientY;st.moved=0;st.touch=isTouch(e);
-      if(st.touch){const P=packRect();
+      {const P=packRect();
         // the cutting band: from a bit above the pack down to just under the dotted line
         if(y>P.top-P.h*.18&&y<P.L.y+P.h*.16&&x>P.L.x-P.w*.35&&x<P.R.x+P.w*.35){
-          st.cut={x0:x,last:x,lastSpark:x};st.tminX=st.tmaxX=Math.max(P.L.x,Math.min(P.R.x,x));st.trail=1;st.px=st.py=0;st.guide=0;return;}
+          st.cut={x0:x,last:x,lastSpark:x,lastRip:x};st.tminX=st.tmaxX=Math.max(P.L.x,Math.min(P.R.x,x));st.trail=1;st.px=st.py=0;st.guide=0;return;}
       }
       st.drag=true;st.base=st.ry;st.baseX=st.rx;st.vy=st.vxr=0;st.samples=[{t:performance.now(),x:e.clientX,y:e.clientY}];cv.classList.add("drag");});
     cv.addEventListener("pointermove",e=>{const r=cv.getBoundingClientRect();
       if(st.cut){const P=packRect(),x=e.clientX-r.left,cxp=Math.max(P.L.x,Math.min(P.R.x,x));
         st.tminX=Math.min(st.tminX,cxp);st.tmaxX=Math.max(st.tmaxX,cxp);st.cut.last=x;
         if(Math.abs(x-st.cut.lastSpark)>10&&x>P.L.x-10&&x<P.R.x+10){st.cut.lastSpark=x;burst(x,P.L.y,reduce?1:4,["#ffffff","#ffd75e","#c4a2ff"],2.4,{up:1,stars:.5,size:2.5});}
-        const k=(st.tmaxX-st.tminX)/P.w;topG.rotation.x=-k*.35;topG.position.z=k*.04;
-        if(k>=.8){const dir=Math.sign(st.cut.last-st.cut.x0)||1;st.cut=null;api.onCut&&api.onCut(dir);}
+        if(Math.abs(x-st.cut.lastRip)>16&&x>P.L.x-10&&x<P.R.x+10){st.cut.lastRip=x;api.onRip&&api.onRip();}
+        const k=(st.tmaxX-st.tminX)/P.w,dir=Math.sign(st.cut.last-st.cut.x0)||1;peel(k,dir);
+        if(k>=.8){st.cut=null;api.onCut&&api.onCut(dir);}
         return;}
       if(!isTouch(e)){st.px=(e.clientX-r.left)/r.width-.5;st.py=(e.clientY-r.top)/r.height-.5;}
       if(!st.drag)return;
@@ -2010,9 +2013,14 @@ td.n{text-align:right}
       const dx=last.clientX-st.sx,dy=last.clientY-st.sy;st.moved=Math.max(st.moved,Math.hypot(dx,dy));
       st.try=st.base+dx*.011;st.trx=Math.max(-.55,Math.min(.55,st.baseX+dy*.005));
       const now=performance.now();st.samples.push({t:now,x:last.clientX,y:last.clientY});while(st.samples.length>2&&now-st.samples[0].t>90)st.samples.shift();});
+    /* the cut part of the strip lifts while the far end stays attached (hinge), like paper being torn open */
+    const peelS={k:0,dir:1};
+    function peel(k,dir){peelS.k=k;peelS.dir=dir;const hx=dir>0?PW/2:-PW/2,a=-dir*k*.32;
+      topG.rotation.set(-k*.45,0,a);topG.position.set(hx-Math.cos(a)*hx,tearY-Math.sin(a)*hx+k*.015,k*.06);}
     const up=e=>{
-      if(st.cut){st.cut=null;gsap.to(topG.rotation,{x:0,duration:.4,ease:"back.out(2)"});gsap.to(topG.position,{z:0,duration:.4});
-        if(st.tmaxX-st.tminX<6)api.onNudge&&api.onNudge();return;}
+      if(st.cut){const tiny=st.tmaxX-st.tminX<6;st.cut=null;
+        gsap.to(peelS,{k:0,duration:.45,ease:"back.out(2)",onUpdate:()=>peel(peelS.k,peelS.dir)});
+        if(tiny){if(st.touch)api.onNudge&&api.onNudge();else api.onTap&&api.onTap();}return;}
       if(!st.drag)return;st.drag=false;cv.classList.remove("drag");
       if(st.moved<8){if(st.touch)api.onNudge&&api.onNudge();else api.onTap&&api.onTap();return;}
       // throw: the pack keeps the speed of the finger, then slows down and settles facing you
@@ -2127,9 +2135,9 @@ td.n{text-align:right}
         .to(topG.position,{x:1.9*dir,y:tearY+1.1,z:.9,duration:D(.6),ease:"power2.out"},"<")
         .add(()=>gsap.to({o:1},{o:0,duration:D(.35),onUpdate(){setOpacity(topG,this.targets()[0].o);}}),"<.25")
         .add(()=>cb&&cb.onTorn&&cb.onTorn(),"<.05")
-        // the body tips back a little and slides down as the cards come out
-        .to(bodyG.rotation,{x:-.35,duration:D(.4),ease:"power2.out"},"<")
-        .to(bodyG.position,{y:-2.6,duration:D(.65),ease:"power2.in"},"<.15")
+        // the cards rise out of the opening, then the body tips back and drops away
+        .to(bodyG.rotation,{x:-.3,duration:D(.45),ease:"power2.out"},"<.55")
+        .to(bodyG.position,{y:-2.8,duration:D(.7),ease:"power2.in"},"<.1")
         .add(()=>gsap.to({o:1},{o:0,duration:D(.4),onUpdate(){setOpacity(bodyG,this.targets()[0].o);}}),"<.25")
         .add(()=>{api.hide();cb&&cb.onDone&&cb.onDone();},"+=.05");
       return true;
@@ -2138,6 +2146,9 @@ td.n{text-align:right}
     api.pulse=function(color,strength){burstL.color.set(color);gsap.fromTo(burstL,{intensity:(strength||1)*4},{intensity:0,duration:1.6,ease:"power2.out"});
       dustTint.set(color);dm.color.set(color);setTimeout(()=>dustTint.setRGB(.7,.75,1),2200);};
     api.dust=function(){return dm;};
+    /* where the opening (top edge of the body) is on screen, in page pixels: the cards are hidden below it while they come out */
+    api.mouthY=function(){packG.updateMatrixWorld();const p=screenOf(new T.Vector3(0,tearY,.05).applyMatrix4(bodyG.matrixWorld));return cv.getBoundingClientRect().top+p.y;};
+    api.mouth=function(){packG.updateMatrixWorld();const p=screenOf(new T.Vector3(0,tearY,.05).applyMatrix4(bodyG.matrixWorld)),r=cv.getBoundingClientRect();return {x:r.left+p.x,y:r.top+p.y};};
     api.pause=function(on){st.running=!on;};
     return api;
   })();
@@ -2150,8 +2161,10 @@ td.n{text-align:right}
   function applyPackMode(){stage.classList.toggle("is3d",use3d);if(use3d){if(mode==="pack")P3.show(false);}else P3.hide();}
   P3.onTap=()=>open();
   P3.onCut=dir=>open({cut:true,dir});
+  P3.onRip=()=>SFX.play("rip");
+  if(location.protocol==="file:")window.__P3=P3;  // local tests only
   P3.onNudge=()=>{setHint("Glisse le doigt sur le pointillé pour ouvrir");};
-  function packHint(){let empty=false;try{empty=limitOn()&&S.stock<=0;}catch(e){}if(empty){setHint(use3d?"Reviens quand le prochain booster sera prêt":"");return;}setHint(use3d?(P3.coarse?"Glisse le doigt sur le pointillé pour ouvrir":"Clique sur le paquet pour l'ouvrir · glisse pour le tourner"):"");}
+  function packHint(){let empty=false;try{empty=limitOn()&&S.stock<=0;}catch(e){}if(empty){setHint(use3d?"Reviens quand le prochain booster sera prêt":"");return;}setHint(use3d?(P3.coarse?"Glisse le doigt sur le pointillé pour ouvrir":"Découpe le pointillé à la souris ou clique pour ouvrir · glisse le paquet pour le tourner"):"");}
   function hidePack(){gsap.killTweensOf(pack);gsap.set(pack,{display:"none"});P3.hide();}
 
   function buildStack(cards){
@@ -2210,8 +2223,15 @@ td.n{text-align:right}
       gsap.set(els,{y:60,scale:.62,opacity:0,rotation:0});
       setHint("");
       P3.open({onTear:()=>SFX.play("tear"),onTorn:()=>{
-        gsap.timeline({onComplete:()=>{flipUp(shown[0],.5,()=>{busy=false;mode="stack";setHint("Touche ou glisse pour la carte suivante");setBtn("Carte suivante");});}})
-          .fromTo(els.slice().reverse(),{y:70,scale:.62,opacity:0,rotation:0},{y:(i)=>(els.length-1-i)*10,rotation:(i)=>[0,-4,4,-3,3][els.length-1-i]||0,scale:(i)=>1-(els.length-1-i)*.04,opacity:1,duration:D(.7),stagger:D(.07),ease:"back.out(1.4)"},"+=.12");
+        // the cards come out of the pack: hidden below the opening (clip) and rising, the clip follows the pack as it falls
+        const sr=stack.getBoundingClientRect(),ch=els[0].offsetHeight||400,m=P3.mouth();
+        const centre=sr.top+sr.height/2,startY=(m.y-centre)+ch/2+6,dx=m.x-(sr.left+sr.width/2);
+        const clip=()=>{const y=P3.mouthY()-sr.top;stack.style.clipPath=y<sr.height-2?`inset(-200px -200px ${Math.max(0,sr.height-y)}px -200px)`:"";};
+        clip();gsap.ticker.add(clip);
+        SFX.play("slide");
+        gsap.timeline({onComplete:()=>{gsap.ticker.remove(clip);stack.style.clipPath="";flipUp(shown[0],.5,()=>{busy=false;mode="stack";setHint("Touche ou glisse pour la carte suivante");setBtn("Carte suivante");});}})
+          .fromTo(els.slice().reverse(),{x:dx,y:startY,scale:.86,opacity:1,rotation:0},{x:0,y:(i)=>(els.length-1-i)*10,rotation:(i)=>[0,-4,4,-3,3][els.length-1-i]||0,scale:(i)=>1-(els.length-1-i)*.04,duration:D(.95),stagger:D(.05),ease:"power3.out"},"+=.05")
+          .add(()=>{},"+=.35");
       }},o&&o.cut?o:null);
       return;
     }
@@ -2464,7 +2484,7 @@ td.n{text-align:right}
     gsap.killTweensOf(b);gsap.timeline().fromTo(b,{opacity:0,scale:.6},{opacity:1,scale:1,duration:.4,ease:"back.out(2)"}).to(b,{opacity:0,y:-20,duration:.6,delay:1.2}).set(b,{y:0});}
 
   function backToPack(){
-    VOICE.stop();cancelAnimationFrame(foilRaf);stack.innerHTML="";shown=[];idx=0;parts=[];
+    VOICE.stop();cancelAnimationFrame(foilRaf);stack.innerHTML="";stack.style.clipPath="";shown=[];idx=0;parts=[];
     gsap.set("#dim",{opacity:0});ov.innerHTML="";bov.innerHTML="";stage.querySelectorAll(".zoom").forEach(z=>z.remove());
     if(use3d){P3.show(true);mode="pack";packHint();setBtn("Ouvrir le booster");renderPacks();return;}
     gsap.set(pack,{display:"block",x:0,y:0,rotation:0});gsap.set(pack.querySelectorAll(".top,.body"),{x:0,y:0,rotation:0,opacity:1});
