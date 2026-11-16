@@ -158,10 +158,12 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:150;height:var(--tabh);padding-bottom:env(safe-area-inset-bottom,0px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
   background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);box-sizing:border-box;padding-inline:max(0px,calc((100% - 620px)/2))}
 .tab{appearance:none;border:0;background:none;color:var(--muted);display:grid;place-items:center;align-content:center;gap:2px;font:600 12px var(--ui);cursor:pointer;position:relative;padding:6px 2px;min-width:0}
-.tab .ti{font-size:22px;line-height:1;filter:grayscale(.6);opacity:.8;transition:transform .2s}
+.tab .ti{font-size:22px;line-height:1;display:grid;place-items:center;height:26px;transition:transform .2s}
+.tab .ti .ic{width:25px;height:25px}
 .tab span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .tab.on{color:var(--accent)}
-.tab.on .ti{filter:none;opacity:1;transform:translateY(-2px) scale(1.08)}
+.tab.on .ti{transform:translateY(-2px) scale(1.08)}
+.tab.on .ti .ic{stroke-width:2.1}
 .tab.on::before{content:"";position:absolute;top:0;left:28%;right:28%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
 .tab:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:10px}
 .tab:disabled{opacity:.45;cursor:default}
@@ -178,6 +180,7 @@ html:has(body:not(.admin)),html:has(body.preview){background:#1a0f2e}
 .socialbtn{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));z-index:95;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
   background:rgba(20,18,32,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;font-size:21px;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .gearbtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 56px);font-size:19px}
+.socialbtn{display:grid;place-items:center;color:#ffd98a}
 .gearbtn.on{background:rgba(255,217,138,.35)}
 .socialbtn .sbadge{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#ff4b45;color:#fff;font:700 11px/19px var(--ui);text-align:center}
 body:has(.binder:not([hidden])) .socialbtn,body:has(.shop:not([hidden])) .socialbtn{display:none}
@@ -637,15 +640,15 @@ td.n{text-align:right}
 </div>
 
 <nav class="tabbar" aria-label="Navigation du jeu">
-  <button type="button" class="tab" id="binderBtn"><span class="ti" aria-hidden="true">📖</span><span>Classeur</span></button>
-  <button type="button" class="tab" id="marketBtn"><span class="ti" aria-hidden="true">🔄</span><span class="tbadge alert" id="mkBadge" aria-label="échanges possibles" hidden>0</span><span>Marché</span></button>
-  <button type="button" class="tab on" id="tabBooster" aria-current="page"><span class="ti" aria-hidden="true">🎴</span><span>Booster</span></button>
-  <button type="button" class="tab" id="rankBtn"><span class="ti" aria-hidden="true">🏆</span><span>Classement</span></button>
-  <button type="button" class="tab" id="shopBtn"><span class="ti" aria-hidden="true">🍌</span><span class="tbadge" id="banCount" aria-label="bananes">0</span><span>Boutique</span></button>
+  <button type="button" class="tab" id="binderBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12z"/><path d="M19 16h-12a2 2 0 0 0 -2 2"/><path d="M9 8h6"/></svg></span><span>Classeur</span></button>
+  <button type="button" class="tab" id="marketBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10h14l-4 -4"/><path d="M17 14h-14l4 4"/></svg></span><span class="tbadge alert" id="mkBadge" aria-label="échanges possibles" hidden>0</span><span>Marché</span></button>
+  <button type="button" class="tab on" id="tabBooster" aria-current="page"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.604 7.197l7.138 -3.109a.96 .96 0 0 1 1.27 .527l4.924 11.902a1 1 0 0 1 -.514 1.304l-7.137 3.109a.96 .96 0 0 1 -1.271 -.527l-4.924 -11.903a1 1 0 0 1 .514 -1.304z"/><path d="M15 4h1a1 1 0 0 1 1 1v3.5"/><path d="M20 6c.264 .112 .52 .217 .768 .315a1 1 0 0 1 .53 1.311l-2.298 5.374"/></svg></span><span>Booster</span></button>
+  <button type="button" class="tab" id="rankBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21l8 0"/><path d="M12 17l0 4"/><path d="M7 4l10 0"/><path d="M17 4v8a5 5 0 0 1 -10 0v-8"/><path d="M5 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M19 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/></svg></span><span>Classement</span></button>
+  <button type="button" class="tab" id="shopBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l18 0"/><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4"/><path d="M5 21l0 -10.15"/><path d="M19 21l0 -10.15"/><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/></svg></span><span class="tbadge" id="banCount" aria-label="bananes">0</span><span>Boutique</span></button>
 </nav>
 
-<button type="button" class="socialbtn" id="socialBtn" aria-label="Actu et chat" aria-expanded="false" aria-controls="social">💬<span class="sbadge" id="socialBadge" hidden></span></button>
-<button type="button" class="socialbtn gearbtn" id="setBtn" aria-label="Réglages" aria-expanded="false" aria-controls="settings">⚙️</button>
+<button type="button" class="socialbtn" id="socialBtn" aria-label="Actu et chat" aria-expanded="false" aria-controls="social"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"/></svg><span class="sbadge" id="socialBadge" hidden></span></button>
+<button type="button" class="socialbtn gearbtn" id="setBtn" aria-label="Réglages" aria-expanded="false" aria-controls="settings"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg></button>
 <aside id="social" class="social" aria-label="Actu et chat" hidden>
   <div class="sochead"><b>Entre potes</b><button type="button" class="socx" id="socClose" aria-label="Fermer">✕</button></div>
   <div class="soctabs" role="tablist"><button type="button" role="tab" id="socFeedTab" class="on" aria-selected="true">Actu<span class="dotn" id="feedN" hidden></span></button><button type="button" role="tab" id="socChatTab" aria-selected="false">Chat<span class="dotn" id="chatN" hidden></span></button></div>
