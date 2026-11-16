@@ -53,7 +53,7 @@ body:not(.admin) .mfadminrow{display:none!important}
 <button type="button" class="retry" hidden>Réessayer</button><div class="out"></div></div></div>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Bangers&family=Reggae+One&family=Mochiy+Pop+One&family=Permanent+Marker&family=Press+Start+2P&family=Cinzel:wght@900&family=Tilt+Neon&family=Orbitron:wght@900&family=Audiowide&family=Sedgwick+Ave+Display&family=VT323&family=Caveat:wght@700&family=Rye&family=Shippori+Mincho+B1:wght@800&family=Playfair+Display+SC:wght@700&family=Quicksand:wght@700&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Bangers&family=Reggae+One&family=Mochiy+Pop+One&family=Permanent+Marker&family=Press+Start+2P&family=Cinzel:wght@900&family=Tilt+Neon&family=Orbitron:wght@900&family=Audiowide&family=Sedgwick+Ave+Display&family=VT323&family=Caveat:wght@700&family=Rye&family=Berkshire+Swash&family=Shippori+Mincho+B1:wght@800&family=Playfair+Display+SC:wght@700&family=Quicksand:wght@700&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: a dark "opening table" stage on top (the same in both themes, like a game screen),
    test controls and stats below in the page's own light/dark palette. */
@@ -814,6 +814,7 @@ td.n{text-align:right}
     {name:"Fantasy (Cinzel)",css:"Cinzel, Georgia, serif"}
   ];
   let CARD_FONT=FONTS[0].css,CARD_W="";
+  const CANDY_FONT="'Berkshire Swash', Georgia, serif";  // Christmas cards with the candy-cane frame always use this title font
   const FULL={x:22,y:22,w:706,h:1006,r:26};
 
   /* ---------- shared drawing helpers ---------- */
@@ -1575,7 +1576,7 @@ td.n{text-align:right}
     c.save();shape(c,A);c.clip();const g=c.createLinearGradient(0,H-330,0,H-30);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.78)");c.fillStyle=g;c.fillRect(A.x,H-330,A.w,300);c.restore();
     const title=(o.title||"").trim();c.save();c.textAlign="center";c.textBaseline="alphabetic";
     c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText("CARTE EXCLUSIVE",W/2,H-142);
-    c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;c.font=`${CARD_W||400} 60px ${CARD_FONT}`;fitText(c,title,W-140,64,30);c.textBaseline="middle";fillTextSafe(c,title,W/2,H-104,"center");c.restore();
+    c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;const sf=CARD_FONT,sw=CARD_W;if(kind==="candy"){CARD_FONT=CANDY_FONT;CARD_W="";}c.font=`${CARD_W||400} 60px ${CARD_FONT}`;fitText(c,title,W-140,64,30);c.textBaseline="middle";fillTextSafe(c,title,W/2,H-104,"center");CARD_FONT=sf;CARD_W=sw;c.restore();
     // inner edge of the frame
     c.save();shape(c,A);c.lineWidth=5;c.strokeStyle=kind==="candy"?"#ffffff":kind==="frost"?"rgba(255,255,255,.95)":"#5c3a08";c.stroke();c.restore();
     c.save();rr(c,2,2,W-4,H-4,39);c.lineWidth=4;c.strokeStyle=kind==="candy"?"#8c1018":kind==="frost"?"#3d86b8":"#6b4510";c.stroke();c.restore();
@@ -3936,7 +3937,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   renderRates();renderStats();syncBananas();renderPacks();
   // each card style has its own font: load them, and redraw the cards on screen when they arrive
   if(document.fonts&&document.fonts.load){let rT=0;const again=()=>{clearTimeout(rT);rT=setTimeout(()=>shown.forEach(s=>paint(s.cv,s.c,0)),60);};
-    STYLES.forEach(s=>document.fonts.load(`${s.weight||""} 40px ${s.font}`.trim()).then(again).catch(()=>{}));}
+    STYLES.forEach(s=>document.fonts.load(`${s.weight||""} 40px ${s.font}`.trim()).then(again).catch(()=>{}));
+    document.fonts.load(`40px ${CANDY_FONT}`).then(()=>{again();try{BIND.repaint();}catch(e){}}).catch(()=>{});}
 })();
 </script>
 
