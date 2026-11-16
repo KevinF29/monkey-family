@@ -664,7 +664,7 @@ td.n{text-align:right}
         <label><span class="lab">Nom</span><input type="text" id="stNewName" maxlength="60" autocomplete="off" placeholder="Nom de la carte"></label>
         <label><span class="lab">Catégorie</span><select id="stNewCat"></select></label>
         <label><span class="lab">Rareté</span><select id="stNewRar"></select></label>
-        <label class="stexcl"><input type="checkbox" id="stNewExcl"> <span>Carte exclusive : récompense quand on complète la catégorie (jamais dans un booster)</span></label>
+        <label class="stexcl"><input type="checkbox" id="stNewExcl"> <span>Carte exclusive : offerte quand on complète la catégorie choisie ci-dessus. Rangée à la fin du classeur, dans « Cartes Exclusives », sans numéro ni rareté, jamais dans un booster.</span></label>
       </div>
       <div class="stnewfoot"><p class="shint" id="stNewNum" aria-live="polite"></p><button type="button" class="sbtn" id="stNewGo">Créer la carte</button></div>
       <p class="shint stnewmsg" id="stNewMsg" role="status"></p>
@@ -783,7 +783,9 @@ td.n{text-align:right}
     {key:"legendaire",name:"Légendaire",pips:5,sym:"star",mode:"half",foil:true,a:"#c08a0e",b:"#ffd75e",tx:"#ffc93c",ink:"#4a3000"},
     {key:"secret",name:"Secret",pips:0,secret:true,sym:"controller",mode:"full",foil:true,a:"#d9620b",b:"#ffb15c",tx:"#ff9a3c",ink:"#4a1d00"},
     {key:"mythique",name:"Mythique",pips:6,sym:"pint",mode:"full",foil:true,glow:true,glowC:"#ff3b30",glowEdge:"#ff6a5c",a:"#c10f18",b:"#ff4d40",tx:"#ff4b45",ink:"#3d0306"},
-    {key:"originel",name:"Originel",pips:7,sym:"monkey",mode:"full",foil:true,glow:true,a:"#ffffff",b:"#ffffff",tx:"#ffffff",ink:"#1b1030",rainbow:true}
+    {key:"originel",name:"Originel",pips:7,sym:"monkey",mode:"full",foil:true,glow:true,a:"#ffffff",b:"#ffffff",tx:"#ffffff",ink:"#1b1030",rainbow:true},
+    /* exclusive cards (collection rewards): outside the rarity system */
+    {key:"exclusive",name:"Exclusive",pips:0,sym:"none",mode:"full",foil:true,glow:true,glowC:"#ffd98a",glowEdge:"#ffe7b0",a:"#0d0b10",b:"#3a3340",tx:"#ffd98a",ink:"#0b0a0d",excl:true}
   ];
   /* Layout by rarity: Commune→Rare = style frame; Épique, Légendaire = full image below the title; Secret, Mythique, Originel = full art. */
   const modeOf=o=>RARITIES[o.rarity].mode;
@@ -821,7 +823,7 @@ td.n{text-align:right}
 
   /* Rarity symbols: commune = rond, peu commune = carré, rare = losange, épique = triangle,
      légendaire = étoile, secret = manette, mythique = pinte de bière, originel = tête de singe */
-  const SYM_W={circle:52,square:52,diamond:52,triangle:56,controller:66,star:56,pint:52,monkey:76};
+  const SYM_W={circle:52,square:52,diamond:52,triangle:56,controller:66,star:56,pint:52,monkey:76,none:0};
   const symW=i=>SYM_W[RARITIES[i].sym];
   function controller(c,x,y,fill,stroke){
     const s=1.15;c.save();c.translate(x,y);c.scale(s,s);
@@ -861,6 +863,7 @@ td.n{text-align:right}
   }
   function gem(c,R,right,cy,fill,stroke){
     c.save();const n=R.sym;
+    if(n==="none"){c.restore();return;}
     if(n==="circle"){c.beginPath();c.arc(right-26,cy,22,0,Math.PI*2);finish(c,fill,stroke);}
     else if(n==="square"){rr(c,right-46,cy-20,40,40,5);finish(c,fill,stroke);}
     else if(n==="controller"){controller(c,right-33,cy,fill,stroke);}
@@ -941,7 +944,7 @@ td.n{text-align:right}
     }
     c.restore();
   }
-  function pips(c,R,phase,y,o){
+  function pips(c,R,phase,y,o){if(R.excl)return;
     const right=o.right||W-60;
     /* Secret sits outside the rarity scale: a badge instead of the 7 points */
     if(R.secret){c.save();const bw=200,bh=34,x=right+10-bw,yy=y-bh/2;
@@ -1571,19 +1574,20 @@ td.n{text-align:right}
      numbered from its category and rarity: a card inserted in the middle shifts the following numbers */
   const CAT_SEQ=["Lieux mémorables","Heures perdues","Répliques Cultes","Running gags","Objets Cultes","Moments légendaires","Personnages"];
   const CAT_PFX={"Lieux mémorables":"L","Heures perdues":"H","Répliques Cultes":"R","Running gags":"G","Objets Cultes":"O","Moments légendaires":"M","Personnages":"P"};
-  const RANK=["Commune","Peu commune","Rare","Épique","Légendaire","Mythique","Originel","Secret"];
+  const RANK=["Commune","Peu commune","Rare","Épique","Légendaire","Mythique","Originel","Secret","Exclusive"];
+  const EXCL_CAT="Cartes Exclusives";
   const NEWKEY="mf-newcards-v1";
   const BUILT=new Set(CARDS.map(c=>slug(c.name)));
   let NEWCARDS=[],STORE_OK=true;
   try{localStorage.setItem(NEWKEY+"-t","1");NEWCARDS=JSON.parse(localStorage.getItem(NEWKEY)||"[]");if(!Array.isArray(NEWCARDS))NEWCARDS=[];}catch(e){STORE_OK=false;NEWCARDS=[];}
   const extraOf=list=>list.filter(n=>n&&typeof n.name==="string"&&n.name.trim()&&RANK.includes(n.rarity)&&typeof n.cat==="string"&&!BUILT.has(slug(n.name)));
   {const have=new Set(BUILT);extraOf(NEWCARDS).forEach(n=>{const k=slug(n.name);if(have.has(k))return;have.add(k);
-    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.rarity,created:n.id,excl:!!n.excl});});}
+    CARDS.push({num:"",cat:n.cat,name:n.name.trim(),rarity:n.excl?"Exclusive":n.rarity,created:n.id,excl:!!n.excl});});}
   function numberCards(list){
     const ci=c=>{const i=CAT_SEQ.indexOf(c.cat);return i<0?99:i;};
     const out=list.map((c,i)=>[c,i]).sort((a,b)=>ci(a[0])-ci(b[0])||a[0].cat.localeCompare(b[0].cat)||(!!a[0].excl-!!b[0].excl)||RANK.indexOf(a[0].rarity)-RANK.indexOf(b[0].rarity)||a[1]-b[1]).map(x=>x[0]);
     const cnt={},nums=new Map();
-    out.forEach(c=>{const p=CAT_PFX[c.cat]||((slug(c.cat)[0]||"x").toUpperCase());cnt[p]=(cnt[p]||0)+1;nums.set(c,p+String(cnt[p]).padStart(2,"0"));});
+    out.forEach(c=>{if(c.excl){nums.set(c,"");return;}const p=CAT_PFX[c.cat]||((slug(c.cat)[0]||"x").toUpperCase());cnt[p]=(cnt[p]||0)+1;nums.set(c,p+String(cnt[p]).padStart(2,"0"));});
     return {out,nums};}
   {const {out,nums}=numberCards(CARDS);out.forEach(c=>c.num=nums.get(c));CARDS.length=0;out.forEach(c=>CARDS.push(c));}
   CARDS.forEach((c,i)=>{c.id=i;c.r=RIDX[c.rarity];c.key="c-"+(slug(c.name)||("n"+i)).slice(0,120);c.orig=c.name;});
@@ -1909,7 +1913,7 @@ td.n{text-align:right}
   const colorOf=n=>{const R=RARITIES[RIDX[n]];return R.rainbow?"conic-gradient(#f55,#fd5,#5f8,#5cf,#a6f,#f55)":R.a;};
   function renderRates(){
     const f=v=>v?String(v).replace(".",","):"–";
-    const rows=RARITIES.map((R,i)=>`<tr><td><span class="dot" style="background:${colorOf(R.name)}"></span>${R.name}</td>${SLOTS.map(r=>`<td class="n">${f(r[i])}</td>`).join("")}<td class="n">${byR[i].length}</td></tr>`).join("");
+    const rows=RARITIES.filter(R=>!R.excl).map((R,i)=>`<tr><td><span class="dot" style="background:${colorOf(R.name)}"></span>${R.name}</td>${SLOTS.map(r=>`<td class="n">${f(r[i])}</td>`).join("")}<td class="n">${byR[i].length}</td></tr>`).join("");
     $("rates").innerHTML=`<tr><th>%</th>${SLOTS.map((_,k)=>`<th class="n">C${k+1}</th>`).join("")}<th class="n">Cartes</th></tr>${rows}`;
   }
   function renderStats(){
@@ -1917,7 +1921,7 @@ td.n{text-align:right}
     const diff=Object.keys(S.owned).length;$("k-coll").textContent=diff;$("k-coll-l").textContent=`cartes différentes sur ${CARDS.length}`;
     {const o=byR[RIDX.Originel];$("k-uni").textContent=`${o.filter(c=>S.owned[c.id]).length}/${o.length}`;}
     const total=Object.values(S.counts).reduce((a,b)=>a+b,0)||1;
-    $("counts").innerHTML=`<tr><th>Rareté</th><th class="n">Tirées</th><th class="n">Part</th><th class="n">Collection</th></tr>`+RARITIES.map((R,i)=>{
+    $("counts").innerHTML=`<tr><th>Rareté</th><th class="n">Tirées</th><th class="n">Part</th><th class="n">Collection</th></tr>`+RARITIES.filter(R=>!R.excl).map((R,i)=>{
       const n=S.counts[R.name]||0,got=byR[i].filter(c=>S.owned[c.id]).length;
       return `<tr><td><span class="dot" style="background:${colorOf(R.name)}"></span>${R.name}</td><td class="n">${n}</td><td class="n">${(n/total*100).toFixed(1).replace(".",",")} %</td><td class="n">${got}/${byR[i].length}</td></tr>`;}).join("");
     $("log").innerHTML=S.log.length?S.log.map(l=>`<div><span class="dot" style="background:${colorOf(l.rarity)}"></span><b>${esc(l.name)}</b><span class="hint">${l.rarity} · booster n° ${l.b}</span></div>`).join(""):`<p class="hint">Rien pour l'instant. Les Légendaires et au-dessus apparaîtront ici.</p>`;
@@ -2632,12 +2636,13 @@ td.n{text-align:right}
   const COVER_IMG=new Image();COVER_IMG.decoding="async";COVER_IMG.src=COVER_SRC;
   const BIND=(function(){
     const root=$("binder"),book=$("book"),leavesEl=$("leaves"),pageLbl=$("bpage"),prevB=$("bprev"),nextB=$("bnext");
-    const CAT_ORDER=["Lieux mémorables", "Heures perdues", "Répliques Cultes", "Running gags", "Objets Cultes", "Moments légendaires", "Personnages"];
+    const CAT_ORDER=["Lieux mémorables", "Heures perdues", "Répliques Cultes", "Running gags", "Objets Cultes", "Moments légendaires", "Personnages", EXCL_CAT];
+    const bcat=c=>c.excl?EXCL_CAT:c.cat;
     const nat=s=>parseInt(String(s).replace(/\D/g,""),10)||0;
-    const cats=[...CAT_ORDER.filter(c=>CARDS.some(x=>x.cat===c)),...[...new Set(CARDS.map(c=>c.cat))].filter(c=>!CAT_ORDER.includes(c))];
+    const cats=[...CAT_ORDER.filter(c=>CARDS.some(x=>bcat(x)===c)),...[...new Set(CARDS.map(bcat))].filter(c=>!CAT_ORDER.includes(c))];
     // pages: each category starts on a fresh page, 9 sleeves per page
     const PAGES=[];
-    cats.forEach(cat=>{const list=CARDS.filter(c=>c.cat===cat).sort((a,b)=>a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
+    cats.forEach(cat=>{const ci=c=>CAT_ORDER.indexOf(c.cat);const list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
       const n=Math.ceil(list.length/9);for(let i=0;i<n;i++)PAGES.push({cat,part:i+1,parts:n,cards:list.slice(i*9,i*9+9)});});
     const B={leaves:[],cur:0,spread:true,anim:false,open:false,pw:0};
     const scratch=document.createElement("canvas");scratch.width=750;scratch.height=1050;const sx=scratch.getContext("2d");
@@ -2647,9 +2652,9 @@ td.n{text-align:right}
       if(f.type==="cover")return `<div class="cover cover-img" role="img" aria-label="Classeur Monkey Family, ${CARDS.length} cartes"><img class="cimg" src="${COVER_SRC}" alt="" draggable="false"><div class="ccount">${CARDS.length} cartes</div><div class="copen">Touche pour ouvrir</div></div>`;
       if(f.type==="toc"){
         const firstPage={};PAGES.forEach((p,i)=>{if(firstPage[p.cat]===undefined)firstPage[p.cat]=i;});
-        const rows=cats.map(cat=>{const all=CARDS.filter(c=>c.cat===cat),got=all.filter(c=>S.owned[c.id]).length;
+        const rows=cats.map(cat=>{const all=CARDS.filter(c=>bcat(c)===cat),got=all.filter(c=>S.owned[c.id]).length;
           return `<button type="button" class="tocrow" data-page="${firstPage[cat]}"><span>${cat}</span><i style="--p:${all.length?got/all.length*100:0}%"></i><em>${got}/${all.length}</em><small>p. ${firstPage[cat]+1}</small></button>`;}).join("");
-        const rar=RARITIES.map((R,i)=>{const all=byR[i],got=all.filter(c=>S.owned[c.id]).length;
+        const rar=RARITIES.map((R,i)=>{const all=byR[i],got=all.filter(c=>S.owned[c.id]).length;if(R.excl&&!all.length)return "";
           return `<span class="rchip"><span class="dot" style="background:${colorOf(R.name)}"></span>${R.name} <b>${got}/${all.length}</b></span>`;}).join("");
         return `<div class="sheet toc"><div class="phead"><span>Sommaire</span><span>${ownedN()} / ${CARDS.length}</span></div>
           <div class="tocbody">${rows}<div class="rchips">${rar}</div><p class="tochint">Touche une catégorie pour y aller.</p></div></div>`;}
@@ -2909,7 +2914,7 @@ td.n{text-align:right}
           let y=header(x,W,L,Rr,top,"Sommaire",`${ownedN()} / ${CARDS.length}`)+W*.03;
           const firstPage={};PAGES.forEach((p,i)=>{if(firstPage[p.cat]===undefined)firstPage[p.cat]=i;});
           const rh=W*.1;
-          cats.forEach(cat=>{const all=CARDS.filter(c=>c.cat===cat),got=all.filter(c=>S.owned[c.id]).length;
+          cats.forEach(cat=>{const all=CARDS.filter(c=>bcat(c)===cat),got=all.filter(c=>S.owned[c.id]).length;
             rr(x,L,y,cw,rh,W*.018);x.fillStyle="rgba(43,36,51,.06)";x.fill();
             x.textAlign="right";x.font=`600 ${W*.03}px ${F_L}`;x.fillStyle="#6a6274";const pl=`p. ${firstPage[cat]+1}`;x.fillText(pl,Rr-W*.03,y+rh*.48);const plw=x.measureText(pl).width;
             x.font=`600 ${W*.036}px ${F_U}`;x.fillStyle="#4a4255";const gt=`${got}/${all.length}`;x.fillText(gt,Rr-W*.05-plw,y+rh*.48);const gw=x.measureText(gt).width;
@@ -2918,7 +2923,7 @@ td.n{text-align:right}
             if(got){rr(x,bx,by,Math.max(bh,bw*got/all.length),bh,bh/2);x.fillStyle="#6b3aa6";x.fill();}
             out.regions.push({x:L/W,y:y/H,w:cw/W,h:rh/H,act:"page",page:firstPage[cat]});y+=rh+W*.02;});
           y+=W*.02;let cx0=L;const fs=W*.03,lh=fs*1.7;x.font=`500 ${fs}px ${F_U}`;
-          RARITIES.forEach((R0,i)=>{const all=byR[i],got=all.filter(c=>S.owned[c.id]).length;const t1=R0.name+" ",t2=`${got}/${all.length}`;
+          RARITIES.forEach((R0,i)=>{const all=byR[i],got=all.filter(c=>S.owned[c.id]).length;if(R0.excl&&!all.length)return;const t1=(R0.excl?"Exclusives":R0.name)+" ",t2=`${got}/${all.length}`;
             x.font=`500 ${fs}px ${F_U}`;const w1=x.measureText(t1).width;x.font=`700 ${fs}px ${F_U}`;const w2=x.measureText(t2).width;const tw=fs*1.2+w1+w2;
             if(cx0+tw>Rr){cx0=L;y+=lh;}
             x.beginPath();x.arc(cx0+fs*.38,y+fs*.62,fs*.33,0,PI*2);x.fillStyle=fillColor(x,R0.name,cx0+fs*.38,y+fs*.62);x.fill();
@@ -3382,15 +3387,16 @@ td.n{text-align:right}
     /* ---- create a card right here: name + category + rarity, the number follows automatically ---- */
     const allCats=[...new Set([...CAT_SEQ,...CARDS.map(c=>c.cat)])];
     allCats.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;$("stNewCat").appendChild(o);});
-    RANK.forEach(r=>{const o=document.createElement("option");o.value=r;o.textContent=r;$("stNewRar").appendChild(o);});
+    RANK.filter(r=>r!=="Exclusive").forEach(r=>{const o=document.createElement("option");o.value=r;o.textContent=r;$("stNewRar").appendChild(o);});
+    $("stNewExcl").addEventListener("change",()=>{const on=$("stNewExcl").checked;$("stNewRar").disabled=on;$("stNewCat").previousElementSibling.textContent=on?"Récompense de la catégorie":"Catégorie";});
     const nameTaken=n=>{const k=slug(n);return !!k&&CARDS.some(c=>slug(c.name)===k||slug(c.orig)===k);};
     function previewNew(){const name=$("stNewName").value.trim(),cat=$("stNewCat").value,rarity=$("stNewRar").value;
-      const tmp={num:"",cat,name:name||"…",rarity,excl:$("stNewExcl").checked};const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
+      const tmp={num:"",cat,name:name||"…",rarity,excl:$("stNewExcl").checked};if(tmp.excl){$("stNewNum").textContent=`Carte exclusive, récompense de « ${cat} » : sans numéro, à la fin du classeur.`;$("stNewGo").disabled=!name;return;}const {nums}=numberCards([...CARDS,tmp]);const n=nums.get(tmp);
       const shifted=CARDS.filter(c=>c.cat===cat&&nums.get(c)!==c.num).length;
       $("stNewNum").textContent=`Elle sera la carte ${n}`+(shifted?` · ${shifted} carte${shifted>1?"s":""} de « ${cat} » ${shifted>1?"seront renumérotées":"sera renumérotée"} après elle.`:".");
       $("stNewGo").disabled=!name;}
     ["input","change"].forEach(t=>["stNewName","stNewCat","stNewRar","stNewExcl"].forEach(id=>$(id).addEventListener(t,()=>{$("stNewMsg").textContent="";previewNew();})));
-    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),cat=$("stNewCat").value,rarity=$("stNewRar").value,excl=$("stNewExcl").checked;
+    async function createCard(){const name=$("stNewName").value.trim().replace(/\s+/g," "),cat=$("stNewCat").value,excl=$("stNewExcl").checked,rarity=excl?"Exclusive":$("stNewRar").value;
       const msg=t=>$("stNewMsg").textContent=t;
       if(!name)return msg("Donne un nom à la carte.");
       if(!slug(name))return msg("Le nom doit contenir au moins une lettre ou un chiffre.");
@@ -3453,7 +3459,7 @@ td.n{text-align:right}
       if(tab==="recycle")renderRecycle();else renderStyles();
     }
     function renderRecycle(){
-      const rows=RARITIES.map((R,i)=>{const list=byR[i],n=list.reduce((s,c)=>s+dupes(c),0);return {R,n,v:n*RECYCLE[R.name]};});
+      const rows=RARITIES.filter(R=>!R.excl).map((R,i)=>{const list=byR[i],n=list.reduce((s,c)=>s+dupes(c),0);return {R,n,v:n*RECYCLE[R.name]};});
       const total=rows.reduce((s,r)=>s+r.v,0),count=rows.reduce((s,r)=>s+r.n,0);
       body.innerHTML=`<p class="shint">Tu gardes toujours un exemplaire de chaque carte : seuls les doubles sont recyclés.</p>
         <table class="stable"><tr><th>Rareté</th><th class="n">Doubles</th><th class="n">🍌 / carte</th><th class="n">Total</th><th></th></tr>
