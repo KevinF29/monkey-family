@@ -396,7 +396,7 @@ td.n{text-align:right}
 .cltitle{margin:0;font-family:var(--display);font-size:clamp(28px,8vw,46px);line-height:1.05;color:#fff;text-shadow:0 0 24px rgba(255,215,94,.55)}
 .celeb.ult .cltitle{font-family:'Cinzel',Georgia,serif;font-weight:900;letter-spacing:.04em;background:linear-gradient(180deg,#fffbe0 0%,#ffe27a 30%,#d79a1e 52%,#fff1a8 64%,#b8740c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 2px 0 #5a3400) drop-shadow(0 0 18px rgba(255,200,60,.6))}
 .clstage{position:relative;width:min(62vw,calc(min(52svh,470px)*750/1050));aspect-ratio:750/1050;perspective:1400px;margin:6px 0}
-.clflip{position:absolute;inset:0;transform-style:preserve-3d;opacity:0;pointer-events:none}
+.clflip{position:absolute;top:0;bottom:0;transform-style:preserve-3d;opacity:0;pointer-events:none}
 .clback,.clfront{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:4%/3%;overflow:hidden}
 .clfront{transform:rotateY(180deg);box-shadow:0 0 0 2px rgba(255,215,94,.5),0 18px 60px rgba(0,0,0,.6),0 0 70px rgba(255,215,94,.35)}
 .celeb.ult .clfront{box-shadow:0 0 0 3px #ffd75e,0 18px 60px rgba(0,0,0,.6),0 0 110px rgba(255,200,60,.7)}
@@ -784,7 +784,7 @@ td.n{text-align:right}
 <div id="celeb" class="celeb" role="dialog" aria-modal="true" aria-labelledby="clTitle" hidden>
   <canvas class="clfx" aria-hidden="true"></canvas><div class="clrays" aria-hidden="true"></div><div class="clrays two" aria-hidden="true"></div>
   <div class="clbox"><p class="clkick" id="clKick"></p><h2 class="cltitle" id="clTitle"></h2>
-    <div class="clstage"><div class="clflip"><div class="clback" aria-hidden="true"><span>🐒</span></div><div class="clfront"></div></div><div class="cltrophy" aria-hidden="true">🏆</div></div>
+    <div class="clstage"><div class="cltrophy" aria-hidden="true">🏆</div></div>
     <p class="cltext" id="clText"></p><button type="button" class="sbtn big" id="clOk">Découvrir ma récompense</button></div>
 </div>
 
@@ -1622,7 +1622,7 @@ td.n{text-align:right}
     // name at the bottom, on a soft dark fade so it reads on any picture
     c.save();shape(c,A);c.clip();const g=c.createLinearGradient(0,H-330,0,H-30);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.78)");c.fillStyle=g;c.fillRect(A.x,H-330,A.w,300);c.restore();
     const title=(o.title||"").trim();c.save();c.textAlign="center";c.textBaseline="alphabetic";
-    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText(ult?"CARTE ULTIME":"CARTE EXCLUSIVE",W/2,ban?H-176:H-142);
+    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText(ult?"CARTE ULTIME":kind==="banana"&&o.cat?String(o.cat).toUpperCase():"CARTE EXCLUSIVE",W/2,ban?H-176:H-142);
     c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;const sf=CARD_FONT,sw=CARD_W;if(kind==="candy"||kind==="banana"){CARD_FONT=kind==="candy"?CANDY_FONT:BANANA_FONT;CARD_W="";}if(ult){CARD_FONT=ULT_FONT;CARD_W="900";}c.font=`${CARD_W||400} 60px ${CARD_FONT}`;const fsz=fitText(c,title,ban?W-210:W-140,ult?58:64,30);c.textBaseline="middle";
     if(ult){const ty=H-134;// gold letters: dark outline glow, then a metallic gradient, then a thin light rim
       c.shadowColor="rgba(60,30,0,.95)";c.shadowBlur=10;c.fillStyle="#5a3400";fillTextSafe(c,title,W/2,ty+2,"center");c.shadowColor="rgba(255,200,60,.55)";c.shadowBlur=18;
@@ -1839,7 +1839,7 @@ td.n{text-align:right}
   /* ---------- drawing ---------- */
   let testStyle=null; // "Essayer un style": preview only, never saved
   const cardOpts=(c,ph,form)=>{const st=testStyle??S.style;
-    const o={style:st,font:-1,rarity:c.r,title:c.name.trim(),subtitle:"",num:c.num,img:null,zoom:1,ox:0,oy:0,fill:"plain",phase:ph||0,forExport:true,frame:c.frame||""};
+    const o={style:st,font:-1,rarity:c.r,title:c.name.trim(),subtitle:"",num:c.num,img:null,zoom:1,ox:0,oy:0,fill:"plain",phase:ph||0,forExport:true,frame:c.frame||"",cat:c.cat};
     let a=null;try{a=artOpts(c,st,form);}catch(e){}
     if(a)Object.assign(o,a);else if(typeof LENTI!=="undefined"&&LENTI.has(c.id))o.img=LENTI.get(c.id).B;
     return o;};
@@ -2773,7 +2773,12 @@ td.n{text-align:right}
     const cats=[...CAT_ORDER.filter(c=>c===EXCL_CAT||CARDS.some(x=>bcat(x)===c)),...[...new Set(CARDS.map(bcat))].filter(c=>!CAT_ORDER.includes(c))];
     // pages: each category starts on a fresh page, 9 sleeves per page
     const PAGES=[];
-    cats.forEach(cat=>{const ci=c=>{const i=CAT_ORDER.indexOf(c.cat);return i<0?99:i;};const list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
+    cats.forEach(cat=>{const ci=c=>{const i=CAT_ORDER.indexOf(c.cat);return i<0?99:i;};let list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
+      if(cat===EXCL_CAT){/* first page: the ultimate card ("La famille") in the middle, the category rewards around it; event cards on the next pages */
+        const ult=list.filter(c=>c.cat===ULT_CAT),rew=list.filter(c=>!c.ev&&c.cat!==ULT_CAT),evs=list.filter(c=>c.ev);
+        const mid=ult.length?ult.shift():null,first=Array(9).fill(null),ring=[0,1,2,3,5,6,7,8];
+        if(mid)first[4]=mid;ring.forEach((k,i)=>{if(rew[i])first[k]=rew[i];});
+        list=first.concat(rew.slice(8),ult,evs);while(list.length>9&&list.length%9&&list[list.length-1]===null)list.pop();}
       const n=cat===EXCL_CAT?Math.max(2,Math.ceil(list.length/9)):Math.ceil(list.length/9);  // 2 pages kept ready for the exclusive cards to come
       for(let i=0;i<n;i++)PAGES.push({cat,part:i+1,parts:n,cards:list.slice(i*9,i*9+9)});});
     const B={leaves:[],cur:0,spread:true,anim:false,open:false,pw:0};
@@ -2791,7 +2796,7 @@ td.n{text-align:right}
         return `<div class="sheet toc"><div class="phead"><span>Sommaire</span><span>${ownedN()} / ${CARDS.length}</span></div>
           <div class="tocbody">${rows}<div class="rchips">${rar}</div><p class="tochint">Touche une catégorie pour y aller.</p></div></div>`;}
       if(f.type==="page"){const p=PAGES[f.i];
-        const slots=p.cards.map(c=>{const n=S.owned[c.id]||0,R=RARITIES[c.r];
+        const slots=p.cards.map(c=>{if(!c)return `<div class="slot none"></div>`;const n=S.owned[c.id]||0,R=RARITIES[c.r];
           if(!n)return `<div class="slot empty${c.excl?" excl":""}"><span class="snum">${c.num}</span><span class="sq">${c.excl?"🏆":"?"}</span><span class="sdot" style="background:${colorOf(c.rarity)}"></span></div>`;
           return `<button type="button" class="slot got${R.foil?" foil":""}" data-id="${c.id}" aria-label="${c.name.trim()}, ${c.rarity}"><canvas width="240" height="336" data-id="${c.id}"></canvas>${n>1?`<span class="cnt">×${n}</span>`:""}${(S.fresh||[]).includes(c.id)?`<span class="new">Nouveau</span>`:""}</button>`;}).join("");
         const pad=Array.from({length:9-p.cards.length},()=>`<div class="slot none"></div>`).join("");
@@ -3700,10 +3705,10 @@ td.n{text-align:right}
   {const sel=$("tceleb"),cats=["Lieux mémorables","Heures perdues","Répliques Cultes","Running gags","Objets Cultes","Moments légendaires","Personnages"].filter(k=>CAT_MUSIC[k]);
     sel.innerHTML=cats.map(c=>`<option value="${esc(c)}">Catégorie : ${esc(c)}</option>`).join("")+`<option value="${esc(ULT_CAT)}">👑 Carte ultime (toute la collection)</option>`;
     $("tcelebGo").addEventListener("click",()=>{const cat=sel.value,ul=cat===ULT_CAT;
-      let c=CARDS.find(x=>x.excl&&x.cat===cat);
-      if(!c){c={key:"__test-"+cat,id:-1,num:"",cat,name:ul?"Carte ultime (test)":"Carte exclusive (test)",rarity:"Exclusive",r:RIDX.Exclusive,excl:true,frame:ul?"goldbanana":"banana",ev:false};banFrame(c.frame);}
-      if(CAT_MUSIC[cat]&&!CSND[c.key])CSND[c.key]=CAT_MUSIC[cat];
-      CELEB.show({kind:"collection",cat,boosters:ul?0:3,ultimate:ul},[c],ul);});}
+      let cs=CARDS.filter(x=>x.excl&&!x.ev&&x.cat===cat);
+      if(!cs.length){cs=[{key:"__test-"+cat,id:-1,num:"",cat,name:ul?"Carte ultime (test)":"Carte exclusive (test)",rarity:"Exclusive",r:RIDX.Exclusive,excl:true,frame:ul?"goldbanana":"banana",ev:false}];banFrame(cs[0].frame);}
+      cs.forEach(c=>{if(CAT_MUSIC[cat]&&!CSND[c.key])CSND[c.key]=CAT_MUSIC[cat];});
+      CELEB.show({kind:"collection",cat,boosters:ul?0:3,ultimate:ul},cs,ul);});}
   $("unlockEx").addEventListener("click",async()=>{const ex=CARDS.filter(c=>c.excl);if(!ex.length){say("Aucune carte exclusive pour l'instant : crée-les dans le Studio.");return;}
     if(!SRV){ex.forEach(c=>{if(!S.owned[c.id])S.owned[c.id]=1;});save();renderStats();try{BIND.repaint();}catch(e){}say(`${ex.length} carte${ex.length>1?"s":""} exclusive${ex.length>1?"s":""} débloquée${ex.length>1?"s":""} (test).`);return;}
     const b=$("unlockEx");b.disabled=true;
@@ -3876,10 +3881,13 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   setInterval(renderEvents,60000);
   /* ---------- cadeaux reçus (événement, catégorie complète) ---------- */
   /* ---------- category complete / whole collection: a celebration, the reward card flips in and its music starts ---------- */
-  const CELEB=(function(){const root=$("celeb"),cv=root.querySelector(".clfx"),cx=cv.getContext("2d"),flip=root.querySelector(".clflip"),front=root.querySelector(".clfront"),
+  const CELEB=(function(){const root=$("celeb"),cv=root.querySelector(".clfx"),cx=cv.getContext("2d"),stg=root.querySelector(".clstage"),
       troph=root.querySelector(".cltrophy"),rays=[...root.querySelectorAll(".clrays")],ok=$("clOk"),box=root.querySelector(".clbox");
     const flash=document.createElement("div");flash.style.cssText="position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4";root.appendChild(flash);
-    let P=[],raf=0,stage=0,done=null,cur=null,ul=false,g0=null,tw=[],timers=[];
+    let P=[],raf=0,stage=0,done=null,cur=null,all=[],flips=[],ul=false,g0=null,tw=[],timers=[];
+    /* one flipping card per reward (Personnages gives two), side by side, as big as the screen allows */
+    function lay(){const n=Math.max(1,flips.length),gap=12,maxH=Math.min(H()*.52,470),cw=Math.max(80,Math.min((W()*.92-(n-1)*gap)/n,maxH*750/1050,W()*.62));
+      stg.style.width=(n*cw+(n-1)*gap)+"px";stg.style.height=(cw*1050/750)+"px";stg.style.aspectRatio="auto";flips.forEach((f,i)=>{f.style.left=(i*(cw+gap))+"px";f.style.width=cw+"px";});}
     const R=Math.random,W=()=>innerWidth,H=()=>innerHeight,N=n=>reduce?Math.round(n/4):n;
     function size(){const d=Math.min(2,devicePixelRatio||1);cv.width=W()*d;cv.height=H()*d;cx.setTransform(d,0,0,d,0,0);}
     function draw(){cx.clearRect(0,0,W(),H());P=P.filter(p=>p.life>0&&p.y<H()+80);
@@ -3896,16 +3904,20 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     function bananas(n){for(let i=0;i<N(n);i++)P.push({k:"ban",x:R()*W(),y:-40-R()*H()*.8,vx:(R()-.5)*1.2,vy:2+R()*3,g:.02,drag:.995,rot:R()*6,vr:(R()-.5)*.12,life:5,decay:.002,s:30+R()*28});}
     const GOLD=["#ffd75e","#fff1a8","#ffb627","#ffffff"],CONF=["#ffd75e","#a066ff","#ff5fa2","#5fd4ff","#ffffff","#7dff9b"];
     function clear(){tw.forEach(t=>t&&t.kill());tw=[];timers.forEach(clearInterval);timers=[];}
-    function show(g,cards,isUlt){return new Promise(res=>{done=res;g0=g;ul=!!isUlt;cur=(ul?cards.find(c=>c.cat===ULT_CAT):cards.find(c=>VOICE.hasMusic(c.key)))||cards[0]||null;
+    function show(g,cards,isUlt){return new Promise(res=>{done=res;g0=g;ul=!!isUlt;all=ul?cards.filter(c=>c.cat===ULT_CAT):cards.slice();if(!all.length)all=cards.slice();
+      cur=all.find(c=>VOICE.hasMusic(c.key))||all[0]||null;
       clear();root.classList.toggle("ult",ul);root.style.opacity="";root.hidden=false;size();P=[];run();stage=1;
       $("clKick").textContent=ul?"Collection complète":"Catégorie complète";
       $("clTitle").textContent=ul?"Les rois d'la jungle":g.cat;
       $("clText").innerHTML=ul?"Tu as <b>toutes les cartes du jeu</b> !":`Tu as toutes les cartes de <b>${esc(g.cat)}</b> !`;
-      troph.textContent=ul?"👑":"🏆";front.innerHTML="";
-      if(cur){const k=document.createElement("canvas");k.width=750*ZOOM_K;k.height=1050*ZOOM_K;k.setAttribute("role","img");k.setAttribute("aria-label",cur.name.trim());front.appendChild(k);paint(k,cur,0);setTimeout(()=>paint(k,cur,0),800);
-        if(VOICE.hasMusic(cur.key))VOICE.prep(cur.key);}
-      gsap.set(flip,{opacity:0,rotationY:0,scale:.6,y:0});gsap.set(troph,{opacity:1,scale:1,rotation:0});gsap.set(rays,{opacity:0,rotation:0});
-      ok.disabled=false;ok.textContent=cur?(ul?"Découvrir la carte ultime":"Découvrir ma récompense"):"Super !";
+      troph.textContent=ul?"👑":"🏆";flips.forEach(f=>f.remove());
+      flips=all.map(c=>{const f=document.createElement("div");f.className="clflip";f.innerHTML=`<div class="clback" aria-hidden="true"><span>🐒</span></div><div class="clfront"></div>`;
+        const k=document.createElement("canvas");k.width=750*ZOOM_K;k.height=1050*ZOOM_K;k.setAttribute("role","img");k.setAttribute("aria-label",c.name.trim());f.querySelector(".clfront").appendChild(k);
+        stg.insertBefore(f,troph);paint(k,c,0);setTimeout(()=>paint(k,c,0),800);return f;});
+      lay();if(cur&&VOICE.hasMusic(cur.key))VOICE.prep(cur.key);
+      flips.forEach(f=>f.querySelector(".clback span").style.fontSize=Math.min(170,f.offsetWidth*.5)+"px");
+      gsap.set(flips,{opacity:0,rotationY:0,scale:.6,y:0});gsap.set(troph,{opacity:1,scale:1,rotation:0});gsap.set(rays,{opacity:0,rotation:0});
+      ok.disabled=false;ok.textContent=cur?(ul?"Découvrir la carte ultime":all.length>1?"Découvrir mes récompenses":"Découvrir ma récompense"):"Super !";
       gsap.fromTo(box,{opacity:0,y:24},{opacity:1,y:0,duration:.5,ease:"power2.out"});
       gsap.fromTo(troph,{scale:.2,rotation:-20},{scale:1,rotation:0,duration:.8,ease:"back.out(2)"});
       tw.push(gsap.to(troph,{scale:1.1,duration:.7,yoyo:true,repeat:-1,ease:"sine.inOut",delay:.8}));
@@ -3920,13 +3932,13 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         .call(()=>{spark(x,y,ul?170:100,ul?GOLD:CONF,ul?10:7);confetti(ul?170:100,ul?GOLD.concat(CONF):CONF);if(ul)bananas(45);})
         .to(flash,{opacity:ul?.9:.55,duration:.08}).to(flash,{opacity:0,duration:ul?.9:.5})
         .to(rays,{opacity:1,duration:.7},"<")
-        .fromTo(flip,{opacity:1,rotationY:0,scale:ul?.35:.55,y:ul?-H()*.55:0},{rotationY:180+360*turns,scale:1,y:0,duration:ul?2:1.25,ease:"power3.out"},ul?"<-0.6":"<-0.4")
+        .fromTo(flips,{opacity:1,rotationY:0,scale:ul?.35:.55,y:ul?-H()*.55:0},{rotationY:180+360*turns,scale:1,y:0,duration:ul?2:1.25,ease:"power3.out",stagger:.25},ul?"<-0.6":"<-0.4")
         .call(()=>{spark(x,y,ul?120:60,GOLD,ul?8:5);
           $("clText").innerHTML=ul?(cur?`Voici <b>${esc(cur.name.trim())}</b>, la carte ultime !`:"Tu es le roi de la jungle !")
-            :`Tu gagnes <b>${g0.boosters||0} booster${(g0.boosters||0)>1?"s":""}</b>${cur?` et la carte exclusive <b>${esc(cur.name.trim())}</b>`:""} !`;
+            :`Tu gagnes <b>${g0.boosters||0} booster${(g0.boosters||0)>1?"s":""}</b>${all.length>1?` et les cartes exclusives ${all.map(c=>`<b>${esc(c.name.trim())}</b>`).join(" et ")}`:cur?` et la carte exclusive <b>${esc(cur.name.trim())}</b>`:""} !`;
           gsap.fromTo($("clText"),{opacity:0,y:8},{opacity:1,y:0,duration:.4});ok.textContent="Super !";ok.disabled=false;stage=3;ok.focus();});
       tw.push(gsap.to(rays[0],{rotation:360,duration:28,repeat:-1,ease:"none"}),gsap.to(rays[1],{rotation:-360,duration:44,repeat:-1,ease:"none"}));
-      tw.push(gsap.to(flip,{y:-8,duration:1.6,yoyo:true,repeat:-1,ease:"sine.inOut",delay:ul?2.2:1.5}));
+      tw.push(gsap.to(flips,{y:-8,duration:1.6,yoyo:true,repeat:-1,ease:"sine.inOut",delay:ul?2.2:1.5,stagger:.3}));
       // the celebration goes on while the music plays
       const t0=performance.now();
       timers.push(setInterval(()=>{const el=performance.now()-t0;if(el>(ul?12000:5000))return;
@@ -3936,7 +3948,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       gsap.to(root,{opacity:0,duration:.45,onComplete:()=>{root.hidden=true;root.style.opacity="";P=[];const d=done;done=null;d&&d();}});}
     ok.addEventListener("click",()=>{if(stage===1&&cur)reveal();else if(stage===1||stage===3)close();});
     root.addEventListener("keydown",e=>{if(e.key==="Escape"&&stage!==2)close();});
-    window.addEventListener("resize",()=>{if(!root.hidden)size();});
+    window.addEventListener("resize",()=>{if(!root.hidden){size();lay();}});
     return {show};})();
 
   const GIFTS=(function(){const root=$("giftpop");let q=[],inCeleb=false;
