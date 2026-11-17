@@ -376,6 +376,7 @@ td.n{text-align:right}
 .packs b .spk{color:#ffd98a;opacity:1;padding-left:4px}
 .packs b .xpk{color:#ff8f8a;opacity:1;padding-left:4px}
 .stage.xmas{box-shadow:inset 0 0 0 2px rgba(232,50,47,.75),inset 0 0 90px rgba(232,50,47,.3)}
+.stage.neon{box-shadow:inset 0 0 0 2px rgba(62,232,255,.7),inset 0 0 90px rgba(177,107,255,.35)}
 .stage.xmas::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.6;
   background-image:radial-gradient(2.5px 2.5px at 20px 30px,#fff 50%,transparent 60%),radial-gradient(2px 2px at 90px 120px,#fff 50%,transparent 60%),radial-gradient(3px 3px at 150px 60px,#fff 50%,transparent 60%),radial-gradient(1.8px 1.8px at 60px 160px,#fff 50%,transparent 60%),radial-gradient(2.2px 2.2px at 130px 170px,#fff 50%,transparent 60%);
   background-size:180px 180px;animation:mfsnow 14s linear infinite}
@@ -2051,7 +2052,7 @@ td.n{text-align:right}
   pack.style.setProperty("--packimg",`url(${PACK_SRC[0]})`);pack.classList.add("art");
   const PACK_AR=1226/720, PACK_TEAR=.93;
   /* exclusive boosters (event): their own wrapper, same size as the normal one */
-  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël"}};
+  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël",ico:"🎄"},gaming:{src:["packs/gaming-front.webp","packs/gaming-back.webp"],name:"Booster de lancement",ico:"🎮"}};
   const skinImgs={};
   function skinLoad(k){if(!SKINS[k])return null;if(!skinImgs[k]){const imgs=SKINS[k].src.map(u=>{const i=new Image();i.decoding="async";i.src=u;return i;});
     skinImgs[k]={imgs,ready:Promise.all(imgs.map(i=>i.decode?i.decode().catch(()=>{}):new Promise(r=>{i.onload=i.onerror=r;})))};}return skinImgs[k];}  // height/width of the wrapper; the tear line sits just under the top crimp
@@ -2342,7 +2343,7 @@ td.n{text-align:right}
 
   let curSkin="";
   function setSkin(k){k=SKINS[k]?k:"";if(k===curSkin)return;curSkin=k;pack.style.setProperty("--packimg",`url(${k?SKINS[k].src[0]:PACK_SRC[0]})`);
-    if(k)skinLoad(k);P3.skin&&P3.skin(k?skinLoad(k):null);stage.classList.toggle("xmas",k==="noel");}
+    if(k)skinLoad(k);P3.skin&&P3.skin(k?skinLoad(k):null);stage.classList.toggle("xmas",k==="noel");stage.classList.toggle("neon",k==="gaming");}
   let use3d=P3.ok;
   try{if(localStorage.getItem(KEY+"-3d")==="0")use3d=false;}catch(e){}
   $("three3d").checked=use3d;$("three3d").disabled=!P3.ok;
@@ -2447,8 +2448,10 @@ td.n{text-align:right}
   /* exclusive booster: every card is flipped with a festive burst, the last one with the big finish */
   function xmasReveal(s,last){const p=center(s.el),k=shown.indexOf(s)+1;
     try{SFX.play(last?"Légendaire":"Épique");}catch(e){}
-    burst(p.x,p.y,last?130:55,["#ffffff","#ff4b45","#ffd75e","#3fcf72"],last?7:4.5,{up:1.2,stars:.6});
-    if(last){rays("#ffd75e",2.6);setTimeout(()=>burst(p.x,p.y,90,["#ffffff","#dff3ff"],5,{ring:true,g:.02,stars:.8}),300);banner(curSkin==="noel"?"JOYEUX NOËL !":"EXCLUSIVE !",curSkin==="noel"?"#ff3b30":"#ffd75e");}
+    const gm=curSkin==="gaming";
+    burst(p.x,p.y,last?130:55,gm?["#ffffff","#3ee8ff","#b16bff","#ffd75e"]:["#ffffff","#ff4b45","#ffd75e","#3fcf72"],last?7:4.5,{up:1.2,stars:.6});
+    if(last){rays(gm?"#3ee8ff":"#ffd75e",2.6);setTimeout(()=>burst(p.x,p.y,90,gm?["#ffffff","#b16bff"]:["#ffffff","#dff3ff"],5,{ring:true,g:.02,stars:.8}),300);
+      banner(curSkin==="noel"?"JOYEUX NOËL !":gm?"GAME ON !":"EXCLUSIVE !",curSkin==="noel"?"#ff3b30":gm?"#3ee8ff":"#ffd75e");}
     setHint(last?`Carte exclusive ${k}/${shown.length} · la dernière !`:`Carte exclusive ${k}/${shown.length} · touche pour la suivante`);}
   function next(dir){
     if(busy)return;
@@ -3894,7 +3897,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   function renderEvents(){const bar=$("evBar");if(!bar)return;const now=Date.now();const list=EVENTS.filter(e=>e.ends>now);
     const until=t=>new Date(t).toLocaleString("fr-FR",{weekday:"long",hour:"2-digit",minute:"2-digit"});
     const hh=h=>(+h%1?String(+h).replace(".",","):String(+h))+" h";
-    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":e.kind==="card"?"🃏":e.kind==="xpack"?"🎄":"🎁";const cd=e.card&&cardOfKey(e.card);
+    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":e.kind==="card"?"🃏":e.kind==="xpack"?((SKINS[e.skin]||SKINS.noel).ico):"🎁";const cd=e.card&&cardOfKey(e.card);
       const what=e.kind==="xpack"?`Booster exclusif offert : ${e.n} carte${e.n>1?"s":""} exclusive${e.n>1?"s":""}`:e.kind==="card"?`Carte exclusive offerte${cd?` : ${esc(cd.name.trim())}`:""}`:e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
       return `<div class="evitem"><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}${cd&&e.kind!=="card"?` + la carte exclusive ${esc(cd.name.trim())}`:""}<small>${e.kind==="speed"?`${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}`:e.message?esc(e.message):"Ouvre ton cadeau !"}</small></span></div>`;}).join("");
     bar.hidden=!list.length;document.documentElement.style.setProperty("--evh",(list.length?bar.offsetHeight+10:0)+"px");}
@@ -3977,7 +3980,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       const cards=(g.cards||[]).map(cardOfKey).filter(Boolean);
       const xk=+g.xpack||0,sk=SKINS[g.skin]||SKINS.noel,ul=g.kind==="collection"&&(g.ultimate||g.cat===ULT_CAT);
       if(g.kind==="collection"){root.hidden=true;inCeleb=true;CELEB.show(g,cards,ul).then(()=>{inCeleb=false;next();});return;}
-      $("gpIco").textContent=ul?"👑":g.kind==="collection"?"🏆":xk?"🎄":g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
+      $("gpIco").textContent=ul?"👑":g.kind==="collection"?"🏆":xk?sk.ico:g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
       $("gpTitle").textContent=ul?"Collection complète !":g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
       $("gpText").innerHTML=ul?`Tu as <b>toutes les cartes du jeu</b> !<br>Voici ta récompense, ${cards.length>1?"les cartes ultimes":"la carte ultime"} :`
         :g.kind==="collection"

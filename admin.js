@@ -129,8 +129,8 @@
     }));
   }
   /* ---------- événements : boosters offerts, boosters spéciaux, attente réduite ---------- */
-  const KINDS = {gift:"🎁 Boosters offerts", special:"✨ Boosters spéciaux offerts", xpack:"🎄 Booster exclusif (cartes choisies)", card:"🃏 Carte exclusive offerte", speed:"⚡ Attente réduite"};
-  const SKINS = {noel:"Noël"};
+  const KINDS = {gift:"🎁 Boosters offerts", special:"✨ Boosters spéciaux offerts", xpack:"🎁 Booster exclusif (cartes choisies)", card:"🃏 Carte exclusive offerte", speed:"⚡ Attente réduite"};
+  const SKINS = {noel:"Noël", gaming:"Lancement (gaming)"};
   const pad = n => String(n).padStart(2, "0");
   const localInput = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   const fmt = t => new Date(t).toLocaleString("fr-FR", {weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"});
