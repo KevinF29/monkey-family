@@ -143,9 +143,11 @@
     const ex = (window.MF_EXCL_CARDS ? window.MF_EXCL_CARDS() : []).sort((a, b) => (b.ev - a.ev) || a.name.localeCompare(b.name, "fr"));
     const exName = k => { const c = ex.find(x => x.key === k); return c ? c.name : k; };
     const now = Date.now(), start = e.starts || now, end = e.ends || now + 2 * 86400000;
-    const state = x => x.ends <= now ? "Terminé" : x.starts > now ? "À venir" : "En cours";
+    const GIFT = k => k !== "speed";  // gifts are handed out at one fixed date and time
+    const state = x => GIFT(x.kind) ? (x.starts > now ? "Programmé" : "Distribué") : x.ends <= now ? "Terminé" : x.starts > now ? "À venir" : "En cours";
+    const BANNER = 2 * 86400000;  // a gift stays announced on the players' screen for 2 days
     body.innerHTML = `<form class="mfev" id="mfEvForm">
-        <p class="shint">${e.id ? "Modifier l'événement" : "Nouvel événement"} : les boosters offerts arrivent tout seuls chez chaque joueur à sa prochaine visite pendant l'événement (une fois par joueur).</p>
+        <p class="shint">${e.id ? "Modifier l'événement" : "Nouvel événement"} : les cadeaux arrivent tout seuls chez chaque joueur à sa prochaine visite après la date choisie (une fois par joueur).</p>
         <label><span>Nom</span><input id="evTitle" maxlength="60" required value="${esc(e.title || "")}" placeholder="Noël, Week-end turbo…"></label>
         <label><span>Type</span><select id="evKind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}" ${e.kind === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
         <label id="evBWrap"><span>Nombre de boosters</span><input id="evBoosters" type="number" min="1" max="20" value="${e.boosters || 2}"></label>
@@ -153,15 +155,16 @@
         <div id="evXWrap" class="full"><span class="shint">Cartes du booster, dans l'ordre où elles sortent (de 1 à 9 cartes exclusives)</span><div class="evxgrid" id="evXCards"></div>
           <label><span>Emballage</span><select id="evSkin">${Object.entries(SKINS).map(([k, v]) => `<option value="${k}" ${e.skin === k ? "selected" : ""}>${v}</option>`).join("")}</select></label></div>
         <label id="evHWrap"><span>Un booster toutes les… (heures)</span><input id="evHours" type="number" min="1" max="8" step="0.5" value="${e.hours || 4}"></label>
-        <label><span>Début</span><input id="evStart" type="datetime-local" required value="${localInput(start)}"></label>
-        <label><span>Fin</span><input id="evEnd" type="datetime-local" required value="${localInput(end)}"></label>
+        <label id="evAtWrap"><span>Offert le</span><input id="evAt" type="datetime-local" value="${localInput(start)}"></label>
+        <label id="evSWrap"><span>Début</span><input id="evStart" type="datetime-local" value="${localInput(start)}"></label>
+        <label id="evEWrap"><span>Fin</span><input id="evEnd" type="datetime-local" value="${localInput(end)}"></label>
         <label class="full"><span>Message (facultatif)</span><input id="evMsg" maxlength="200" value="${esc(e.message || "")}" placeholder="Joyeux Noël la famille !"></label>
         <p class="shint full" id="evHelp"></p>
         <div class="mfbtns full">${e.id ? `<button type="button" class="sbtn" id="evCancel">Annuler</button>` : ""}<button type="submit" class="sbtn">${e.id ? "Enregistrer" : "Créer l'événement"}</button></div>
         <p class="shint full" id="evNote" role="status"></p>
       </form>
       <h3 class="mfh">Événements</h3>
-      ${list.length ? list.map(x => `<div class="sitem" style="display:grid;grid-template-columns:minmax(0,1fr)"><span class="sname">${esc(x.title)} <small style="display:block;line-height:1.45">${KINDS[x.kind]}${x.kind === "speed" ? ` · 1 toutes les ${x.hours} h` : `${x.kind === "card" ? "" : ` · ${x.boosters} booster${x.boosters > 1 ? "s" : ""}`}${x.kind === "xpack" ? ` de ${(x.cards || []).length} carte${(x.cards || []).length > 1 ? "s" : ""} : ${(x.cards || []).map(k => esc(exName(k))).join(", ")}` : ""}${x.card ? ` · 🃏 ${esc(exName(x.card))}` : ""} · reçu par ${x.claims} joueur${x.claims > 1 ? "s" : ""}`}<br>${fmt(x.starts)} → ${fmt(x.ends)} · <b>${state(x)}</b>${x.message ? `<br>« ${esc(x.message)} »` : ""}</small></span>
+      ${list.length ? list.map(x => `<div class="sitem" style="display:grid;grid-template-columns:minmax(0,1fr)"><span class="sname">${esc(x.title)} <small style="display:block;line-height:1.45">${KINDS[x.kind]}${x.kind === "speed" ? ` · 1 toutes les ${x.hours} h` : `${x.kind === "card" ? "" : ` · ${x.boosters} booster${x.boosters > 1 ? "s" : ""}`}${x.kind === "xpack" ? ` de ${(x.cards || []).length} carte${(x.cards || []).length > 1 ? "s" : ""} : ${(x.cards || []).map(k => esc(exName(k))).join(", ")}` : ""}${x.card ? ` · 🃏 ${esc(exName(x.card))}` : ""} · reçu par ${x.claims} joueur${x.claims > 1 ? "s" : ""}`}<br>${GIFT(x.kind) ? `Offert le ${fmt(x.starts)}` : `${fmt(x.starts)} → ${fmt(x.ends)}`} · <b>${state(x)}</b>${x.message ? `<br>« ${esc(x.message)} »` : ""}</small></span>
         <span class="mfbtns"><button class="sbtn" data-ed="${x.id}">Modifier</button><button class="sbtn" data-del="${x.id}">Supprimer</button></span></div>`).join("") : `<p class="shint">Aucun événement pour l'instant.</p>`}`;
     const kind = $("evKind");
     const fillCards = () => { const need = kind.value === "card";
@@ -169,25 +172,28 @@
       $("evCLab").textContent = need ? "Carte exclusive offerte" : "Carte exclusive en plus (facultatif)"; };
     const opts = sel => `<option value="">—</option>` + ex.map(c => `<option value="${c.key}" ${sel === c.key ? "selected" : ""}>${esc(c.name)}${c.ev ? "" : " (récompense)"}</option>`).join("");
     $("evXCards").innerHTML = Array.from({length:9}, (_, i) => `<label><span>Carte ${i + 1}</span><select data-xc="${i}">${opts((e.cards || [])[i] || "")}</select></label>`).join("");
-    const sync = () => { const sp = kind.value === "speed", cd = kind.value === "card", xp = kind.value === "xpack"; $("evBWrap").hidden = sp || cd; $("evHWrap").hidden = !sp; $("evCWrap").hidden = sp || xp; $("evXWrap").hidden = !xp; fillCards();
+    const sync = () => { const sp = kind.value === "speed", cd = kind.value === "card", xp = kind.value === "xpack"; $("evBWrap").hidden = sp || cd; $("evHWrap").hidden = !sp; $("evAtWrap").hidden = sp; $("evSWrap").hidden = $("evEWrap").hidden = !sp; $("evCWrap").hidden = sp || xp; $("evXWrap").hidden = !xp; fillCards();
       $("evBoosters").max = xp ? 5 : 20; if (xp && +$("evBoosters").value > 5) $("evBoosters").value = 1;
       $("evHelp").textContent = sp ? "Pendant l'événement, chaque joueur reçoit un booster plus souvent (au lieu de toutes les 8 h). Le stock reste limité à 3."
-        : xp ? (ex.length ? "Chaque joueur reçoit ce booster une fois, à sa prochaine visite pendant l'événement. Il contient exactement les cartes choisies, et passe avant les boosters normaux. Crée les cartes dans le Studio (« Carte exclusive », offerte pendant un événement)." : "Crée d'abord les cartes exclusives dans le Studio (« Carte exclusive », offerte pendant un événement).")
-        : cd ? "Chaque joueur reçoit la carte une fois, à sa prochaine visite pendant l'événement (avec une notification au début)."
+        : xp ? (ex.length ? "Chaque joueur reçoit ce booster une fois, dès la date choisie, à sa prochaine visite (même s'il revient plus tard). Il contient exactement les cartes choisies, et passe avant les boosters normaux. Crée les cartes dans le Studio (« Carte exclusive », offerte pendant un événement)." : "Crée d'abord les cartes exclusives dans le Studio (« Carte exclusive », offerte pendant un événement).")
+        : cd ? "Chaque joueur reçoit la carte une fois, dès la date choisie, à sa prochaine visite (même s'il revient plus tard), avec une notification à l'heure dite."
         : kind.value === "special" ? "Booster spécial : les deux dernières cartes ont de bien meilleures chances (Épique minimum sur la dernière). Il passe avant les boosters normaux."
-        : "Les boosters s'ajoutent au stock du joueur, même s'il est déjà plein."; };
+        : "Dès la date choisie, chaque joueur reçoit les boosters à sa prochaine visite (même s'il revient plus tard). Ils s'ajoutent à son stock, même s'il est déjà plein.";
+      if (!sp) $("evHelp").textContent += " Une notification part à l'heure dite, et l'annonce reste affichée 2 jours."; };
     kind.addEventListener("change", sync); sync();
     if ($("evCancel")) $("evCancel").addEventListener("click", () => renderEvents());
     $("evStart").addEventListener("change", () => { if (new Date($("evEnd").value) <= new Date($("evStart").value)) $("evEnd").value = localInput(new Date($("evStart").value).getTime() + 86400000); });
     $("mfEvForm").addEventListener("submit", async ev => {
       ev.preventDefault();
       const p = {id:e.id || null, title:$("evTitle").value.trim(), kind:kind.value, boosters:+$("evBoosters").value || 0, hours:+$("evHours").value || 8,
-        starts:new Date($("evStart").value).getTime(), ends:new Date($("evEnd").value).getTime(), message:$("evMsg").value.trim(), card:$("evCard").value || null};
+        starts:new Date(GIFT(kind.value) ? $("evAt").value : $("evStart").value).getTime(), ends:new Date($("evEnd").value).getTime(), message:$("evMsg").value.trim(), card:$("evCard").value || null};
       if (p.kind === "xpack"){ p.card = null; p.skin = $("evSkin").value; p.cards = [...body.querySelectorAll("[data-xc]")].map(x => x.value).filter(Boolean);
         if (!p.cards.length){ $("evNote").innerHTML = `<span class="mferr">Choisis au moins une carte.</span>`; return; }
         if (new Set(p.cards).size !== p.cards.length){ $("evNote").innerHTML = `<span class="mferr">Une même carte est choisie deux fois.</span>`; return; }
         if (!p.boosters) p.boosters = 1; }
       if (p.kind === "card" && !p.card){ $("evNote").innerHTML = `<span class="mferr">Choisis la carte à offrir.</span>`; return; }
+      if (!isFinite(p.starts)){ $("evNote").innerHTML = `<span class="mferr">Choisis la date et l'heure.</span>`; return; }
+      if (GIFT(p.kind)) p.ends = p.starts + BANNER;
       if (!(p.ends > p.starts)){ $("evNote").innerHTML = `<span class="mferr">La fin doit être après le début.</span>`; return; }
       try{ await window.MF_RPC("mf_event_save", {p}); renderEvents(); }
       catch(err){ $("evNote").innerHTML = `<span class="mferr">${p.kind === "xpack" && /\bkind\b/.test(err.message) ? "Le booster exclusif n'est pas encore installé : lance le script supabase-v5.sql dans Supabase." : esc(err.message)}</span>`; }

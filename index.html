@@ -3879,7 +3879,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     const hh=h=>(+h%1?String(+h).replace(".",","):String(+h))+" h";
     bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":e.kind==="card"?"🃏":e.kind==="xpack"?"🎄":"🎁";const cd=e.card&&cardOfKey(e.card);
       const what=e.kind==="xpack"?`Booster exclusif offert : ${e.n} carte${e.n>1?"s":""} exclusive${e.n>1?"s":""}`:e.kind==="card"?`Carte exclusive offerte${cd?` : ${esc(cd.name.trim())}`:""}`:e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
-      return `<div class="evitem"><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}${cd&&e.kind!=="card"?` + la carte exclusive ${esc(cd.name.trim())}`:""}<small>${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}</small></span></div>`;}).join("");
+      return `<div class="evitem"><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}${cd&&e.kind!=="card"?` + la carte exclusive ${esc(cd.name.trim())}`:""}<small>${e.kind==="speed"?`${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}`:e.message?esc(e.message):"Ouvre ton cadeau !"}</small></span></div>`;}).join("");
     bar.hidden=!list.length;document.documentElement.style.setProperty("--evh",(list.length?bar.offsetHeight+10:0)+"px");}
   setInterval(renderEvents,60000);
   /* ---------- cadeaux reçus (événement, catégorie complète) ---------- */
