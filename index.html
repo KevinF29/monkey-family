@@ -673,7 +673,7 @@ td.n{text-align:right}
         <button class="btn" id="sim" type="button">Simuler 100 boosters</button>
         <button class="btn" id="reset" type="button">Remettre à zéro</button>
       </div>
-      <p class="hint">La simulation tire 100 boosters sans animation pour vérifier les probabilités. Les résultats restent dans ce navigateur.</p>
+      <p class="hint">La simulation tire 100 boosters sans animation pour vérifier les probabilités. Elle ne touche pas à ta collection : seul le tableau « Statistiques » affiche ses résultats.</p>
     </section>
 
     <section class="panel">
@@ -1999,6 +1999,7 @@ td.n{text-align:right}
     const c=pool[(Math.random()*pool.length)|0];
     return c;
   }
+  const SIMC={n:0,counts:{}};  // results of "Simuler 100 boosters"
   function rollBooster(sim){
     // normal cards: 5 % bonus Rare, otherwise Commune 70 % / Peu commune 30 % of the rest
     const forced=sim?"":$("force").value;
@@ -2023,9 +2024,9 @@ td.n{text-align:right}
     $("k-open").textContent=S.opened;
     const base=CARDS.filter(c=>!c.excl),diff=base.filter(c=>(S.owned[c.id]||0)>0).length;$("k-coll").textContent=diff;$("k-coll-l").textContent=`cartes différentes sur ${base.length}`;
     {const o=byR[RIDX.Originel];$("k-uni").textContent=`${o.filter(c=>S.owned[c.id]).length}/${o.length}`;}
-    const total=Object.values(S.counts).reduce((a,b)=>a+b,0)||1;
-    $("counts").innerHTML=`<tr><th>Rareté</th><th class="n">Tirées</th><th class="n">Part</th><th class="n">Collection</th></tr>`+RARITIES.filter(R=>!R.excl).map((R,i)=>{
-      const n=S.counts[R.name]||0,got=byR[i].filter(c=>S.owned[c.id]).length;
+    const CN=SIMC.n?SIMC.counts:S.counts,total=Object.values(CN).reduce((a,b)=>a+b,0)||1;  // after a simulation, its draws (never the real collection)
+    $("counts").innerHTML=`<tr><th>Rareté</th><th class="n">${SIMC.n?`Simulées (${SIMC.n} boosters)`:"Tirées"}</th><th class="n">Part</th><th class="n">Collection</th></tr>`+RARITIES.filter(R=>!R.excl).map((R,i)=>{
+      const n=CN[R.name]||0,got=byR[i].filter(c=>S.owned[c.id]).length;
       return `<tr><td><span class="dot" style="background:${colorOf(R.name)}"></span>${R.name}</td><td class="n">${n}</td><td class="n">${(n/total*100).toFixed(1).replace(".",",")} %</td><td class="n">${got}/${byR[i].length}</td></tr>`;}).join("");
     $("log").innerHTML=S.log.length?S.log.map(l=>`<div><span class="dot" style="background:${colorOf(l.rarity)}"></span><b>${esc(l.name)}</b><span class="hint">${l.rarity} · booster n° ${l.b}</span></div>`).join(""):`<p class="hint">Rien pour l'instant. Les Légendaires et au-dessus apparaîtront ici.</p>`;
   }
@@ -2745,8 +2746,12 @@ td.n{text-align:right}
     row.querySelector("button").addEventListener("click",()=>testAnim(n));$("anims").appendChild(row);
   });
   SLOT3.forEach(([n])=>{const o=document.createElement("option");o.value=n;o.textContent=n;$("force").appendChild(o);});
-  $("sim").addEventListener("click",()=>{if(busy)return;for(let i=0;i<100;i++)rollBooster(true);save();renderStats();say("100 boosters simulés en tirage normal (le forçage est ignoré). Regarde la colonne « Part » pour comparer aux taux.");});
-  $("reset").addEventListener("click",()=>{if(busy)return;S={opened:0,counts:{},owned:{},log:[],fresh:[],style:0,styles:[0],bananas:0,stock:3,nextAt:0,anims:S.anims,listSig:S.listSig};save();renderStats();syncBananas();renderPacks();shown.forEach(s=>paint(s.cv,s.c,0));say("Collection de test remise à zéro : bananes, styles et boosters aussi.");});
+  /* the simulation draws on a throwaway copy: the real collection (kept on the server) is never touched */
+  $("sim").addEventListener("click",()=>{if(busy)return;const keep=S;S=JSON.parse(JSON.stringify(S));S.counts={};
+    try{for(let i=0;i<100;i++)rollBooster(true);Object.entries(S.counts).forEach(([k,v])=>SIMC.counts[k]=(SIMC.counts[k]||0)+v);SIMC.n+=100;}finally{S=keep;}
+    renderStats();say(`${SIMC.n} boosters simulés en tirage normal (le forçage est ignoré), sans toucher à ta collection. Regarde la colonne « Part » pour comparer aux taux.`);});
+  $("reset").addEventListener("click",()=>{if(busy)return;SIMC.n=0;SIMC.counts={};
+    if(SRV){renderStats();say("Simulation remise à zéro. Ta collection est gardée sur le serveur : elle ne change pas.");return;}S={opened:0,counts:{},owned:{},log:[],fresh:[],style:0,styles:[0],bananas:0,stock:3,nextAt:0,anims:S.anims,listSig:S.listSig};save();renderStats();syncBananas();renderPacks();shown.forEach(s=>paint(s.cv,s.c,0));say("Collection de test remise à zéro : bananes, styles et boosters aussi.");});
 
   /* ---------- Classeur "Monkey Family": the collection as a ring binder with turning pages ---------- */
   /* golden bananas scattered on the binder cover (vector, same on every device) */
