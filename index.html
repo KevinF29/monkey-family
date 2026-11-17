@@ -1741,8 +1741,8 @@ td.n{text-align:right}
       await DB.doc("players/"+UID).set(publicStats());setSaveState("ok");}
     catch(e){setSaveState("err");}
     cloudBusy=false;if(cloudAgain){cloudAgain=false;cloudPush();}}
-  function publicStats(){const by={};let uniq=0,tot=0;CARDS.forEach(c=>{const n=S.owned[c.id]||0;if(n){uniq++;by[c.rarity]=(by[c.rarity]||0)+1;}tot+=n;});
-    return {pseudo:(PREFS.pseudo||"").slice(0,20),unique:uniq,cards:tot,total:CARDS.length,opened:S.opened||0,by,t:Date.now()};}
+  function publicStats(){const by={};let uniq=0,tot=0;CARDS.forEach(c=>{if(c.excl)return;const n=S.owned[c.id]||0;if(n){uniq++;by[c.rarity]=(by[c.rarity]||0)+1;}tot+=n;});
+    return {pseudo:(PREFS.pseudo||"").slice(0,20),unique:uniq,cards:tot,total:CARDS.filter(c=>!c.excl).length,opened:S.opened||0,by,t:Date.now()};}
   function setSaveState(k){const el=document.getElementById("saveState");if(!el)return;
     el.textContent=k==="ok"?"✓ Sauvegarde en ligne : ta collection te suit sur tous tes appareils.":k==="err"?"Sauvegarde en ligne indisponible pour l'instant : ta collection reste sur cet appareil.":"Sauvegarde : sur cet appareil";}
   /* ---------- collection managed by the server (PWA): boosters, stock, bananas and purchases are decided there ---------- */
@@ -2021,7 +2021,7 @@ td.n{text-align:right}
   }
   function renderStats(){
     $("k-open").textContent=S.opened;
-    const diff=Object.keys(S.owned).length;$("k-coll").textContent=diff;$("k-coll-l").textContent=`cartes différentes sur ${CARDS.length}`;
+    const base=CARDS.filter(c=>!c.excl),diff=base.filter(c=>(S.owned[c.id]||0)>0).length;$("k-coll").textContent=diff;$("k-coll-l").textContent=`cartes différentes sur ${base.length}`;
     {const o=byR[RIDX.Originel];$("k-uni").textContent=`${o.filter(c=>S.owned[c.id]).length}/${o.length}`;}
     const total=Object.values(S.counts).reduce((a,b)=>a+b,0)||1;
     $("counts").innerHTML=`<tr><th>Rareté</th><th class="n">Tirées</th><th class="n">Part</th><th class="n">Collection</th></tr>`+RARITIES.filter(R=>!R.excl).map((R,i)=>{
@@ -3854,11 +3854,12 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(!rows.length){B.innerHTML=`<p class="shint">Personne au classement pour l'instant.</p>`;return;}
       const medal=i=>["🥇","🥈","🥉"][i]||String(i+1);
       const top=["Originel","Secret","Mythique","Légendaire"];
-      B.innerHTML=`<div class="rklist">${rows.map((r,i)=>{const pct=Math.round(100*r.unique/CARDS.length);
+      const NB=CARDS.filter(c=>!c.excl).length;  // only booster cards count, not the exclusives
+      B.innerHTML=`<div class="rklist">${rows.map((r,i)=>{const pct=Math.min(100,Math.round(100*r.unique/NB));
         const chips=top.filter(t=>r.by&&r.by[t]).map(t=>`${rpill(t)} ×${r.by[t]}`).join(" ");
         return `<div class="rkrow${r.id===UID?" me":""}"><span class="rkpos">${medal(i)}</span><div style="min-width:0"><div class="rkname">${esc(r.id===UID?(PREFS.pseudo||"Toi")+" (toi)":SOCIAL.nameOf(r.id))}</div>
           <div class="rkbar" aria-hidden="true"><i style="width:${pct}%"></i></div><div class="rkmeta">${r.opened||0} booster${(r.opened||0)>1?"s":""} ouvert${(r.opened||0)>1?"s":""}${chips?" · "+chips:""}</div></div>
-          <span class="rkn">${r.unique}<small>/ ${CARDS.length}</small></span></div>`;}).join("")}</div>`;}
+          <span class="rkn">${r.unique}<small>/ ${NB}</small></span></div>`;}).join("")}</div>`;}
     function show(){if(open)return;closeOthers("rank");open=true;root.hidden=false;document.querySelector(".wrap").style.display="none";document.body.style.overflow="hidden";P3.pause&&P3.pause(true);cancelAnimationFrame(foilRaf);
       render();gsap.fromTo(root.querySelector(".shopbox"),{y:30,opacity:0},{y:0,opacity:1,duration:.35,ease:"power2.out"});$("rankClose").focus();}
     function hide(){if(!open)return;open=false;root.hidden=true;document.querySelector(".wrap").style.display="";document.body.style.overflow="";
