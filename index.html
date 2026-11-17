@@ -710,7 +710,7 @@ td.n{text-align:right}
         <label><span class="lab">Rareté</span><select id="stNewRar"></select></label>
         <label class="stexcl"><input type="checkbox" id="stNewExcl"> <span>Carte exclusive (full art) : rangée à la fin du classeur dans « Cartes Exclusives », sans numéro ni rareté, jamais dans un booster.</span></label>
         <label class="stexo" hidden><span class="lab">Elle est offerte…</span><select id="stNewEk"><option value="reward">quand on complète une catégorie</option><option value="event">pendant un événement (Noël…)</option><option value="ultimate">quand on a toutes les cartes du jeu (carte ultime)</option></select></label>
-        <label class="stexo" hidden><span class="lab">Contour</span><select id="stNewFrame"><option value="gold">Doré</option><option value="candy">Sucre d'orge</option><option value="frost">Givré</option></select></label>
+        <label class="stexo" hidden><span class="lab">Contour</span><select id="stNewFrame"><option value="gold">Doré</option><option value="candy">Sucre d'orge</option><option value="frost">Givré</option><option value="gaming">Gaming (manettes)</option></select></label>
       </div>
       <div class="stnewfoot"><p class="shint" id="stNewNum" aria-live="polite"></p><button type="button" class="sbtn" id="stNewGo">Créer la carte</button></div>
       <p class="shint stnewmsg" id="stNewMsg" role="status"></p>
@@ -1594,10 +1594,12 @@ td.n{text-align:right}
     titleBlock(c,o,R,{x:40,y:42,w:W-80,h:116},{ink:"#ffffff",glow:S.edge==="neon"?glowOf(R,ph):"rgba(0,0,0,.85)",gemFill:frameFill(c,R,600,80,90,60,ph+120)});
   }
   /* full-art exclusive cards: the illustration covers the card, inside a decorative frame */
-  const FRAMES={gold:"Doré",candy:"Sucre d'orge",frost:"Givré",banana:"Bananes",goldbanana:"Bananes en or"};
+  const FRAMES={gold:"Doré",candy:"Sucre d'orge",frost:"Givré",gaming:"Gaming",banana:"Bananes",goldbanana:"Bananes en or"};
   const ULT_CAT="Collection complète";  // the ultimate card: given when a player owns every booster card
   /* the banana frame (collection rewards) is Kévin's painted artwork, laid over the picture */
-  const FRAME_IMG={},FRAME_SRC={banana:"packs/frame-bananes.webp",goldbanana:"packs/frame-or.webp"};
+  const FRAME_IMG={},FRAME_SRC={banana:"packs/frame-bananes.webp",goldbanana:"packs/frame-or.webp",gaming:"packs/frame-gaming.webp"};
+  /* where the picture shows through each painted frame (card units, 750 × 1050) */
+  const FRAME_WIN={banana:{x:64,y:80,w:622,h:890,r:64},goldbanana:{x:64,y:80,w:622,h:890,r:64},gaming:{x:68,y:92,w:614,h:866,r:34}};
   const banFrame=(k="banana")=>{let f=FRAME_IMG[k];if(!f){f=FRAME_IMG[k]=new Image();f.decoding="async";f.onload=()=>{try{repaintAll();}catch(e){}};f.src=FRAME_SRC[k];}return f.complete&&f.naturalWidth?f:null;};
   function frameBand(c,kind,ph){
     if(kind==="candy"){
@@ -1615,19 +1617,19 @@ td.n{text-align:right}
       rr(c,0,0,W,H,40);c.fillStyle=g;c.fill();}
   }
   function drawFrameArt(c,o,R,ph,kind){
-    const ban=kind==="banana"||kind==="goldbanana",ult=kind==="goldbanana";
-    if(ban){rr(c,0,0,W,H,40);c.fillStyle="#2a1250";c.fill();}else frameBand(c,kind,ph);
-    const A=ban?{x:64,y:80,w:W-128,h:H-160,r:64}:{x:44,y:44,w:W-88,h:H-88,r:22};
+    const ban=!!FRAME_SRC[kind],ult=kind==="goldbanana",up=kind==="gaming"?24:0;  // the gaming frame has a keyboard and a mouse at the bottom  // painted frames (image laid over the picture)
+    if(ban){rr(c,0,0,W,H,40);c.fillStyle=kind==="gaming"?"#120c22":"#2a1250";c.fill();}else frameBand(c,kind,ph);
+    const A=ban?FRAME_WIN[kind]:{x:44,y:44,w:W-88,h:H-88,r:22};
     artImage(c,o,A,FULL,{empty:"#14151f",lines:"rgba(255,255,255,.06)",hint:"rgba(255,255,255,.6)"});
     // name at the bottom, on a soft dark fade so it reads on any picture
     c.save();shape(c,A);c.clip();const g=c.createLinearGradient(0,H-330,0,H-30);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.78)");c.fillStyle=g;c.fillRect(A.x,H-330,A.w,300);c.restore();
     const title=(o.title||"").trim();c.save();c.textAlign="center";c.textBaseline="alphabetic";
-    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":"#ffe7a8";c.fillText(ult?"CARTE ULTIME":kind==="banana"&&o.cat?String(o.cat).toUpperCase():"CARTE EXCLUSIVE",W/2,ban?H-176:H-142);
+    c.font=`700 26px "Barlow Condensed","Arial Narrow",sans-serif`;c.fillStyle=kind==="candy"?"#ffd2d2":kind==="frost"?"#d8f0ff":kind==="gaming"?"#a8ecff":"#ffe7a8";c.fillText(ult?"CARTE ULTIME":kind==="banana"&&o.cat?String(o.cat).toUpperCase():"CARTE EXCLUSIVE",W/2,ban?H-176-up:H-142);
     c.fillStyle="#ffffff";c.shadowColor="rgba(0,0,0,.7)";c.shadowBlur=12;const sf=CARD_FONT,sw=CARD_W;if(kind==="candy"||kind==="banana"){CARD_FONT=kind==="candy"?CANDY_FONT:BANANA_FONT;CARD_W="";}if(ult){CARD_FONT=ULT_FONT;CARD_W="900";}c.font=`${CARD_W||400} 60px ${CARD_FONT}`;const fsz=fitText(c,title,ban?W-210:W-140,ult?58:64,30);c.textBaseline="middle";
     if(ult){const ty=H-134;// gold letters: dark outline glow, then a metallic gradient, then a thin light rim
       c.shadowColor="rgba(60,30,0,.95)";c.shadowBlur=10;c.fillStyle="#5a3400";fillTextSafe(c,title,W/2,ty+2,"center");c.shadowColor="rgba(255,200,60,.55)";c.shadowBlur=18;
       const g=c.createLinearGradient(0,ty-fsz*.55,0,ty+fsz*.5);[["#fffbe0",0],["#ffe27a",.28],["#d79a1e",.5],["#fff1a8",.62],["#b8740c",1]].forEach(([k,t])=>g.addColorStop(t,k));c.fillStyle=g;fillTextSafe(c,title,W/2,ty,"center");}
-    else fillTextSafe(c,title,W/2,ban?H-134:H-104,"center");CARD_FONT=sf;CARD_W=sw;c.restore();
+    else fillTextSafe(c,title,W/2,ban?H-134-up:H-104,"center");CARD_FONT=sf;CARD_W=sw;c.restore();
     if(ban){const f=banFrame(kind);if(f)c.drawImage(f,0,0,W,H);else{c.save();shape(c,A);c.lineWidth=26;c.strokeStyle="#f2c230";c.stroke();c.restore();}return;}
     // inner edge of the frame
     c.save();shape(c,A);c.lineWidth=5;c.strokeStyle=kind==="candy"?"#ffffff":kind==="frost"?"rgba(255,255,255,.95)":"#5c3a08";c.stroke();c.restore();
@@ -4131,7 +4133,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     document.fonts.load(`40px ${BANANA_FONT}`).then(()=>{again();try{BIND.repaint();}catch(e){}}).catch(()=>{});
     document.fonts.load(`40px ${CANDY_FONT}`).then(()=>{again();try{BIND.repaint();}catch(e){}}).catch(()=>{});}
   function repaintAll(){shown.forEach(s=>paint(s.cv,s.c,0));try{BIND.repaint();}catch(e){}}
-  if(CARDS.some(c=>c.frame==="banana"))banFrame();if(CARDS.some(c=>c.frame==="goldbanana"))banFrame("goldbanana");
+  Object.keys(FRAME_SRC).forEach(k=>{if(CARDS.some(c=>c.frame===k))banFrame(k);});
 })();
 </script>
 
