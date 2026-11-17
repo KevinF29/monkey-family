@@ -384,6 +384,29 @@ td.n{text-align:right}
 .gpcards img.gppack{width:min(170px,40vw);height:auto;filter:drop-shadow(0 14px 26px rgba(0,0,0,.55)) drop-shadow(0 0 30px rgba(232,50,47,.35))}
 .mfev #evXWrap{display:grid;gap:8px}.mfev #evXWrap[hidden]{display:none}
 .evxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.celeb{position:fixed;inset:0;z-index:420;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,#3b1670 0%,#170a2c 55%,#07030e 100%);padding:16px}
+.celeb[hidden]{display:none}
+.celeb.ult{background:radial-gradient(circle at 50% 42%,#5a3a06 0%,#2a1450 50%,#07030e 100%)}
+.clfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.clrays{position:absolute;left:50%;top:44%;width:190vmax;height:190vmax;translate:-50% -50%;opacity:0;pointer-events:none;z-index:0;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,rgba(255,215,94,.22) 0deg 7deg,transparent 7deg 20deg);mask:radial-gradient(circle,#000 0%,transparent 62%);-webkit-mask:radial-gradient(circle,#000 0%,transparent 62%)}
+.clrays.two{background:repeating-conic-gradient(from 10deg,rgba(255,255,255,.12) 0deg 3deg,transparent 3deg 14deg)}
+.clbox{position:relative;z-index:2;display:grid;justify-items:center;gap:10px;text-align:center;width:min(440px,100%)}
+.clkick{margin:0;font:700 13px var(--label);letter-spacing:.32em;text-transform:uppercase;color:#ffd75e}
+.cltitle{margin:0;font-family:var(--display);font-size:clamp(28px,8vw,46px);line-height:1.05;color:#fff;text-shadow:0 0 24px rgba(255,215,94,.55)}
+.celeb.ult .cltitle{font-family:'Cinzel',Georgia,serif;font-weight:900;letter-spacing:.04em;background:linear-gradient(180deg,#fffbe0 0%,#ffe27a 30%,#d79a1e 52%,#fff1a8 64%,#b8740c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 2px 0 #5a3400) drop-shadow(0 0 18px rgba(255,200,60,.6))}
+.clstage{position:relative;width:min(62vw,calc(min(52svh,470px)*750/1050));aspect-ratio:750/1050;perspective:1400px;margin:6px 0}
+.clflip{position:absolute;inset:0;transform-style:preserve-3d;opacity:0;pointer-events:none}
+.clback,.clfront{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:4%/3%;overflow:hidden}
+.clfront{transform:rotateY(180deg);box-shadow:0 0 0 2px rgba(255,215,94,.5),0 18px 60px rgba(0,0,0,.6),0 0 70px rgba(255,215,94,.35)}
+.celeb.ult .clfront{box-shadow:0 0 0 3px #ffd75e,0 18px 60px rgba(0,0,0,.6),0 0 110px rgba(255,200,60,.7)}
+.clfront canvas{width:100%;height:100%;display:block}
+.clback{display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#6b2fb3,#2a1250 70%);box-shadow:inset 0 0 0 6px #ffd75e,inset 0 0 0 10px #2a1250,inset 0 0 0 12px rgba(255,215,94,.6),0 18px 50px rgba(0,0,0,.6)}
+.clback span{font-size:min(30vw,170px);filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+.cltrophy{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center;font-size:min(34vw,180px);filter:drop-shadow(0 0 30px rgba(255,215,94,.7))}
+.cltext{margin:0;min-height:1.3em;font:500 16px/1.4 var(--label);color:#f3e8ff}
+.cltext b{color:#ffd75e}
+@media (prefers-reduced-motion:reduce){.clrays{display:none}}
 .giftpop{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:20px;background:rgba(10,4,20,.82);backdrop-filter:blur(4px)}
 .giftpop[hidden]{display:none}
 .gpbox{width:min(420px,100%);display:grid;gap:12px;justify-items:center;text-align:center;padding:24px 20px;border-radius:20px;background:linear-gradient(180deg,#3b1f6e,#1a0f2e);border:1px solid rgba(255,217,138,.55);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 60px rgba(255,200,60,.2);color:#f3eee4}
@@ -751,6 +774,13 @@ td.n{text-align:right}
     <div class="shophead"><b>Classement</b><span class="shopbal" id="rankSub"></span><button class="bbtn" id="rankClose" type="button" aria-label="Fermer le classement">✕</button></div>
     <div class="shopbody" id="rankBody"></div>
   </div>
+</div>
+
+<div id="celeb" class="celeb" role="dialog" aria-modal="true" aria-labelledby="clTitle" hidden>
+  <canvas class="clfx" aria-hidden="true"></canvas><div class="clrays" aria-hidden="true"></div><div class="clrays two" aria-hidden="true"></div>
+  <div class="clbox"><p class="clkick" id="clKick"></p><h2 class="cltitle" id="clTitle"></h2>
+    <div class="clstage"><div class="clflip"><div class="clback" aria-hidden="true"><span>🐒</span></div><div class="clfront"></div></div><div class="cltrophy" aria-hidden="true">🏆</div></div>
+    <p class="cltext" id="clText"></p><button type="button" class="sbtn big" id="clOk">Découvrir ma récompense</button></div>
 </div>
 
 <div id="giftpop" class="giftpop" role="dialog" aria-modal="true" aria-labelledby="gpTitle" hidden>
@@ -1771,6 +1801,12 @@ td.n{text-align:right}
     "Originel":["deb0bb0a55362bcfd160902187648452","6b30722f4bee92f0717476d489205150"]};
   /* music for specific cards, started when the card is revealed (card key -> [mp4, webm]) */
   const CSND={"c-monkey-family":["9c39482813c747083d60a78a12a149c8","be899d053259b76bf9a11e4f1e02a5a6"]};
+  /* each category's music goes with its exclusive reward card (and "Les rois d'la jungle" with the ultimate card) */
+  const CAT_MUSIC={"Lieux mémorables":["32fe7d7c95aa69a64a7fdfbc9328c45a","0ed1a6952dc902d45bc199f350115bb7"],"Objets Cultes":["172c995b121fa662361e7bd8398b8070","2f92c490f66c0cb0964db126fcf11dde"],
+    "Personnages":["065ac1eaf280c8b5b197279163270174","6ecf5a81f245aa9651f88c40042c1159"],"Moments légendaires":["172c995b121fa662361e7bd8398b8070","cb9d5be5de340e4e8401430251be8aee"],
+    "Répliques Cultes":["5f7e93ee26cfe8d47426fd9f1b9bce92","43dea6f9847a0d78b3993c963825b32d"],"Heures perdues":["a488eb43b0ac8442f5ee55c1fdeff7d2","46c7af455f103af4e5f8a6c4461bcdfb"],
+    "Running gags":["4f639ed00c0bbb34cfc21b6561ce92f5","8b62640e529e4a675d1aafb6c9cfb5ce"],[ULT_CAT]:["cea991e11bf858c1b747ad87b6dff607","e13a7acfdd3f4fbc61bf12256df9f796"]};
+  CARDS.forEach(c=>{if(c.excl&&!c.ev&&CAT_MUSIC[c.cat])CSND[c.key]=CAT_MUSIC[c.cat];});
   const VOICE=(function(){const els={},mels={};let cur=null,mus=null,unlocked=false;
     function mk(v,pre){if(!v||location.protocol==="file:")return null;let a;try{a=new Audio();}catch(e){return null;}a.preload=pre;
       const mp4=a.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')||a.canPlayType("video/mp4"),webm=a.canPlayType('video/webm; codecs="opus"');
@@ -3825,10 +3861,75 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     bar.hidden=!list.length;document.documentElement.style.setProperty("--evh",(list.length?bar.offsetHeight+10:0)+"px");}
   setInterval(renderEvents,60000);
   /* ---------- cadeaux reçus (événement, catégorie complète) ---------- */
-  const GIFTS=(function(){const root=$("giftpop");let q=[];
+  /* ---------- category complete / whole collection: a celebration, the reward card flips in and its music starts ---------- */
+  const CELEB=(function(){const root=$("celeb"),cv=root.querySelector(".clfx"),cx=cv.getContext("2d"),flip=root.querySelector(".clflip"),front=root.querySelector(".clfront"),
+      troph=root.querySelector(".cltrophy"),rays=[...root.querySelectorAll(".clrays")],ok=$("clOk"),box=root.querySelector(".clbox");
+    const flash=document.createElement("div");flash.style.cssText="position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4";root.appendChild(flash);
+    let P=[],raf=0,stage=0,done=null,cur=null,ul=false,g0=null,tw=[],timers=[];
+    const R=Math.random,W=()=>innerWidth,H=()=>innerHeight,N=n=>reduce?Math.round(n/4):n;
+    function size(){const d=Math.min(2,devicePixelRatio||1);cv.width=W()*d;cv.height=H()*d;cx.setTransform(d,0,0,d,0,0);}
+    function draw(){cx.clearRect(0,0,W(),H());P=P.filter(p=>p.life>0&&p.y<H()+80);
+      for(const p of P){p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.vx*=p.drag;p.rot+=p.vr;p.life-=p.decay;
+        cx.globalAlpha=Math.max(0,Math.min(1,p.life*1.6));
+        if(p.k==="spark"){cx.globalCompositeOperation="lighter";cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.s*(.5+p.life*.5),0,7);cx.fill();cx.globalCompositeOperation="source-over";continue;}
+        cx.save();cx.translate(p.x,p.y);cx.rotate(p.rot);
+        if(p.k==="ban")cx.drawImage(banSprite(),-p.s/2,-p.s/2,p.s,p.s);else{cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/4,p.s,Math.max(1.5,p.s/2*Math.abs(Math.cos(p.rot*1.7))));}
+        cx.restore();}
+      cx.globalAlpha=1;}
+    function run(){if(raf)return;const f=()=>{draw();raf=root.hidden?0:requestAnimationFrame(f);};raf=requestAnimationFrame(f);}
+    function spark(x,y,n,cols,sp){for(let i=0;i<N(n);i++){const a=R()*Math.PI*2,v=(.25+R()*.75)*sp;P.push({k:"spark",x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:.05,drag:.985,rot:0,vr:0,life:1,decay:.01+R()*.014,s:1.6+R()*2.6,c:cols[i%cols.length]});}}
+    function confetti(n,cols){for(let i=0;i<N(n);i++)P.push({k:"conf",x:R()*W(),y:-20-R()*H()*.6,vx:(R()-.5)*1.6,vy:1.6+R()*2.6,g:.015,drag:.996,rot:R()*6,vr:(R()-.5)*.24,life:4,decay:.003,s:8+R()*9,c:cols[i%cols.length]});}
+    function bananas(n){for(let i=0;i<N(n);i++)P.push({k:"ban",x:R()*W(),y:-40-R()*H()*.8,vx:(R()-.5)*1.2,vy:2+R()*3,g:.02,drag:.995,rot:R()*6,vr:(R()-.5)*.12,life:5,decay:.002,s:30+R()*28});}
+    const GOLD=["#ffd75e","#fff1a8","#ffb627","#ffffff"],CONF=["#ffd75e","#a066ff","#ff5fa2","#5fd4ff","#ffffff","#7dff9b"];
+    function clear(){tw.forEach(t=>t&&t.kill());tw=[];timers.forEach(clearInterval);timers=[];}
+    function show(g,cards,isUlt){return new Promise(res=>{done=res;g0=g;ul=!!isUlt;cur=(ul?cards.find(c=>c.cat===ULT_CAT):cards.find(c=>VOICE.hasMusic(c.key)))||cards[0]||null;
+      clear();root.classList.toggle("ult",ul);root.style.opacity="";root.hidden=false;size();P=[];run();stage=1;
+      $("clKick").textContent=ul?"Collection complète":"Catégorie complète";
+      $("clTitle").textContent=ul?"Les rois d'la jungle":g.cat;
+      $("clText").innerHTML=ul?"Tu as <b>toutes les cartes du jeu</b> !":`Tu as toutes les cartes de <b>${esc(g.cat)}</b> !`;
+      troph.textContent=ul?"👑":"🏆";front.innerHTML="";
+      if(cur){const k=document.createElement("canvas");k.width=750*ZOOM_K;k.height=1050*ZOOM_K;k.setAttribute("role","img");k.setAttribute("aria-label",cur.name.trim());front.appendChild(k);paint(k,cur,0);setTimeout(()=>paint(k,cur,0),800);
+        if(VOICE.hasMusic(cur.key))VOICE.prep(cur.key);}
+      gsap.set(flip,{opacity:0,rotationY:0,scale:.6,y:0});gsap.set(troph,{opacity:1,scale:1,rotation:0});gsap.set(rays,{opacity:0,rotation:0});
+      ok.disabled=false;ok.textContent=cur?(ul?"Découvrir la carte ultime":"Découvrir ma récompense"):"Super !";
+      gsap.fromTo(box,{opacity:0,y:24},{opacity:1,y:0,duration:.5,ease:"power2.out"});
+      gsap.fromTo(troph,{scale:.2,rotation:-20},{scale:1,rotation:0,duration:.8,ease:"back.out(2)"});
+      tw.push(gsap.to(troph,{scale:1.1,duration:.7,yoyo:true,repeat:-1,ease:"sine.inOut",delay:.8}));
+      setTimeout(()=>{const r=troph.getBoundingClientRect();spark(r.left+r.width/2,r.top+r.height/2,ul?70:40,GOLD,ul?6:4.5);},350);
+      try{SFX.play("coin");}catch(e){}ok.focus();});}
+    function reveal(){stage=2;clear();ok.disabled=true;
+      if(cur&&VOICE.hasMusic(cur.key))VOICE.music(cur.key);
+      try{if(PREFS.vib&&navigator.vibrate)navigator.vibrate(ul?[60,40,120,40,220]:[40,40,80]);}catch(e){}
+      const r=root.querySelector(".clstage").getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,turns=ul?2:1;
+      const tl=gsap.timeline();
+      tl.to(troph,{scale:1.7,opacity:0,duration:.35,ease:"power2.in"})
+        .call(()=>{spark(x,y,ul?170:100,ul?GOLD:CONF,ul?10:7);confetti(ul?170:100,ul?GOLD.concat(CONF):CONF);if(ul)bananas(45);})
+        .to(flash,{opacity:ul?.9:.55,duration:.08}).to(flash,{opacity:0,duration:ul?.9:.5})
+        .to(rays,{opacity:1,duration:.7},"<")
+        .fromTo(flip,{opacity:1,rotationY:0,scale:ul?.35:.55,y:ul?-H()*.55:0},{rotationY:180+360*turns,scale:1,y:0,duration:ul?2:1.25,ease:"power3.out"},ul?"<-0.6":"<-0.4")
+        .call(()=>{spark(x,y,ul?120:60,GOLD,ul?8:5);
+          $("clText").innerHTML=ul?(cur?`Voici <b>${esc(cur.name.trim())}</b>, la carte ultime !`:"Tu es le roi de la jungle !")
+            :`Tu gagnes <b>${g0.boosters||0} booster${(g0.boosters||0)>1?"s":""}</b>${cur?` et la carte exclusive <b>${esc(cur.name.trim())}</b>`:""} !`;
+          gsap.fromTo($("clText"),{opacity:0,y:8},{opacity:1,y:0,duration:.4});ok.textContent="Super !";ok.disabled=false;stage=3;ok.focus();});
+      tw.push(gsap.to(rays[0],{rotation:360,duration:28,repeat:-1,ease:"none"}),gsap.to(rays[1],{rotation:-360,duration:44,repeat:-1,ease:"none"}));
+      tw.push(gsap.to(flip,{y:-8,duration:1.6,yoyo:true,repeat:-1,ease:"sine.inOut",delay:ul?2.2:1.5}));
+      // the celebration goes on while the music plays
+      const t0=performance.now();
+      timers.push(setInterval(()=>{const el=performance.now()-t0;if(el>(ul?12000:5000))return;
+        if(ul){spark(W()*(.15+R()*.7),H()*(.12+R()*.4),70,R()<.5?GOLD:CONF,6+R()*3);if(R()<.5)bananas(6);}
+        else spark(W()*(.15+R()*.7),H()*(.12+R()*.35),40,CONF,4.5+R()*2);},ul?550:900));}
+    function close(){stage=0;clear();VOICE.stopMusic(1200);ok.disabled=true;
+      gsap.to(root,{opacity:0,duration:.45,onComplete:()=>{root.hidden=true;root.style.opacity="";P=[];const d=done;done=null;d&&d();}});}
+    ok.addEventListener("click",()=>{if(stage===1&&cur)reveal();else if(stage===1||stage===3)close();});
+    root.addEventListener("keydown",e=>{if(e.key==="Escape"&&stage!==2)close();});
+    window.addEventListener("resize",()=>{if(!root.hidden)size();});
+    return {show};})();
+
+  const GIFTS=(function(){const root=$("giftpop");let q=[],inCeleb=false;
     function next(){const g=q.shift();if(!g){root.hidden=true;return;}
       const cards=(g.cards||[]).map(cardOfKey).filter(Boolean);
       const xk=+g.xpack||0,sk=SKINS[g.skin]||SKINS.noel,ul=g.kind==="collection"&&(g.ultimate||g.cat===ULT_CAT);
+      if(g.kind==="collection"){root.hidden=true;inCeleb=true;CELEB.show(g,cards,ul).then(()=>{inCeleb=false;next();});return;}
       $("gpIco").textContent=ul?"👑":g.kind==="collection"?"🏆":xk?"🎄":g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
       $("gpTitle").textContent=ul?"Collection complète !":g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
       $("gpText").innerHTML=ul?`Tu as <b>toutes les cartes du jeu</b> !<br>Voici ta récompense, ${cards.length>1?"les cartes ultimes":"la carte ultime"} :`
@@ -3844,7 +3945,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       gsap.fromTo(root.querySelector(".gpbox"),{scale:.8,opacity:0},{scale:1,opacity:1,duration:.4,ease:"back.out(1.6)"});$("gpOk").focus();}
     $("gpOk").addEventListener("click",next);
     root.addEventListener("keydown",e=>{if(e.key==="Escape")next();});
-    return {show(list){const was=q.length||!root.hidden;q.push(...list);if(!was)next();}};})();
+    return {show(list){const was=q.length||!root.hidden||inCeleb;q.push(...list);if(!was)next();}};})();
 
   /* ---------- marché : échanges de doubles entre joueurs, carte contre carte, même rareté ---------- */
   const MARKET=(function(){let mkT=0;const mkSay=t=>{const e=$("mkMsg");if(!e)return;e.textContent=t||"";e.hidden=!t;clearTimeout(mkT);if(t)mkT=setTimeout(()=>{e.hidden=true;},6000);};const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[]},loaded=false,err="",busyMk=false,offerKey="",picked=[],showOwned=false;
