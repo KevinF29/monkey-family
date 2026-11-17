@@ -179,7 +179,7 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 }
 .bigopen{width:min(100%,420px);font-size:19px!important;padding:16px 22px!important;border-radius:14px!important;box-shadow:0 10px 26px rgba(75,63,184,.35)}
 .bigopen:disabled{opacity:1;background:var(--field)!important;color:var(--muted)!important;border-color:var(--line)!important;box-shadow:none}
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:150;height:var(--tabh);padding-bottom:env(safe-area-inset-bottom,0px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+.tabbar{--panel:#28184a;--line:#3d2a63;--muted:#b3a7cc;--accent:#ffd98a;position:fixed;left:0;right:0;bottom:0;z-index:150;height:var(--tabh);padding-bottom:env(safe-area-inset-bottom,0px);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
   background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);box-sizing:border-box;padding-inline:max(0px,calc((100% - 620px)/2))}
 .tab{appearance:none;border:0;background:none;color:var(--muted);display:grid;place-items:center;align-content:center;gap:2px;font:600 12px var(--ui);cursor:pointer;position:relative;padding:6px 2px;min-width:0}
 .tab .ti{font-size:22px;line-height:1;display:grid;place-items:center;height:26px;transition:transform .2s}
@@ -1808,7 +1808,7 @@ td.n{text-align:right}
   const CSND={"c-monkey-family":["9c39482813c747083d60a78a12a149c8","be899d053259b76bf9a11e4f1e02a5a6"]};
   /* each category's music goes with its exclusive reward card (and "Les rois d'la jungle" with the ultimate card) */
   const CAT_MUSIC={"Lieux mémorables":["32fe7d7c95aa69a64a7fdfbc9328c45a","0ed1a6952dc902d45bc199f350115bb7"],"Objets Cultes":["172c995b121fa662361e7bd8398b8070","2f92c490f66c0cb0964db126fcf11dde"],
-    "Personnages":["065ac1eaf280c8b5b197279163270174","6ecf5a81f245aa9651f88c40042c1159"],"Moments légendaires":["172c995b121fa662361e7bd8398b8070","cb9d5be5de340e4e8401430251be8aee"],
+    "Personnages":["065ac1eaf280c8b5b197279163270174","6ecf5a81f245aa9651f88c40042c1159"],"Moments légendaires":["d55a771ea4de2c9f04fd9868492f8217","7645124ea1b7013dce4246bd5b6e111e"],
     "Répliques Cultes":["5f7e93ee26cfe8d47426fd9f1b9bce92","43dea6f9847a0d78b3993c963825b32d"],"Heures perdues":["a488eb43b0ac8442f5ee55c1fdeff7d2","46c7af455f103af4e5f8a6c4461bcdfb"],
     "Running gags":["4f639ed00c0bbb34cfc21b6561ce92f5","8b62640e529e4a675d1aafb6c9cfb5ce"],[ULT_CAT]:["cea991e11bf858c1b747ad87b6dff607","e13a7acfdd3f4fbc61bf12256df9f796"]};
   CARDS.forEach(c=>{if(c.excl&&!c.ev&&CAT_MUSIC[c.cat])CSND[c.key]=CAT_MUSIC[c.cat];});
@@ -2446,7 +2446,7 @@ td.n{text-align:right}
     try{SFX.play(last?"Légendaire":"Épique");}catch(e){}
     burst(p.x,p.y,last?130:55,["#ffffff","#ff4b45","#ffd75e","#3fcf72"],last?7:4.5,{up:1.2,stars:.6});
     if(last){rays("#ffd75e",2.6);setTimeout(()=>burst(p.x,p.y,90,["#ffffff","#dff3ff"],5,{ring:true,g:.02,stars:.8}),300);banner(curSkin==="noel"?"JOYEUX NOËL !":"EXCLUSIVE !",curSkin==="noel"?"#ff3b30":"#ffd75e");}
-    if(!last)setHint(`Carte exclusive ${k}/${shown.length} · touche pour la suivante`);}
+    setHint(last?`Carte exclusive ${k}/${shown.length} · la dernière !`:`Carte exclusive ${k}/${shown.length} · touche pour la suivante`);}
   function next(dir){
     if(busy)return;
     if(mode==="stack"||(mode==="revealed"&&idx<shown.length-1)){
@@ -2776,9 +2776,11 @@ td.n{text-align:right}
     cats.forEach(cat=>{const ci=c=>{const i=CAT_ORDER.indexOf(c.cat);return i<0?99:i;};let list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
       if(cat===EXCL_CAT){/* first page: the ultimate card ("La famille") in the middle, the category rewards around it; event cards on the next pages */
         const ult=list.filter(c=>c.cat===ULT_CAT),rew=list.filter(c=>!c.ev&&c.cat!==ULT_CAT),evs=list.filter(c=>c.ev);
-        const mid=ult.length?ult.shift():null,first=Array(9).fill(null),ring=[0,1,2,3,5,6,7,8];
-        if(mid)first[4]=mid;ring.forEach((k,i)=>{if(rew[i])first[k]=rew[i];});
-        list=first.concat(rew.slice(8),ult,evs);while(list.length>9&&list.length%9&&list[list.length-1]===null)list.pop();}
+        const mid=ult.length?ult.shift():null,first=Array(9).fill(null),extra=[];
+        // each category keeps its own sleeve, even before its reward card is created (Personnages has two)
+        const SPOT={"Lieux mémorables":[0],"Heures perdues":[1],"Répliques Cultes":[2],"Running gags":[3],"Objets Cultes":[5],"Moments légendaires":[6],"Personnages":[7,8]};
+        if(mid)first[4]=mid;rew.forEach(c=>{const k=(SPOT[c.cat]||[]).find(k=>!first[k]);if(k!==undefined)first[k]=c;else extra.push(c);});
+        list=first.concat(extra,ult,evs);while(list.length>9&&list.length%9&&list[list.length-1]===null)list.pop();}
       const n=cat===EXCL_CAT?Math.max(2,Math.ceil(list.length/9)):Math.ceil(list.length/9);  // 2 pages kept ready for the exclusive cards to come
       for(let i=0;i<n;i++)PAGES.push({cat,part:i+1,parts:n,cards:list.slice(i*9,i*9+9)});});
     const B={leaves:[],cur:0,spread:true,anim:false,open:false,pw:0};
@@ -3708,7 +3710,7 @@ td.n{text-align:right}
       let cs=CARDS.filter(x=>x.excl&&!x.ev&&x.cat===cat);
       if(!cs.length){cs=[{key:"__test-"+cat,id:-1,num:"",cat,name:ul?"Carte ultime (test)":"Carte exclusive (test)",rarity:"Exclusive",r:RIDX.Exclusive,excl:true,frame:ul?"goldbanana":"banana",ev:false}];banFrame(cs[0].frame);}
       cs.forEach(c=>{if(CAT_MUSIC[cat]&&!CSND[c.key])CSND[c.key]=CAT_MUSIC[cat];});
-      CELEB.show({kind:"collection",cat,boosters:ul?0:3,ultimate:ul},cs,ul);});}
+      CELEB.show({kind:"collection",cat,boosters:ul?0:3,ultimate:ul,test:true},cs,ul);});}
   $("unlockEx").addEventListener("click",async()=>{const ex=CARDS.filter(c=>c.excl);if(!ex.length){say("Aucune carte exclusive pour l'instant : crée-les dans le Studio.");return;}
     if(!SRV){ex.forEach(c=>{if(!S.owned[c.id])S.owned[c.id]=1;});save();renderStats();try{BIND.repaint();}catch(e){}say(`${ex.length} carte${ex.length>1?"s":""} exclusive${ex.length>1?"s":""} débloquée${ex.length>1?"s":""} (test).`);return;}
     const b=$("unlockEx");b.disabled=true;
@@ -3908,7 +3910,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     function show(g,cards,isUlt){return new Promise(res=>{done=res;g0=g;ul=!!isUlt;all=ul?cards.filter(c=>c.cat===ULT_CAT):cards.slice();if(!all.length)all=cards.slice();
       cur=all.find(c=>VOICE.hasMusic(c.key))||all[0]||null;
       clear();root.classList.toggle("ult",ul);root.style.opacity="";root.hidden=false;size();P=[];run();stage=1;
-      $("clKick").textContent=ul?"Collection complète":"Catégorie complète";
+      $("clKick").textContent=(ul?"Collection complète":"Catégorie complète")+(g.test?" · test":"");
       $("clTitle").textContent=ul?"Les rois d'la jungle":g.cat;
       $("clText").innerHTML=ul?"Tu as <b>toutes les cartes du jeu</b> !":`Tu as toutes les cartes de <b>${esc(g.cat)}</b> !`;
       troph.textContent=ul?"👑":"🏆";flips.forEach(f=>f.remove());
@@ -3937,6 +3939,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         .call(()=>{spark(x,y,ul?120:60,GOLD,ul?8:5);
           $("clText").innerHTML=ul?(cur?`Voici <b>${esc(cur.name.trim())}</b>, la carte ultime !`:"Tu es le roi de la jungle !")
             :`Tu gagnes <b>${g0.boosters||0} booster${(g0.boosters||0)>1?"s":""}</b>${all.length>1?` et les cartes exclusives ${all.map(c=>`<b>${esc(c.name.trim())}</b>`).join(" et ")}`:cur?` et la carte exclusive <b>${esc(cur.name.trim())}</b>`:""} !`;
+          if(g0.test)$("clText").insertAdjacentHTML("beforeend",`<br><small style="opacity:.7">Test : rien n'est donné.</small>`);
           gsap.fromTo($("clText"),{opacity:0,y:8},{opacity:1,y:0,duration:.4});ok.textContent="Super !";ok.disabled=false;stage=3;ok.focus();});
       tw.push(gsap.to(rays[0],{rotation:360,duration:28,repeat:-1,ease:"none"}),gsap.to(rays[1],{rotation:-360,duration:44,repeat:-1,ease:"none"}));
       tw.push(gsap.to(flips,{y:-8,duration:1.6,yoyo:true,repeat:-1,ease:"sine.inOut",delay:ul?2.2:1.5,stagger:.3}));
