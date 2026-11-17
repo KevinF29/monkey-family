@@ -2802,7 +2802,9 @@ td.n{text-align:right}
     const PAGES=[];
     cats.forEach(cat=>{const ci=c=>{const i=CAT_ORDER.indexOf(c.cat);return i<0?99:i;};let list=CARDS.filter(c=>bcat(c)===cat).sort((a,b)=>cat===EXCL_CAT?ci(a)-ci(b)||a.name.localeCompare(b.name,"fr"):a.num.localeCompare(b.num,"fr",{numeric:true})||nat(a.num)-nat(b.num));
       if(cat===EXCL_CAT){/* first page: the ultimate card ("La famille") in the middle, the category rewards around it; event cards on the next pages */
-        const ult=list.filter(c=>c.cat===ULT_CAT),rew=list.filter(c=>!c.ev&&c.cat!==ULT_CAT),evs=list.filter(c=>c.ev);
+        // event cards grouped by frame (all the Gaming ones together, then all the candy-cane ones...), by name inside each group
+        const FR_ORDER=["gaming","candy","frost","gold"],fi=c=>{const i=FR_ORDER.indexOf(c.frame||"gold");return i<0?99:i;};
+        const ult=list.filter(c=>c.cat===ULT_CAT),rew=list.filter(c=>!c.ev&&c.cat!==ULT_CAT),evs=list.filter(c=>c.ev).sort((a,b)=>fi(a)-fi(b)||a.name.localeCompare(b.name,"fr"));
         const mid=ult.length?ult.shift():null,first=Array(9).fill(null),extra=[];
         // each category keeps its own sleeve, even before its reward card is created (Personnages has two)
         const SPOT={"Lieux mémorables":[0],"Heures perdues":[1],"Répliques Cultes":[2],"Running gags":[3],"Objets Cultes":[5],"Moments légendaires":[6],"Personnages":[7,8]};
