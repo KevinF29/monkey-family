@@ -673,7 +673,7 @@ td.n{text-align:right}
         <button class="btn" id="sim" type="button">Simuler 100 boosters</button>
         <button class="btn" id="reset" type="button">Remettre à zéro</button>
       </div>
-      <p class="hint">La simulation tire 100 boosters sans animation pour vérifier les probabilités. Elle ne touche pas à ta collection : seul le tableau « Statistiques » affiche ses résultats.</p>
+      <p class="hint">La simulation tire 100 boosters sans animation pour vérifier les probabilités. Elle ne touche pas à ta collection : seul le tableau « Statistiques » affiche ses résultats. « Remettre à zéro » vide ton compte admin (cartes, bananes, boosters, styles, récompenses) et la simulation.</p>
     </section>
 
     <section class="panel">
@@ -2751,7 +2751,15 @@ td.n{text-align:right}
     try{for(let i=0;i<100;i++)rollBooster(true);Object.entries(S.counts).forEach(([k,v])=>SIMC.counts[k]=(SIMC.counts[k]||0)+v);SIMC.n+=100;}finally{S=keep;}
     renderStats();say(`${SIMC.n} boosters simulés en tirage normal (le forçage est ignoré), sans toucher à ta collection. Regarde la colonne « Part » pour comparer aux taux.`);});
   $("reset").addEventListener("click",()=>{if(busy)return;SIMC.n=0;SIMC.counts={};
-    if(SRV){renderStats();say("Simulation remise à zéro. Ta collection est gardée sur le serveur : elle ne change pas.");return;}S={opened:0,counts:{},owned:{},log:[],fresh:[],style:0,styles:[0],bananas:0,stock:3,nextAt:0,anims:S.anims,listSig:S.listSig};save();renderStats();syncBananas();renderPacks();shown.forEach(s=>paint(s.cv,s.c,0));say("Collection de test remise à zéro : bananes, styles et boosters aussi.");});
+    if(SRV){const b=$("reset");
+      // admin test account: empties it on the server too (two clicks, to avoid a slip)
+      if(b.dataset.sure!=="1"){b.dataset.sure="1";b.textContent="Confirmer la remise à zéro";renderStats();say("Clique encore pour vider ton compte admin : cartes, bananes, boosters, styles et récompenses.");
+        clearTimeout(b._t);b._t=setTimeout(()=>{delete b.dataset.sure;b.textContent="Remettre à zéro";},6000);return;}
+      delete b.dataset.sure;b.textContent="Remettre à zéro";b.disabled=true;
+      window.MF_RPC("mf_admin_reset_self",{}).then(r=>{S.owned={};S.counts={};S.log=[];S.fresh=[];applyServer(r.state||r);renderStats();syncBananas();renderPacks();try{BIND.repaint();}catch(e){}shown.forEach(s=>paint(s.cv,s.c,0));
+          say("Compte admin remis à zéro : classeur vide, 3 boosters, 0 banane.");},
+        e=>say(/PGRST202|Could not find|does not exist/i.test(String(e&&e.message||e))?"Lance d'abord le script supabase-v10.sql dans Supabase.":"Impossible de remettre à zéro : "+String(e&&e.message||e)))
+        .finally(()=>{b.disabled=false;});return;}S={opened:0,counts:{},owned:{},log:[],fresh:[],style:0,styles:[0],bananas:0,stock:3,nextAt:0,anims:S.anims,listSig:S.listSig};save();renderStats();syncBananas();renderPacks();shown.forEach(s=>paint(s.cv,s.c,0));say("Collection de test remise à zéro : bananes, styles et boosters aussi.");});
 
   /* ---------- Classeur "Monkey Family": the collection as a ring binder with turning pages ---------- */
   /* golden bananas scattered on the binder cover (vector, same on every device) */
