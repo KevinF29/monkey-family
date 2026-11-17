@@ -1708,7 +1708,7 @@ td.n{text-align:right}
    if(!obj(S))S={};if(!num(S.opened)||S.opened<0)S.opened=0;if(!obj(S.owned))S.owned={};if(!obj(S.counts))S.counts={};
    Object.keys(S.owned).forEach(k=>{const n=S.owned[k];if(!num(n)||n<1)delete S.owned[k];else S.owned[k]=Math.floor(n);});
    if(!Array.isArray(S.log))S.log=[];if(!Array.isArray(S.fresh))S.fresh=[];if(!obj(S.anims))S.anims={};
-   if(S.stock!==undefined)S.stock=num(S.stock)?Math.max(0,Math.min(3,Math.floor(S.stock))):3;if(!num(S.nextAt))S.nextAt=0;if(!num(S.style))S.style=0;}
+   if(S.stock!==undefined)S.stock=num(S.stock)?Math.max(0,Math.min(99,Math.floor(S.stock))):3;  /* gifts can take the stock above 3 */if(!num(S.nextAt))S.nextAt=0;if(!num(S.style))S.style=0;}
   /* the card list changed (sheet sync): the test collection follows each card by its name key,
      so adding, removing or reordering cards keeps what was already collected */
   {const keys=CARDS.map(c=>c.key),byKey=new Map(keys.map((k,i)=>[k,i]));
@@ -3743,7 +3743,8 @@ td.n{text-align:right}
     S={opened:0,counts:{},owned:{},log:[],style:0,anims,bananas:0,styles:[0],stock:3,nextAt:0,...r,fresh:[]};
     normalizeS();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
     syncBananas();renderStats();renderPacks();try{BIND.repaint();}catch(e){}
-    if(mode==="pack"||mode==="summary")shown.forEach(s=>paint(s.cv,s.c,0));}
+    if(mode==="pack"||mode==="summary")shown.forEach(s=>paint(s.cv,s.c,0));
+    if(SRV)try{srvRefresh();}catch(e){}}  // boosters and bananas always come from the server
   function postFeed(d){if(!CLOUD||!DB||!UID||ADMIN)return;  // the admin stays out of the news feed
 const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     DB.doc("feed/"+id).set({...d,uid:UID,t:Date.now()}).catch(()=>{});}
