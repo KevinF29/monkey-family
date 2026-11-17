@@ -650,6 +650,11 @@ td.n{text-align:right}
         <p class="hint">Décoche la limite pour tester sans attendre.</p>
       </div>
       <div class="field">
+        <label class="lab" for="tceleb">Tester une fête de récompense</label>
+        <div class="bar"><select id="tceleb"></select><button class="btn sm" id="tcelebGo" type="button">Lancer</button></div>
+        <p class="hint">Rejoue l'animation de fin de catégorie (ou de la carte ultime) avec sa carte et sa musique. Rien n'est donné.</p>
+      </div>
+      <div class="field">
         <label class="lab" for="tstyle">Essayer un style</label>
         <select id="tstyle"><option value="">Mon style (celui de la boutique)</option></select>
         <p class="hint">Aperçu gratuit de n'importe quel style sur les boosters, le classeur et le zoom. Ça ne débloque rien dans la boutique.</p>
@@ -3691,6 +3696,14 @@ td.n{text-align:right}
   setInterval(renderPacks,1000);
   $("limit").addEventListener("change",()=>{try{localStorage.setItem(KEY+"-limit",$("limit").checked?"1":"0");}catch(e){}renderPacks();});
   try{if(localStorage.getItem(KEY+"-limit")==="0")$("limit").checked=false;}catch(e){}
+  /* admin: replay a reward celebration (nothing is given) */
+  {const sel=$("tceleb"),cats=["Lieux mémorables","Heures perdues","Répliques Cultes","Running gags","Objets Cultes","Moments légendaires","Personnages"].filter(k=>CAT_MUSIC[k]);
+    sel.innerHTML=cats.map(c=>`<option value="${esc(c)}">Catégorie : ${esc(c)}</option>`).join("")+`<option value="${esc(ULT_CAT)}">👑 Carte ultime (toute la collection)</option>`;
+    $("tcelebGo").addEventListener("click",()=>{const cat=sel.value,ul=cat===ULT_CAT;
+      let c=CARDS.find(x=>x.excl&&x.cat===cat);
+      if(!c){c={key:"__test-"+cat,id:-1,num:"",cat,name:ul?"Carte ultime (test)":"Carte exclusive (test)",rarity:"Exclusive",r:RIDX.Exclusive,excl:true,frame:ul?"goldbanana":"banana",ev:false};banFrame(c.frame);}
+      if(CAT_MUSIC[cat]&&!CSND[c.key])CSND[c.key]=CAT_MUSIC[cat];
+      CELEB.show({kind:"collection",cat,boosters:ul?0:3,ultimate:ul},[c],ul);});}
   $("unlockEx").addEventListener("click",async()=>{const ex=CARDS.filter(c=>c.excl);if(!ex.length){say("Aucune carte exclusive pour l'instant : crée-les dans le Studio.");return;}
     if(!SRV){ex.forEach(c=>{if(!S.owned[c.id])S.owned[c.id]=1;});save();renderStats();try{BIND.repaint();}catch(e){}say(`${ex.length} carte${ex.length>1?"s":""} exclusive${ex.length>1?"s":""} débloquée${ex.length>1?"s":""} (test).`);return;}
     const b=$("unlockEx");b.disabled=true;
