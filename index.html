@@ -2783,17 +2783,17 @@ td.n{text-align:right}
       for(let i=0;i<n;i++)PAGES.push({cat,part:i+1,parts:n,cards:list.slice(i*9,i*9+9)});});
     const B={leaves:[],cur:0,spread:true,anim:false,open:false,pw:0};
     const scratch=document.createElement("canvas");scratch.width=750;scratch.height=1050;const sx=scratch.getContext("2d");
-    const ownedN=()=>Object.keys(S.owned).length;
+    const BASE_N=()=>CARDS.filter(c=>!c.excl).length,ownedN=()=>CARDS.filter(c=>!c.excl&&(S.owned[c.id]||0)>0).length;  // the binder counts only booster cards, not the exclusives
 
     function faceHTML(f){
-      if(f.type==="cover")return `<div class="cover cover-img" role="img" aria-label="Classeur Monkey Family, ${CARDS.length} cartes"><img class="cimg" src="${COVER_SRC}" alt="" draggable="false"><div class="ccount">${CARDS.length} cartes</div><div class="copen">Touche pour ouvrir</div></div>`;
+      if(f.type==="cover")return `<div class="cover cover-img" role="img" aria-label="Classeur Monkey Family, ${BASE_N()} cartes"><img class="cimg" src="${COVER_SRC}" alt="" draggable="false"><div class="ccount">${BASE_N()} cartes</div><div class="copen">Touche pour ouvrir</div></div>`;
       if(f.type==="toc"){
         const firstPage={};PAGES.forEach((p,i)=>{if(firstPage[p.cat]===undefined)firstPage[p.cat]=i;});
         const rows=cats.map(cat=>{const all=CARDS.filter(c=>bcat(c)===cat),got=all.filter(c=>S.owned[c.id]).length;
           return `<button type="button" class="tocrow" data-page="${firstPage[cat]}"><span>${cat}</span><i style="--p:${all.length?got/all.length*100:0}%"></i><em>${got}/${all.length}</em><small>p. ${firstPage[cat]+1}</small></button>`;}).join("");
         const rar=RARITIES.map((R,i)=>{const all=byR[i],got=all.filter(c=>S.owned[c.id]).length;if(R.excl&&!all.length)return "";
           return `<span class="rchip"><span class="dot" style="background:${colorOf(R.name)}"></span>${R.name} <b>${got}/${all.length}</b></span>`;}).join("");
-        return `<div class="sheet toc"><div class="phead"><span>Sommaire</span><span>${ownedN()} / ${CARDS.length}</span></div>
+        return `<div class="sheet toc"><div class="phead"><span>Sommaire</span><span>${ownedN()} / ${BASE_N()}</span></div>
           <div class="tocbody">${rows}<div class="rchips">${rar}</div><p class="tochint">Touche une catégorie pour y aller.</p></div></div>`;}
       if(f.type==="page"){const p=PAGES[f.i];
         const slots=p.cards.map(c=>{if(!c)return `<div class="slot none"></div>`;const n=S.owned[c.id]||0,R=RARITIES[c.r];
@@ -3025,7 +3025,7 @@ td.n{text-align:right}
           x.drawImage(COVER_IMG,0,0,W,H);
           const sg=x.createLinearGradient(0,0,W*.1,0);sg.addColorStop(0,"rgba(0,0,0,.35)");sg.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=sg;x.fillRect(0,0,W*.1,H);
           x.textAlign="center";x.font=`600 ${W*.046}px ${F_U}`;x.fillStyle="#fff";x.shadowColor="rgba(0,0,0,.35)";x.shadowBlur=W*.006;x.shadowOffsetY=W*.002;
-          x.fillText(`${CARDS.length} cartes`,W/2,H*.713);x.shadowOffsetY=0;x.globalAlpha=.85;x.font=`600 ${W*.032}px ${F_L}`;x.fillStyle="#fff";x.shadowColor="rgba(0,0,0,.6)";x.shadowBlur=W*.008;
+          x.fillText(`${BASE_N()} cartes`,W/2,H*.713);x.shadowOffsetY=0;x.globalAlpha=.85;x.font=`600 ${W*.032}px ${F_L}`;x.fillStyle="#fff";x.shadowColor="rgba(0,0,0,.6)";x.shadowBlur=W*.008;
           x.fillText("TOUCHE POUR OUVRIR",W/2,H*.93);x.globalAlpha=1;x.shadowColor="transparent";
           out.regions.push({x:0,y:0,w:1,h:1,act:"open"});return out;}
         if(f.type==="cover"){
@@ -3039,7 +3039,7 @@ td.n{text-align:right}
           const tg=x.createLinearGradient(0,cy+ts*.1,0,cy+ts*2.1);tg.addColorStop(0,"#fff6d8");tg.addColorStop(.22,"#ffd166");tg.addColorStop(.28,"#c98a1a");tg.addColorStop(.5,"#ffe3a0");tg.addColorStop(.72,"#ffd166");tg.addColorStop(.78,"#c98a1a");tg.addColorStop(1,"#ffe3a0");
           ["MONKEY","FAMILY"].forEach((t,i)=>{const yy=cy+ts*(1+i*1.02);x.fillStyle="rgba(0,0,0,.45)";x.fillText(t,W/2,yy+W*.008);x.fillStyle=tg;x.fillText(t,W/2,yy);});
           x.font=`600 ${W*.038}px ${F_L}`;x.fillStyle="#ffd98a";x.fillText("CLASSEUR OFFICIEL",W/2,cy+ts*2.55);
-          x.font=`500 ${W*.042}px ${F_U}`;x.fillStyle="#efe6ff";x.fillText(`${CARDS.length} cartes`,W/2,cy+ts*3.25);
+          x.font=`500 ${W*.042}px ${F_U}`;x.fillStyle="#efe6ff";x.fillText(`${BASE_N()} cartes`,W/2,cy+ts*3.25);
           x.globalAlpha=.7;x.font=`600 ${W*.032}px ${F_L}`;x.fillStyle="#fff";x.fillText("TOUCHE POUR OUVRIR",W/2,H*.93);x.globalAlpha=1;
           out.regions.push({x:0,y:0,w:1,h:1,act:"open"});return out;}
         if(f.type==="inside"||f.type==="lining"){
@@ -3048,7 +3048,7 @@ td.n{text-align:right}
         if(f.type==="blank"){x.fillStyle="#ebe5d8";x.fillRect(0,0,W,H);x.strokeStyle="rgba(0,0,0,.035)";x.lineWidth=W*.012;for(let i=-H;i<W;i+=W*.045){x.beginPath();x.moveTo(i,0);x.lineTo(i+H,H);x.stroke();}holes(x,W,H,sp);return out;}
         paper(x,W,H,sp);holes(x,W,H,sp);
         if(f.type==="toc"){
-          let y=header(x,W,L,Rr,top,"Sommaire",`${ownedN()} / ${CARDS.length}`)+W*.03;
+          let y=header(x,W,L,Rr,top,"Sommaire",`${ownedN()} / ${BASE_N()}`)+W*.03;
           const firstPage={};PAGES.forEach((p,i)=>{if(firstPage[p.cat]===undefined)firstPage[p.cat]=i;});
           const rh=W*.1;
           cats.forEach(cat=>{const all=CARDS.filter(c=>bcat(c)===cat),got=all.filter(c=>S.owned[c.id]).length;
