@@ -147,6 +147,12 @@ header p{margin:4px 0 0;color:var(--muted);max-width:66ch}
 .face.back .emb{position:relative;width:46%;aspect-ratio:548/720}
 .face.back .emb canvas{position:absolute;inset:0;width:100%;height:100%}
 .face.back .emb .ea{transform-origin:67.9% 41.7%}
+/* recap of a big booster (8-9 cards): flat cards without the 3D layers and blend effects, phones run out of graphics memory otherwise (black patches) */
+.stage.lite .card{perspective:none}
+.stage.lite .card .tilt,.stage.lite .card .flip{transform:none!important;transform-style:flat}
+.stage.lite .card .face.back,.stage.lite .card .holo{display:none}
+.stage.lite .card .face.front{transform:none;backface-visibility:visible;-webkit-backface-visibility:visible}
+.stage.lite .card .aura{box-shadow:0 0 16px 3px var(--glow,#fff)}
 .card .aura{position:absolute;inset:1.5%;border-radius:7%/5%;opacity:0;pointer-events:none;box-shadow:0 0 40px 12px var(--glow,#fff),0 0 90px 30px var(--glow,#fff)}
 .tag{position:absolute;left:50%;bottom:-30px;translate:-50% 0;white-space:nowrap;font:700 13px var(--label);letter-spacing:.1em;text-transform:uppercase;opacity:0;color:var(--stage-fg)}
 
@@ -2687,7 +2693,7 @@ td.n{text-align:right}
       gsap.to(s.el,{x:pos[i].x,y:pos[i].y,rotation:0,scale:sc,opacity:1,duration:D(.55),delay:D(i*.08),ease:"back.out(1.3)"});
       gsap.to(s.aura,{opacity:RARITIES[s.c.r].glow?.4:0,duration:.4});
       gsap.to(s.el.querySelector(".tag"),{opacity:1,duration:.3,delay:D(.4+i*.08)});});
-    setTimeout(()=>{busy=false;mode="summary";setHint("Touche une carte pour l'agrandir");tickPacks();setBtn(limitOn()&&avail()<=0?"Terminer":"Ouvrir un autre booster");if(SRV&&CLOUD)srvRefresh();
+    setTimeout(()=>{busy=false;mode="summary";stage.classList.toggle("lite",shown.length>5);setHint("Touche une carte pour l'agrandir");tickPacks();setBtn(limitOn()&&avail()<=0?"Terminer":"Ouvrir un autre booster");if(SRV&&CLOUD)srvRefresh();
       say(XP?`${XP.title} : ${deckCards.map(c=>c.name.trim()).join(", ")}.`:`Booster n° ${S.opened} : ${deckCards.map(c=>c.name.trim()).join(", ")}.`);renderStats();},D(800));
   }
 
@@ -2714,7 +2720,7 @@ td.n{text-align:right}
 
   function backToPack(){
     if(SFX.mute){SFX.mute=false;VOICE.stopMusic(1500);}
-    XP=null;VOICE.stop();cancelAnimationFrame(foilRaf);stack.innerHTML="";stack.style.clipPath="";shown=[];idx=0;parts=[];
+    XP=null;VOICE.stop();cancelAnimationFrame(foilRaf);stage.classList.remove("lite");stack.innerHTML="";stack.style.clipPath="";shown=[];idx=0;parts=[];
     gsap.set("#dim",{opacity:0});ov.innerHTML="";bov.innerHTML="";stage.querySelectorAll(".zoom").forEach(z=>z.remove());
     if(use3d){P3.show(true);mode="pack";packHint();setBtn("Ouvrir le booster");renderPacks();return;}
     gsap.set(pack,{display:"block",x:0,y:0,rotation:0});gsap.set(pack.querySelectorAll(".top,.body"),{x:0,y:0,rotation:0,opacity:1});
