@@ -1808,7 +1808,7 @@ td.n{text-align:right}
         case "pop":tone(c,700,t,.08,"sine",.08,1100);break;}}
     function vib(k){if(!PREFS.vib||!navigator.vibrate||(navigator.userActivation&&!navigator.userActivation.hasBeenActive))return;const P={rip:4,slide:10,tear:25,flip:8,Rare:20,"Épique":[30,40,30],"Légendaire":[40,40,60],"Mythique":[80,50,120,50,160],"Secret":[60,40,100,40,140],"Originel":[100,60,100,60,250]};
       if(P[k])try{navigator.vibrate(P[k]);}catch(e){}}
-    return {play(k){try{play(k);}catch(e){}vib(k);}};})();
+    return {mute:false,play(k){if(this.mute)return;try{play(k);}catch(e){}vib(k);}};})();
 
   /* recorded reveal sounds for the special rarities (assets: mp4 with AAC first, webm/opus as fallback); played from the start of the reveal animation */
   const RSND={"Épique":["72ecab68a62c276eeaa8458b3c44708c","17cf7b9fa7913aaf19953e7be0f4afc0"],"Légendaire":["b1ae4d116d134f85b0c6fe03cc34d1c3","65cc3692e834e038b508ad7f0c2d92a5"],
@@ -1822,6 +1822,7 @@ td.n{text-align:right}
     "Répliques Cultes":["5f7e93ee26cfe8d47426fd9f1b9bce92","43dea6f9847a0d78b3993c963825b32d"],"Heures perdues":["a488eb43b0ac8442f5ee55c1fdeff7d2","46c7af455f103af4e5f8a6c4461bcdfb"],
     "Running gags":["4f639ed00c0bbb34cfc21b6561ce92f5","8b62640e529e4a675d1aafb6c9cfb5ce"],[ULT_CAT]:["cea991e11bf858c1b747ad87b6dff607","e13a7acfdd3f4fbc61bf12256df9f796"]};
   CARDS.forEach(c=>{if(c.excl&&!c.ev&&CAT_MUSIC[c.cat])CSND[c.key]=CAT_MUSIC[c.cat];});
+  CSND["__pack-gaming"]=["991e25a18e33d0be5791361e79f9e419","36cebe09aa77299fcbecbb3737a45d57"];  // launch booster: music for the whole opening
   const VOICE=(function(){const els={},mels={};let cur=null,mus=null,unlocked=false;
     function mk(v,pre){if(!v||location.protocol==="file:")return null;let a;try{a=new Audio();}catch(e){return null;}a.preload=pre;
       const mp4=a.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')||a.canPlayType("video/mp4"),webm=a.canPlayType('video/webm; codecs="opus"');
@@ -1839,7 +1840,7 @@ td.n{text-align:right}
     setTimeout(()=>Object.keys(RSND).forEach(el),1500);
     return {has:k=>!!RSND[k],hasMusic:k=>!!CSND[k],stop,stopMusic,
       prep(k){const m=mel(k);if(m&&m.preload!=="auto"){m.preload="auto";try{m.load();}catch(e){}}},
-      music(k){if(!PREFS.snd)return;const m=mel(k);if(!m)return;
+      music(k,o){if(!PREFS.snd)return;const m=mel(k);if(!m)return;try{m.loop=!!(o&&o.loop);}catch(e){}
         if(cur){const c=cur;cur=null;fade(c,0,500,()=>{try{c.pause();c.volume=1;}catch(e){}});}
         if(mus&&mus!==m)stopMusic(400);mus=m;clearInterval(m._f);try{m.muted=false;m.currentTime=0;m.volume=.2;}catch(e){}
         try{const p=m.play();if(p&&p.catch)p.catch(()=>{if(mus===m)mus=null;});}catch(e){mus=null;return;}fade(m,1,700);},
@@ -2059,7 +2060,7 @@ td.n{text-align:right}
   pack.style.setProperty("--packimg",`url(${PACK_SRC[0]})`);pack.classList.add("art");
   const PACK_AR=1226/720, PACK_TEAR=.93;
   /* exclusive boosters (event): their own wrapper, same size as the normal one */
-  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël",ico:"🎄"},gaming:{src:["packs/gaming-front.webp","packs/gaming-back.webp"],name:"Booster de lancement",ico:"🎮"}};
+  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël",ico:"🎄"},gaming:{src:["packs/gaming-front.webp","packs/gaming-back.webp"],name:"Booster de lancement",ico:"🎮",music:"__pack-gaming"}};
   const skinImgs={};
   function skinLoad(k){if(!SKINS[k])return null;if(!skinImgs[k]){const imgs=SKINS[k].src.map(u=>{const i=new Image();i.decoding="async";i.src=u;return i;});
     skinImgs[k]={imgs,ready:Promise.all(imgs.map(i=>i.decode?i.decode().catch(()=>{}):new Promise(r=>{i.onload=i.onerror=r;})))};}return skinImgs[k];}  // height/width of the wrapper; the tear line sits just under the top crimp
@@ -2350,7 +2351,7 @@ td.n{text-align:right}
 
   let curSkin="";
   function setSkin(k){k=SKINS[k]?k:"";if(k===curSkin)return;curSkin=k;pack.style.setProperty("--packimg",`url(${k?SKINS[k].src[0]:PACK_SRC[0]})`);
-    if(k)skinLoad(k);P3.skin&&P3.skin(k?skinLoad(k):null);stage.classList.toggle("xmas",k==="noel");stage.classList.toggle("neon",k==="gaming");}
+    if(k){skinLoad(k);if(SKINS[k].music)VOICE.prep(SKINS[k].music);}P3.skin&&P3.skin(k?skinLoad(k):null);stage.classList.toggle("xmas",k==="noel");stage.classList.toggle("neon",k==="gaming");}
   let use3d=P3.ok;
   try{if(localStorage.getItem(KEY+"-3d")==="0")use3d=false;}catch(e){}
   $("three3d").checked=use3d;$("three3d").disabled=!P3.ok;
@@ -2367,13 +2368,16 @@ td.n{text-align:right}
 
   function buildStack(cards){
     stack.innerHTML="";shown=[];
+    // big decks (exclusive boosters): lighter canvases, phones run out of canvas memory and blank some cards otherwise
+    const K=cards.length>5?Math.min(PILE_K,.9):PILE_K;
     cards.forEach((c,i)=>{
       const el=document.createElement("div");el.className="card";el.style.zIndex=10-i;
       el.setAttribute("role","img");el.setAttribute("aria-label",`${c.name.trim()}, ${c.rarity}`);
-      el.innerHTML=`<div class="tilt"><div class="aura"></div><div class="flip"><div class="face back"><div class="emb"><canvas class="eb" width="411" height="540"></canvas><canvas class="ea" width="411" height="540"></canvas></div></div><div class="face front"><canvas width="${Math.round(750*PILE_K)}" height="${Math.round(1050*PILE_K)}"></canvas><div class="holo"></div></div></div></div><div class="tag"></div>`;
+      el.innerHTML=`<div class="tilt"><div class="aura"></div><div class="flip"><div class="face back"><div class="emb"><canvas class="eb" width="411" height="540"></canvas><canvas class="ea" width="411" height="540"></canvas></div></div><div class="face front"><canvas width="${Math.round(750*K)}" height="${Math.round(1050*K)}"></canvas><div class="holo"></div></div></div></div><div class="tag"></div>`;
       const RR=RARITIES[c.r];el.style.setProperty("--holo",RR.foil?(RR.glow?.75:.6):(c.r>=2?.35:.22));if(!RR.foil)el.classList.add("plain");
       backEmblem(el.querySelector(".back .emb"));
       const cv=el.querySelector(".front canvas");paint(cv,c,0);
+      cv.addEventListener("contextrestored",()=>paint(cv,c,0));  // the browser dropped the picture to save memory: draw it again
       const tag=el.querySelector(".tag");tag.textContent=c.rarity;tag.style.color=RARITIES[c.r].rainbow?"#fff":RARITIES[c.r].tx;
       el.addEventListener("click",e=>{if(mode==="summary"){e.stopPropagation();zoom(c);}});
       gsap.set(el,{xPercent:-50,yPercent:-50});// centring lives in GSAP, so every x/y below is an offset from the stage centre
@@ -2393,8 +2397,11 @@ td.n{text-align:right}
   const COARSE=matchMedia("(pointer:coarse)").matches;
   function foilLoop(){cancelAnimationFrame(foilRaf);if(reduce)return;const t0=performance.now();
     let fr=0;const step=()=>{const ph=((performance.now()-t0)/40)%360,sum=mode==="summary";fr++;
-      // recap: several shiny cards at once, a lower frame rate keeps phones smooth (a third on phones, half on computers)
-      if(sum&&fr%(COARSE?3:2)){foilRaf=requestAnimationFrame(step);return;}
+      // recap: several shiny cards at once, redraw only one of them per frame (in turn) so phones never stutter
+      if(sum){const sh=shown.filter(s=>s.el.dataset.open&&(s.lent||RARITIES[s.c.r].foil||formsOf(s.c)));
+        if(sh.length&&!(COARSE&&fr%2)){const s=sh[Math.floor(fr/(COARSE?2:1))%sh.length];
+          if(s.lent)lentRender(s.cv,s.c,Math.round(ph/1.6)*1.6,s.lent.t,s.lent.cache);else paint(s.cv,s.c,ph);}
+        foilRaf=requestAnimationFrame(step);return;}
       shown.forEach((s,j)=>{if(!s.el.dataset.open)return;if(!sum&&j<idx)return;  // cards already swiped away are off screen
       if(s.lent)lentRender(s.cv,s.c,Math.round(ph/1.6)*1.6,s.lent.t,s.lent.cache); // both pictures redrawn every few frames, blend every frame
       else if(RARITIES[s.c.r].foil||formsOf(s.c))paint(s.cv,s.c,ph);});foilRaf=requestAnimationFrame(step);};
@@ -2404,6 +2411,8 @@ td.n{text-align:right}
   async function open(o){
     if(busy||mode!=="pack")return;
     const xp=XPK();XP=xp;
+    // the launch booster has its own music for the whole opening, and no card sound effects over it
+    const xm=xp&&(SKINS[xp.skin]||{}).music;if(xm){VOICE.music(xm,{loop:true});SFX.mute=true;}
     if(!xp&&!takePack()){if(use3d)P3.show(false);setHint("Plus de booster : le prochain arrive dans "+hms(S.nextAt-Date.now()));renderPacks();return;}
     busy=true;mode="opening";say("");setBtn("Ouverture…",true);
     if(SRV){let res;
@@ -2704,6 +2713,7 @@ td.n{text-align:right}
     gsap.killTweensOf(b);gsap.timeline().fromTo(b,{opacity:0,scale:.6},{opacity:1,scale:1,duration:.4,ease:"back.out(2)"}).to(b,{opacity:0,y:-20,duration:.6,delay:1.2}).set(b,{y:0});}
 
   function backToPack(){
+    if(SFX.mute){SFX.mute=false;VOICE.stopMusic(1500);}
     XP=null;VOICE.stop();cancelAnimationFrame(foilRaf);stack.innerHTML="";stack.style.clipPath="";shown=[];idx=0;parts=[];
     gsap.set("#dim",{opacity:0});ov.innerHTML="";bov.innerHTML="";stage.querySelectorAll(".zoom").forEach(z=>z.remove());
     if(use3d){P3.show(true);mode="pack";packHint();setBtn("Ouvrir le booster");renderPacks();return;}
@@ -3718,6 +3728,7 @@ td.n{text-align:right}
   function renderPacks(){
     const el=$("packs"),xp=XPK(),nx=((SRV&&S.xpacks)||[]).length;
     if(mode==="pack"&&!busy)try{setSkin(xp?xp.skin:"");}catch(e){}
+    if(mode==="pack"&&!busy&&SFX.mute){SFX.mute=false;VOICE.stopMusic(1200);}  // an opening that failed: no music left behind
     const xLbl="Ouvrir le booster exclusif",xTag=nx?` <span class="xpk">+ ${nx} exclusi${nx>1?"fs":"f"}</span>`:"";
     if(!limitOn()){el.innerHTML=`<b>Boosters illimités${xTag}</b><span>mode test</span>`;stage.classList.remove("nopack");
       if(mode==="pack"&&!busy){const l=xp?xLbl:"Ouvrir le booster";if(/Prochain|^Ouvrir le booster/.test(openBtn.textContent)&&openBtn.textContent!==l)setBtn(l);}return;}
