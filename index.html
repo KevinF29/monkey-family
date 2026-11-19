@@ -2101,11 +2101,19 @@ td.n{text-align:right}
     let skinI=null;
     function art(back){
       const si=skinI&&skinI[back?1:0],im=si&&si.complete&&si.naturalWidth?si:PACK_IMG[back?1:0];
-      if(im.complete&&im.naturalWidth){const c=document.createElement("canvas");c.width=720;c.height=1226;const x=c.getContext("2d");x.drawImage(im,0,0,720,1226);
+      if(im.complete&&im.naturalWidth){const c=document.createElement("canvas");c.width=720;c.height=1226;const x=c.getContext("2d");const ob=sideCrop(im);x.drawImage(im,ob.l,0,im.naturalWidth-ob.l-ob.r,im.naturalHeight,0,0,720,1226);
         if(!back){x.setLineDash([16,11]);x.lineCap="round";x.strokeStyle="rgba(255,255,255,.85)";x.lineWidth=4;x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=4;
           x.beginPath();x.moveTo(30,1226*(1-TEAR));x.lineTo(690,1226*(1-TEAR));x.stroke();}
         return c;}
       return artOld(back);}
+    /* the wrapper images have a few transparent pixels on their left and right edges: crop them so the front and back
+       meet on the sides of the 3D pack (otherwise a dark gap shows when the pack is turned edge-on) */
+    function sideCrop(im){
+      if(im.__sc)return im.__sc;let l=0,r=0;
+      try{const w=im.naturalWidth,h=im.naturalHeight,c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0);
+        [.3,.5,.7].forEach(f=>{const d=x.getImageData(0,Math.floor(h*f),w,1).data;let a=0,b=0;while(a<w/4&&d[a*4+3]<200)a++;while(b<w/4&&d[(w-1-b)*4+3]<200)b++;l=Math.max(l,a);r=Math.max(r,b);});
+        l=Math.min(l+1,w/8);r=Math.min(r+1,w/8);}catch(e){l=r=0;}
+      return im.__sc={l,r};}
     function artOld(back){
       const c=document.createElement("canvas");c.width=512;c.height=716;const x=c.getContext("2d"),W=512,H=716;
       const g=x.createLinearGradient(0,0,W,H);
