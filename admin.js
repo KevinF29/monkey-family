@@ -69,19 +69,22 @@
       say(P && P.ios() && !P.standalone() ? "Sur iPhone : installe d'abord l'appli sur l'écran d'accueil (ligne « Appli »), puis active-les depuis l'appli." : "Non disponibles sur ce navigateur.");
       return;
     }
-    const refresh = async () => { sw.checked = Notification.permission === "granted" && !!(await P.current()); syncNotif(); };
+    const refresh = async () => { sw.checked = P.isOn ? await P.isOn() : Notification.permission === "granted" && !!(await P.current()); syncNotif(); };
     await refresh();
     if (Notification.permission === "denied") say("Bloquées dans les réglages du navigateur : autorise-les pour ce site.");
+    let busyP = false;
     sw.addEventListener("change", async () => {
-      sw.disabled = true;
+      if (busyP) return; busyP = true; const want = sw.checked; syncNotif();
       try{
-        if (sw.checked){ await P.enable(); say("Activées sur cet appareil : choisis ci-dessous ce qui te prévient."); }
+        if (want){ say("Activation…"); await P.enable(); say("Activées sur cet appareil : choisis ci-dessous ce qui te prévient."); }
         else { await P.disable(); say("Désactivées sur cet appareil."); }
       }catch(e){
         const m = String(e && e.message || e);
         say(m === "denied" ? "Refusées : autorise les notifications pour ce site dans les réglages du navigateur." : m === "dismissed" ? "Pas encore autorisées : réessaie et choisis « Autoriser »." : "Activation impossible pour l'instant, réessaie.");
+      }finally{
+        try{ await refresh(); }catch(e){ sw.checked = false; syncNotif(); }
+        busyP = false; sw.disabled = false;
       }
-      await refresh(); sw.disabled = false;
     });
   }
 
