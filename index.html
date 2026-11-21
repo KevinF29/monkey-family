@@ -372,6 +372,9 @@ td.n{text-align:right}
 .mktag{display:inline-block;font:700 11px var(--ui);padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#e9e4f2;margin-left:6px;vertical-align:1px}
 .mktag.mknew{background:#ffd98a;color:#241a05}
 .mktag.mkout{background:#ff6b6b;color:#fff}
+.afilt{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:10px}.afilt::-webkit-scrollbar{display:none}
+.afilt button{flex:none;appearance:none;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#e9e4f2;border-radius:999px;padding:7px 12px;font:700 13px var(--ui);cursor:pointer;border-left:4px solid var(--rc,rgba(255,255,255,.22))}
+.afilt button[aria-pressed="true"]{background:#ffd98a;color:#241a05;border-color:#ffd98a;border-left-color:var(--rc,#ffd98a)}
 .seg.adur{justify-self:start;grid-template-columns:repeat(3,1fr);width:210px;background:rgba(0,0,0,.25);border-color:rgba(255,255,255,.2)}.seg.adur button{color:#e9e4f2}.seg.adur button[aria-pressed="true"]{background:#ffd98a;color:#241a05}
 .abid{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.abid input{width:96px;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#fff;font:700 15px var(--ui)}
 .aclock{font-weight:700;font-variant-numeric:tabular-nums;color:#e9e4f2}.aclock.soon{color:#ffb35c}
@@ -4071,7 +4074,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   /* ---------- marché : échanges de doubles entre joueurs, carte contre carte, même rareté ---------- */
   /* ---------- Enchères : un double mis en vente 24 h, mise de départ = prix de recyclage, +1 banane minimum ---------- */
   const MARKET=(function(){let mkT=0;const mkSay=t=>{const e=$("mkMsg");if(!e)return;e.textContent=t||"";e.hidden=!t;clearTimeout(mkT);if(t)mkT=setTimeout(()=>{e.hidden=true;},6000);};
-    const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[],mybids:[]},loaded=false,err="",busyMk=false,offerKey="",hours=24,off=0,tickI=0,reloadT=0;
+    const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[],mybids:[]},loaded=false,err="",busyMk=false,offerKey="",hours=24,rarF="",off=0,tickI=0,reloadT=0;
     const mine=x=>x.uid===UID;
     const nOf=c=>c?(S.owned[c.id]||0):0;
     const label=c=>`<b>${esc(c.name.trim())}</b> <span class="mktag">${c.num}</span>`;
@@ -4122,10 +4125,14 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     function priceLine(x){return x.top==null?`Mise de départ : <b>${ban(x.start)}</b> · aucune offre`
       :`Meilleure offre : <b>${ban(x.top)}</b> par <b>${lead(x)?"toi":who(x.topUid,x.topPseudo)}</b> · ${x.bids} enchère${x.bids>1?"s":""}`;}
     function renderAll(){
-      const list=data.open.filter(x=>!mine(x)&&cardOfKey(x.card)).sort((a,b)=>(outbid(b)-outbid(a))||(a.ends-b.ends));
+      const all=data.open.filter(x=>!mine(x)&&cardOfKey(x.card)).sort((a,b)=>(outbid(b)-outbid(a))||(a.ends-b.ends));
+      const cnt={};all.forEach(x=>{const r=cardOfKey(x.card).rarity;cnt[r]=(cnt[r]||0)+1;});
+      if(rarF&&!cnt[rarF])rarF="";
+      const list=rarF?all.filter(x=>cardOfKey(x.card).rarity===rarF):all;
+      const chips=all.length>1&&Object.keys(cnt).length>1?`<div class="afilt" role="group" aria-label="Filtrer par rareté"><button type="button" data-rf="" aria-pressed="${!rarF}">Toutes · ${all.length}</button>${RARITIES.filter(R=>cnt[R.name]).map(R=>`<button type="button" data-rf="${esc(R.name)}" aria-pressed="${rarF===R.name}" style="--rc:${R.rainbow?"#c06bff":R.a}">${esc(R.name)} · ${cnt[R.name]}</button>`).join("")}</div>`:"";
       seenT=Math.max(seenT,...data.open.map(x=>+x.t||0));lsSet("mf-auc-seen",seenT);badge();
       body.innerHTML=`<p class="shint">Chaque vente dure 6, 12 ou 24 h, au choix du vendeur. Enchéris d'au moins 1 banane de plus que la meilleure offre : tes bananes sont mises de côté, et rendues si quelqu'un te dépasse. À la fin, la carte part au meilleur enchérisseur.</p>
-        <div class="slist">${list.map(x=>{const c=cardOfKey(x.card),missing=!nOf(c),n=need(x),me=lead(x),ob=outbid(x);
+        ${chips}<div class="slist">${list.map(x=>{const c=cardOfKey(x.card),missing=!nOf(c),n=need(x),me=lead(x),ob=outbid(x);
           return `<div class="mkitem${ob?" can":""}">${thumb(c)}<div class="mkmain">
             <p><b>${who(x.uid,x.pseudo)}</b> vend ${label(c)} ${rpill(c.rarity)}${missing?`<span class="mktag mknew">Tu ne l'as pas</span>`:`<span class="mktag">Tu l'as ×${nOf(c)}</span>`}</p>
             <p><small>${priceLine(x)}</small></p>
@@ -4134,6 +4141,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
               :`<div class="abid"><input type="number" inputmode="numeric" min="${n}" step="1" value="${n}" aria-label="Ton offre en bananes" data-amt="${x.id}"><span>🍌</span><button class="sbtn" data-bid="${x.id}">Enchérir</button></div>`}
             </div></div>`;}).join("")
           ||`<p class="shint">Aucune vente en cours. Mets un de tes doubles aux enchères dans « Vendre » !</p>`}</div>`;
+      body.querySelectorAll("[data-rf]").forEach(b=>b.addEventListener("click",()=>{rarF=b.dataset.rf;render();}));
       body.querySelectorAll("[data-bid]").forEach(b=>b.addEventListener("click",()=>bid(+b.dataset.bid,b)));
       body.querySelectorAll("[data-amt]").forEach(i=>i.addEventListener("input",()=>{const b=body.querySelector(`[data-bid="${i.dataset.amt}"]`);if(b){b.dataset.sure="";b.textContent="Enchérir";}}));}
     async function bid(id,b){if(busyMk)return;const x=data.open.find(o=>o.id===id),c=x&&cardOfKey(x.card);if(!c)return;
