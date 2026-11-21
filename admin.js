@@ -10,7 +10,7 @@
     inst.innerHTML = `<span class="sl"><b>Appli</b><small id="mfInstallTxt">Ajoute Monkey Family sur ton écran d'accueil</small></span><button type="button" class="sbtn" id="mfInstallBtn">Installer</button>`;
     box.insertBefore(inst, save);
     const nt = document.createElement("div"); nt.className = "srow"; nt.id = "mfPushRow";
-    nt.innerHTML = `<span class="sl"><b>Notifications</b><small id="mfPushSum">Boosters, événements, enchères</small></span><button type="button" class="sbtn" id="mfNotifBtn" aria-controls="mfNotif" aria-expanded="false">Choisir ›</button>`;
+    nt.innerHTML = `<span class="sl"><b>Notifications</b><small id="mfPushSum">Boosters, events, enchères</small></span><button type="button" class="sbtn" id="mfNotifBtn" aria-controls="mfNotif" aria-expanded="false">Choisir ›</button>`;
     box.insertBefore(nt, save);
     const np = document.createElement("div"); np.id = "mfNotif"; np.hidden = true;
     np.innerHTML = `<div class="nfhead"><button type="button" class="sbtn" id="mfNotifBack">‹ Retour</button><h2>Notifications</h2></div>
@@ -37,7 +37,7 @@
   function syncNotif(){
     const on = $("mfPushOn").checked;
     document.querySelectorAll("#mfNotif .nfsub").forEach(r => { const i = r.querySelector("input"); i.checked = !!PREF[i.dataset.k]; i.disabled = !on || prefOk === false; r.classList.toggle("off", !on || prefOk === false); });
-    const names = [["packs", "boosters"], ["events", "événements"], ["auctions", "enchères"]].filter(([k]) => PREF[k]).map(([, n]) => n);
+    const names = [["packs", "boosters"], ["events", "events"], ["auctions", "enchères"]].filter(([k]) => PREF[k]).map(([, n]) => n);
     $("mfPushSum").textContent = !on ? "Désactivées sur cet appareil" : names.length ? "Activées : " + names.join(", ") : "Activées, mais aucun type choisi";
   }
   async function loadPrefs(){
