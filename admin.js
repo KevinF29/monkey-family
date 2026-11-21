@@ -10,8 +10,19 @@
     inst.innerHTML = `<span class="sl"><b>Appli</b><small id="mfInstallTxt">Ajoute Monkey Family sur ton écran d'accueil</small></span><button type="button" class="sbtn" id="mfInstallBtn">Installer</button>`;
     box.insertBefore(inst, save);
     const nt = document.createElement("div"); nt.className = "srow"; nt.id = "mfPushRow";
-    nt.innerHTML = `<span class="sl"><b>Notifications</b><small id="mfPushTxt">Préviens-moi quand un booster est prêt</small></span><input type="checkbox" class="switch" id="mfPushOn" role="switch" aria-describedby="mfPushTxt">`;
+    nt.innerHTML = `<span class="sl"><b>Notifications</b><small id="mfPushSum">Boosters, événements, enchères</small></span><button type="button" class="sbtn" id="mfNotifBtn" aria-controls="mfNotif" aria-expanded="false">Choisir ›</button>`;
     box.insertBefore(nt, save);
+    const np = document.createElement("div"); np.id = "mfNotif"; np.hidden = true;
+    np.innerHTML = `<div class="nfhead"><button type="button" class="sbtn" id="mfNotifBack">‹ Retour</button><h2>Notifications</h2></div>
+      <div class="srow"><label class="sl" for="mfPushOn"><b>Toutes les notifications</b><small id="mfPushTxt">Sur cet appareil</small></label><input type="checkbox" class="switch" id="mfPushOn" role="switch" aria-describedby="mfPushTxt"></div>
+      <div class="srow nfsub"><label class="sl" for="nfPacks"><b>Boosters disponibles</b><small>Quand un booster est prêt à ouvrir</small></label><input type="checkbox" class="switch" id="nfPacks" data-k="packs" role="switch"></div>
+      <div class="srow nfsub"><label class="sl" for="nfEvents"><b>Événements</b><small>Cadeaux, boosters offerts et événements spéciaux</small></label><input type="checkbox" class="switch" id="nfEvents" data-k="events" role="switch"></div>
+      <div class="srow nfsub"><label class="sl" for="nfAuctions"><b>Enchères</b><small>Quand quelqu'un enchérit au-dessus de toi</small></label><input type="checkbox" class="switch" id="nfAuctions" data-k="auctions" role="switch"></div>
+      <p class="savestate" id="nfMsg" role="status"></p>`;
+    box.appendChild(np);
+    const st = document.createElement("style");
+    st.textContent = `.sheetbox.nfopen>:not(#mfNotif){display:none}#mfNotif{display:grid;gap:14px}#mfNotif[hidden]{display:none}.nfhead{display:flex;align-items:center;gap:12px}.nfhead h2{margin:0}.nfsub.off{opacity:.45}`;
+    document.head.appendChild(st);
     const adm = document.createElement("div"); adm.className = "srow mfadminrow";
     adm.innerHTML = `<span class="sl"><b>Admin</b><small>Joueurs, liens personnels et médias</small></span><button type="button" class="sbtn" id="mfAdminBtn">Gérer</button>`;
     box.insertBefore(adm, save);
@@ -21,21 +32,50 @@
   }
 
   /* ---------- notifications ---------- */
+  /* sous-menu des notifications : un interrupteur général (cet appareil) et un par type (enregistrés sur le serveur, pour le joueur) */
+  const PREF = {packs:true, events:true, auctions:true}; let prefOk = null;
+  function syncNotif(){
+    const on = $("mfPushOn").checked;
+    document.querySelectorAll("#mfNotif .nfsub").forEach(r => { const i = r.querySelector("input"); i.checked = !!PREF[i.dataset.k]; i.disabled = !on || prefOk === false; r.classList.toggle("off", !on || prefOk === false); });
+    const names = [["packs", "boosters"], ["events", "événements"], ["auctions", "enchères"]].filter(([k]) => PREF[k]).map(([, n]) => n);
+    $("mfPushSum").textContent = !on ? "Désactivées sur cet appareil" : names.length ? "Activées : " + names.join(", ") : "Activées, mais aucun type choisi";
+  }
+  async function loadPrefs(){
+    try{ Object.assign(PREF, await window.MF_RPC("mf_notif_get")); prefOk = true; $("nfMsg").textContent = ""; }
+    catch(e){ prefOk = false; $("nfMsg").textContent = "Le choix par type n'est pas encore installé sur le serveur : tu reçois toutes les notifications."; }
+    syncNotif();
+  }
+  function setupNotifMenu(){
+    const box = document.querySelector("#settings .sheetbox"), btn = $("mfNotifBtn"), panel = $("mfNotif");
+    const openSub = () => { box.classList.add("nfopen"); panel.hidden = false; btn.setAttribute("aria-expanded", "true"); loadPrefs(); $("mfNotifBack").focus(); };
+    const closeSub = () => { box.classList.remove("nfopen"); panel.hidden = true; btn.setAttribute("aria-expanded", "false"); };
+    btn.addEventListener("click", openSub);
+    $("mfNotifBack").addEventListener("click", () => { closeSub(); btn.focus(); });
+    new MutationObserver(() => { if ($("settings").hidden) closeSub(); }).observe($("settings"), {attributes:true, attributeFilter:["hidden"]});
+    panel.querySelectorAll(".nfsub input").forEach(i => i.addEventListener("change", async () => {
+      const k = i.dataset.k, v = i.checked; PREF[k] = v; syncNotif(); i.disabled = true;
+      try{ Object.assign(PREF, await window.MF_RPC("mf_notif_set", {p:{[k]:v}})); $("nfMsg").textContent = "Enregistré."; }
+      catch(e){ PREF[k] = !v; $("nfMsg").textContent = "Enregistrement impossible pour l'instant, réessaie."; }
+      syncNotif();
+    }));
+    if (window.MF_RPC) loadPrefs(); else syncNotif();
+  }
   async function setupPush(){
     const sw = $("mfPushOn"), txt = $("mfPushTxt"), P = window.MF_PUSH;
     const say = t => { txt.textContent = t; };
+    setupNotifMenu();
     if (!P || !P.supported()){
       sw.disabled = true;
       say(P && P.ios() && !P.standalone() ? "Sur iPhone : installe d'abord l'appli sur l'écran d'accueil (ligne « Appli »), puis active-les depuis l'appli." : "Non disponibles sur ce navigateur.");
       return;
     }
-    const refresh = async () => { sw.checked = Notification.permission === "granted" && !!(await P.current()); };
+    const refresh = async () => { sw.checked = Notification.permission === "granted" && !!(await P.current()); syncNotif(); };
     await refresh();
     if (Notification.permission === "denied") say("Bloquées dans les réglages du navigateur : autorise-les pour ce site.");
     sw.addEventListener("change", async () => {
       sw.disabled = true;
       try{
-        if (sw.checked){ await P.enable(); say("Activées : tu seras prévenu quand un booster est prêt et pendant les événements."); }
+        if (sw.checked){ await P.enable(); say("Activées sur cet appareil : choisis ci-dessous ce qui te prévient."); }
         else { await P.disable(); say("Désactivées sur cet appareil."); }
       }catch(e){
         const m = String(e && e.message || e);

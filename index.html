@@ -36,7 +36,7 @@ body:not(.admin) .mfadminrow{display:none!important}
 .mfbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .mferr{color:#c0392b}
 .mffile{display:block;text-align:center;margin:8px 0;cursor:pointer}
-#mfInstallBtn,#mfAdminBtn{background:var(--accent);color:var(--accent-fg);border:0;padding:8px 14px;border-radius:10px;font:600 14px system-ui,sans-serif;opacity:1;cursor:pointer;flex:none}
+#mfInstallBtn,#mfAdminBtn,#mfNotifBtn{background:var(--accent);color:var(--accent-fg);border:0;padding:8px 14px;border-radius:10px;font:600 14px system-ui,sans-serif;opacity:1;cursor:pointer;flex:none}
 .mfbtns .sbtn{white-space:nowrap}
 #mfadmin .sitem{flex-wrap:wrap;gap:8px}
 .mfev{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px;padding:12px;border-radius:12px;background:rgba(255,255,255,.05)}
@@ -250,9 +250,9 @@ body.kb .social{bottom:auto}
 .chatform input{flex:1;min-width:0;box-sizing:border-box;background:var(--field);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:10px 14px;font:500 16px var(--ui)}
 .chatform button{border-radius:999px}
 .socnote{color:var(--muted);font-size:13px;padding:0 14px 12px;margin:0}
-.setsheet{position:fixed;left:0;right:0;top:calc(max(12px,env(safe-area-inset-top,0px)) + 112px);z-index:140;display:grid;justify-items:end;padding:0 12px 12px;pointer-events:none}
+.setsheet{position:fixed;left:0;right:0;top:auto;bottom:calc(var(--tabh) + 8px);z-index:140;display:grid;justify-items:end;padding:0 12px 12px;pointer-events:none}
 .setsheet[hidden]{display:none}
-.sheetbox{pointer-events:auto;width:min(480px,100%);background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:18px;box-shadow:0 -10px 40px rgba(0,0,0,.3);padding:16px;display:grid;gap:14px;box-sizing:border-box;max-height:calc(100svh - var(--tabh) - 130px - env(safe-area-inset-top,0px));overflow:auto;overscroll-behavior:contain}
+.sheetbox{pointer-events:auto;width:min(480px,100%);background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:18px;box-shadow:0 -10px 40px rgba(0,0,0,.3);padding:16px;display:grid;gap:14px;box-sizing:border-box;max-height:calc(100svh - var(--tabh) - 40px - env(safe-area-inset-top,0px));overflow:auto;overscroll-behavior:contain}
 .sheetbox h2{margin:0;font:400 20px var(--display)}
 .srow{display:flex;align-items:center;justify-content:space-between;gap:14px}
 .srow .sl{display:grid}
@@ -339,6 +339,7 @@ td.n{text-align:right}
 .sbtn.big{width:100%;padding:13px;font-size:16px;background:#ffd98a;color:#241a05}
 .sbtn:focus-visible,.stabs button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .srow{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#mfNotif .srow{flex-wrap:nowrap}#mfNotif .switch{flex:none}#mfNotifBack{background:none;border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:7px 12px;font:600 14px var(--ui);cursor:pointer}
 .srow select{width:auto;background:#1b1826;color:#f3eee4;border-color:rgba(255,255,255,.2)}
 .slist{display:grid;gap:6px}
 .sitem{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
@@ -371,6 +372,7 @@ td.n{text-align:right}
 .mktag{display:inline-block;font:700 11px var(--ui);padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#e9e4f2;margin-left:6px;vertical-align:1px}
 .mktag.mknew{background:#ffd98a;color:#241a05}
 .mktag.mkout{background:#ff6b6b;color:#fff}
+.seg.adur{justify-self:start;grid-template-columns:repeat(3,1fr);width:210px;background:rgba(0,0,0,.25);border-color:rgba(255,255,255,.2)}.seg.adur button{color:#e9e4f2}.seg.adur button[aria-pressed="true"]{background:#ffd98a;color:#241a05}
 .abid{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.abid input{width:96px;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#fff;font:700 15px var(--ui)}
 .aclock{font-weight:700;font-variant-numeric:tabular-nums;color:#e9e4f2}.aclock.soon{color:#ffb35c}
 .amine{margin:0;color:#8fe3a8;font-weight:700;font-size:14px}
@@ -770,12 +772,12 @@ td.n{text-align:right}
   <button type="button" class="tab" id="binderBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12z"/><path d="M19 16h-12a2 2 0 0 0 -2 2"/><path d="M9 8h6"/></svg></span><span>Classeur</span></button>
   <button type="button" class="tab" id="marketBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 10l7.5 7.5a2.1 2.1 0 0 1 -3 3l-7.5 -7.5"/><path d="M6 9l4 -4"/><path d="M13 16l4 -4"/><path d="M8.5 6.5l6 6"/><path d="M4 21h8"/></svg></span><span class="tbadge alert" id="mkBadge" aria-label="nouvelles enchères" hidden>0</span><span>Enchères</span></button>
   <button type="button" class="tab on" id="tabBooster" aria-current="page"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.604 7.197l7.138 -3.109a.96 .96 0 0 1 1.27 .527l4.924 11.902a1 1 0 0 1 -.514 1.304l-7.137 3.109a.96 .96 0 0 1 -1.271 -.527l-4.924 -11.903a1 1 0 0 1 .514 -1.304z"/><path d="M15 4h1a1 1 0 0 1 1 1v3.5"/><path d="M20 6c.264 .112 .52 .217 .768 .315a1 1 0 0 1 .53 1.311l-2.298 5.374"/></svg></span><span>Booster</span></button>
-  <button type="button" class="tab" id="rankBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21l8 0"/><path d="M12 17l0 4"/><path d="M7 4l10 0"/><path d="M17 4v8a5 5 0 0 1 -10 0v-8"/><path d="M5 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M19 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/></svg></span><span>Classement</span></button>
   <button type="button" class="tab" id="shopBtn"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l18 0"/><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4"/><path d="M5 21l0 -10.15"/><path d="M19 21l0 -10.15"/><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/></svg></span><span class="tbadge" id="banCount" aria-label="bananes">0</span><span>Boutique</span></button>
+  <button type="button" class="tab" id="setBtn" aria-expanded="false" aria-controls="settings"><span class="ti" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg></span><span>Réglages</span></button>
 </nav>
 
 <button type="button" class="socialbtn" id="socialBtn" aria-label="Actu et chat" aria-expanded="false" aria-controls="social"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"/></svg><span class="sbadge" id="socialBadge" hidden></span></button>
-<button type="button" class="socialbtn gearbtn" id="setBtn" aria-label="Réglages" aria-expanded="false" aria-controls="settings"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg></button>
+<button type="button" class="socialbtn gearbtn" id="rankBtn" aria-label="Classement"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21l8 0"/><path d="M12 17l0 4"/><path d="M7 4l10 0"/><path d="M17 4v8a5 5 0 0 1 -10 0v-8"/><path d="M5 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M19 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/></svg></button>
 <aside id="social" class="social" aria-label="Actu et chat" hidden>
   <div class="sochead"><b>Entre potes</b><button type="button" class="socx" id="socClose" aria-label="Fermer">✕</button></div>
   <div class="soctabs" role="tablist"><button type="button" role="tab" id="socFeedTab" class="on" aria-selected="true">Actu<span class="dotn" id="feedN" hidden></span></button><button type="button" role="tab" id="socChatTab" aria-selected="false">Chat<span class="dotn" id="chatN" hidden></span></button></div>
@@ -4069,7 +4071,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   /* ---------- marché : échanges de doubles entre joueurs, carte contre carte, même rareté ---------- */
   /* ---------- Enchères : un double mis en vente 24 h, mise de départ = prix de recyclage, +1 banane minimum ---------- */
   const MARKET=(function(){let mkT=0;const mkSay=t=>{const e=$("mkMsg");if(!e)return;e.textContent=t||"";e.hidden=!t;clearTimeout(mkT);if(t)mkT=setTimeout(()=>{e.hidden=true;},6000);};
-    const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[],mybids:[]},loaded=false,err="",busyMk=false,offerKey="",off=0,tickI=0,reloadT=0;
+    const root=$("market"),body=$("mkBody");let open=false,tab="all",data={open:[],done:[],mybids:[]},loaded=false,err="",busyMk=false,offerKey="",hours=24,off=0,tickI=0,reloadT=0;
     const mine=x=>x.uid===UID;
     const nOf=c=>c?(S.owned[c.id]||0):0;
     const label=c=>`<b>${esc(c.name.trim())}</b> <span class="mktag">${c.num}</span>`;
@@ -4122,7 +4124,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
     function renderAll(){
       const list=data.open.filter(x=>!mine(x)&&cardOfKey(x.card)).sort((a,b)=>(outbid(b)-outbid(a))||(a.ends-b.ends));
       seenT=Math.max(seenT,...data.open.map(x=>+x.t||0));lsSet("mf-auc-seen",seenT);badge();
-      body.innerHTML=`<p class="shint">Chaque vente dure 24 h. Enchéris d'au moins 1 banane de plus que la meilleure offre : tes bananes sont mises de côté, et rendues si quelqu'un te dépasse. À la fin, la carte part au meilleur enchérisseur.</p>
+      body.innerHTML=`<p class="shint">Chaque vente dure 6, 12 ou 24 h, au choix du vendeur. Enchéris d'au moins 1 banane de plus que la meilleure offre : tes bananes sont mises de côté, et rendues si quelqu'un te dépasse. À la fin, la carte part au meilleur enchérisseur.</p>
         <div class="slist">${list.map(x=>{const c=cardOfKey(x.card),missing=!nOf(c),n=need(x),me=lead(x),ob=outbid(x);
           return `<div class="mkitem${ob?" can":""}">${thumb(c)}<div class="mkmain">
             <p><b>${who(x.uid,x.pseudo)}</b> vend ${label(c)} ${rpill(c.rarity)}${missing?`<span class="mktag mknew">Tu ne l'as pas</span>`:`<span class="mktag">Tu l'as ×${nOf(c)}</span>`}</p>
@@ -4177,12 +4179,15 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         <label class="mkh" for="mkOffer">La carte que tu mets aux enchères (un de tes doubles)</label>
         <select id="mkOffer">${groups.map(g=>`<optgroup label="${g.R.name}">${g.l.map(c=>`<option value="${c.key}" ${c.key===offerKey?"selected":""}>${c.num} · ${esc(c.name.trim())} (×${nOf(c)})</option>`).join("")}</optgroup>`).join("")}</select>
         <div class="mkitem">${thumb(o)}<div class="mkmain"><p>${label(o)} ${rpill(o.rarity)}</p><p><small>Mise de départ : <b>${ban(p)}</b> (le prix de recyclage d'une carte ${esc(o.rarity)}). Tu en gardes au moins une.</small></p></div></div>
-        <p class="shint">La vente dure 24 h. Si personne n'enchérit, la carte revient dans ta collection. Sinon, elle part au meilleur enchérisseur et tu reçois ses bananes.</p>
-        <button class="sbtn big" id="mkPost">Mettre aux enchères · dès ${ban(p)}</button></div>`;
+        <span class="mkh" id="mkDurL">Durée de la vente</span>
+        <div class="seg adur" role="group" aria-labelledby="mkDurL">${[6,12,24].map(h=>`<button type="button" data-h="${h}" aria-pressed="${h===hours}">${h} h</button>`).join("")}</div>
+        <p class="shint">Si personne n'enchérit, la carte revient dans ta collection. Sinon, elle part au meilleur enchérisseur et tu reçois ses bananes.</p>
+        <button class="sbtn big" id="mkPost">Mettre aux enchères ${hours} h · dès ${ban(p)}</button></div>`;
+      body.querySelectorAll("[data-h]").forEach(b=>b.addEventListener("click",()=>{hours=+b.dataset.h;renderNew();thumbs();}));
       $("mkOffer").addEventListener("change",e=>{offerKey=e.target.value;renderNew();thumbs();setTimeout(thumbs,700);});
       $("mkPost").addEventListener("click",async()=>{if(busyMk)return;busyMk=true;$("mkPost").disabled=true;
-        try{const res=await window.MF_RPC("mf_auction_post",{p_key:offerKey});applyServer(res.state);tab="mine";mkSay("Vente lancée : tes potes ont 24 h pour enchérir.");}
-        catch(e){const m=String(e&&e.message||e);mkSay(/too_many/.test(m)?"Tu as déjà 5 ventes en cours.":/no_double/.test(m)?"Il te faut un double de cette carte.":"Mise en vente impossible pour l'instant, réessaie.");}
+        try{const res=await window.MF_RPC("mf_auction_post",{p_key:offerKey,p_hours:hours});applyServer(res.state);tab="mine";mkSay(`Vente lancée : tes potes ont ${hours} h pour enchérir.`);}
+        catch(e){const m=String(e&&e.message||e);mkSay(/too_many/.test(m)?"Tu as déjà 5 ventes en cours.":/no_double/.test(m)?"Il te faut un double de cette carte.":/PGRST202|p_hours|Could not find/.test(m)?"Le choix de la durée n'est pas encore installé sur le serveur.":"Mise en vente impossible pour l'instant, réessaie.");}
         busyMk=false;load();});}
     function show(t){if(t)tab=t;if(open){render();return;}closeOthers("market");open=true;root.hidden=false;document.querySelector(".wrap").style.display="none";document.body.style.overflow="hidden";P3.pause&&P3.pause(true);cancelAnimationFrame(foilRaf);
       render();load();clearInterval(tickI);tickI=setInterval(tick,1000);gsap.fromTo(root.querySelector(".shopbox"),{y:30,opacity:0},{y:0,opacity:1,duration:.35,ease:"power2.out"});$("mkClose").focus();}
@@ -4199,8 +4204,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
 
   /* ---------- settings sheet ---------- */
   const SETTINGS=(function(){const root=$("settings");
-    function show(){closeOthers("settings");root.hidden=false;$("setBtn").setAttribute("aria-expanded","true");$("setBtn").classList.add("on");$("pseudoIn").value=PREFS.pseudo||"";}
-    function hide(){if(root.hidden)return;root.hidden=true;$("setBtn").setAttribute("aria-expanded","false");$("setBtn").classList.remove("on");}
+    function show(){closeOthers("settings");root.hidden=false;$("setBtn").setAttribute("aria-expanded","true");document.querySelectorAll(".tabbar .tab.on").forEach(t=>t.classList.remove("on"));$("setBtn").classList.add("on");$("pseudoIn").value=PREFS.pseudo||"";}
+    function hide(){if(root.hidden)return;root.hidden=true;$("setBtn").setAttribute("aria-expanded","false");$("setBtn").classList.remove("on");markTab();}
     $("setBtn").addEventListener("click",()=>root.hidden?show():hide());
     $("sndOn").checked=!!PREFS.snd;$("vibOn").checked=!!PREFS.vib;
     $("sndOn").addEventListener("change",e=>{PREFS.snd=e.target.checked;savePrefs();if(!PREFS.snd)VOICE.stop();SFX.play("pop");});
