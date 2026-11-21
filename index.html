@@ -4129,6 +4129,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       const cnt={};all.forEach(x=>{const r=cardOfKey(x.card).rarity;cnt[r]=(cnt[r]||0)+1;});
       if(rarF&&!cnt[rarF])rarF="";
       const list=rarF?all.filter(x=>cardOfKey(x.card).rarity===rarF):all;
+      const oldF=body.querySelector(".afilt"),keepX=oldF?oldF.scrollLeft:0;
       const chips=all.length>1&&Object.keys(cnt).length>1?`<div class="afilt" role="group" aria-label="Filtrer par rareté"><button type="button" data-rf="" aria-pressed="${!rarF}">Toutes · ${all.length}</button>${RARITIES.filter(R=>cnt[R.name]).map(R=>`<button type="button" data-rf="${esc(R.name)}" aria-pressed="${rarF===R.name}" style="--rc:${R.rainbow?"#c06bff":R.a}">${esc(R.name)} · ${cnt[R.name]}</button>`).join("")}</div>`:"";
       seenT=Math.max(seenT,...data.open.map(x=>+x.t||0));lsSet("mf-auc-seen",seenT);badge();
       body.innerHTML=`<p class="shint">Chaque vente dure 6, 12 ou 24 h, au choix du vendeur. Enchéris d'au moins 1 banane de plus que la meilleure offre : tes bananes sont mises de côté, et rendues si quelqu'un te dépasse. À la fin, la carte part au meilleur enchérisseur.</p>
@@ -4141,6 +4142,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
               :`<div class="abid"><input type="number" inputmode="numeric" min="${n}" step="1" value="${n}" aria-label="Ton offre en bananes" data-amt="${x.id}"><span>🍌</span><button class="sbtn" data-bid="${x.id}">Enchérir</button></div>`}
             </div></div>`;}).join("")
           ||`<p class="shint">Aucune vente en cours. Mets un de tes doubles aux enchères dans « Vendre » !</p>`}</div>`;
+      {const f=body.querySelector(".afilt");if(f){f.scrollLeft=keepX;const on=f.querySelector('[aria-pressed="true"]');
+        if(on){const l=on.offsetLeft-f.offsetLeft,r=l+on.offsetWidth;if(l<f.scrollLeft)f.scrollLeft=l-8;else if(r>f.scrollLeft+f.clientWidth)f.scrollLeft=r-f.clientWidth+8;}}}
       body.querySelectorAll("[data-rf]").forEach(b=>b.addEventListener("click",()=>{rarF=b.dataset.rf;render();}));
       body.querySelectorAll("[data-bid]").forEach(b=>b.addEventListener("click",()=>bid(+b.dataset.bid,b)));
       body.querySelectorAll("[data-amt]").forEach(i=>i.addEventListener("input",()=>{const b=body.querySelector(`[data-bid="${i.dataset.amt}"]`);if(b){b.dataset.sure="";b.textContent="Enchérir";}}));}
