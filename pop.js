@@ -723,7 +723,7 @@ function zoomPaint(){
 }
 
 /* ----- studio ----- */
-let sQ="",sCat="",sRar="",sImg="",ed=null;
+let sQ="",sCat="",sRar="",sImg="",sPote="",ed=null;
 function renderStudio(){
   const pane=$('[data-pane="studio"]',hub);
   if(!pane.dataset.built){pane.dataset.built=1;
@@ -732,6 +732,7 @@ function renderStudio(){
     <div class="ps-bar"><input type="search" id="psQ" placeholder="Chercher un nom, une œuvre, un pote…" aria-label="Chercher">
       <select id="psCat" aria-label="Catégorie"><option value="">Toutes les catégories</option>${CATS.map(k=>`<option>${esc(k)}</option>`).join("")}</select>
       <select id="psRar" aria-label="Rareté"><option value="">Toutes les raretés</option>${RAR.map(R=>`<option value="${R.key}">${R.name}</option>`).join("")}<option value="todo">Rareté à définir</option></select>
+      <select id="psPote" aria-label="Pote incarné"><option value="">Tous les potes</option>${POTES.map(([pr,ps])=>`<option value="${esc(pr)}">${esc(ps)}${ps!==pr?` (${esc(pr)})`:""}</option>`).join("")}</select>
       <select id="psImg" aria-label="Illustration"><option value="">Avec ou sans image</option><option value="no">Sans image</option><option value="yes">Avec image</option></select>
       <button class="ph-btn primary" type="button" id="psNew">+ Nouvelle carte</button><button class="ph-btn" type="button" id="psImp">📋 Importer du Google Sheet</button></div>
     <div class="ps-imp" id="psImpBox" hidden>
@@ -746,11 +747,12 @@ function renderStudio(){
     $("#psCat").addEventListener("change",e=>{sCat=e.target.value;renderList();});
     $("#psRar").addEventListener("change",e=>{sRar=e.target.value;renderList();});
     $("#psImg").addEventListener("change",e=>{sImg=e.target.value;renderList();});
+    $("#psPote").addEventListener("change",e=>{sPote=e.target.value;renderList();});
     $("#psImp").addEventListener("click",()=>{const x=$("#psImpBox");x.hidden=!x.hidden;if(!x.hidden)$("#psImpTxt").focus();});
     $("#psImpX").addEventListener("click",()=>{$("#psImpBox").hidden=true;});
     $("#psImpGo").addEventListener("click",importSheet);
     $("#psNew").addEventListener("click",()=>{const n=Math.max(0,...CARDS.map(c=>+(c.id.match(/\d+$/)||[0])[0]),...SEED.map(c=>+(c.id.match(/\d+$/)||[0])[0]))+1;
-      edit({id:"PC-"+String(n).padStart(3,"0"),cat:sCat||CATS[0],sub:"",perso:"",name:"",pote:"",rarity:"rare",custom:true,isNew:true});});
+      edit({id:"PC-"+String(n).padStart(3,"0"),cat:sCat||CATS[0],sub:"",perso:"",name:"",pote:sPote,rarity:"rare",custom:true,isNew:true});});
   }
   renderList();
 }
@@ -758,7 +760,7 @@ const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(
 function renderList(){
   const box=$("#psList");if(!box)return;
   const q=norm(sQ);
-  const list=CARDS.filter(c=>(!sCat||c.cat===sCat)&&(!sRar||(sRar==="todo"?c.todo:c.rarity===sRar&&!c.todo))&&(!sImg||(sImg==="yes")===!!c.asset)
+  const list=CARDS.filter(c=>(!sCat||c.cat===sCat)&&(!sRar||(sRar==="todo"?c.todo:c.rarity===sRar&&!c.todo))&&(!sImg||(sImg==="yes")===!!c.asset)&&(!sPote||c.pote===sPote)
     &&(!q||norm([c.id,c.name,c.sub,c.perso,c.pote,PSEUDO[c.pote]].join(" ")).includes(q)));
   $("#psCount").textContent=`${list.length} carte${list.length>1?"s":""} · ${CARDS.filter(c=>c.asset).length}/${CARDS.length} avec illustration · ${CARDS.filter(c=>c.todo).length} rareté${CARDS.filter(c=>c.todo).length>1?"s":""} à définir`;
   const have=new Map($$(".ps-item",box).map(b=>[b.dataset.id,b]));
