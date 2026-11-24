@@ -58,17 +58,16 @@ const CSS=`
 #mfScratch:not(.admin) .sc-adm,body.preview #mfScratch .sc-adm{display:none!important}
 
 .sc-main{flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:4px 12px max(14px,env(safe-area-inset-bottom))}
-.sc-ticket{--w:min(430px,94vw,calc((100svh - 270px) / 1.52));width:var(--w);flex:none;position:relative;border-radius:18px;padding:calc(var(--w)*.035);
+.sc-logo{flex:none;display:block;height:min(15svh,calc(94vw * .338),150px);width:auto;max-width:94vw;margin:0 0 -6px;pointer-events:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45))}
+.sc-ticket{--w:min(430px,94vw,calc((100svh - 262px - min(15svh,150px)) / 1.36));width:var(--w);flex:none;position:relative;border-radius:18px;padding:calc(var(--w)*.035);
  background:linear-gradient(160deg,#ffe28a,#ffb347 45%,#ff7b54);
  box-shadow:0 0 0 3px #8a3b12,0 14px 0 #5b2208,0 24px 44px rgba(0,0,0,.55)}
-.sc-ticket::before,.sc-ticket::after{content:"";position:absolute;top:calc(var(--w)*.205);width:18px;height:18px;border-radius:50%;background:#1f0b38;box-shadow:inset 0 0 0 3px #8a3b12}
+.sc-ticket::before,.sc-ticket::after{content:"";position:absolute;top:calc(var(--w)*.108);width:18px;height:18px;border-radius:50%;background:#1f0b38;box-shadow:inset 0 0 0 3px #8a3b12}
 .sc-ticket::before{left:-9px}.sc-ticket::after{right:-9px}
 .sc-ticket.new{animation:scIn .55s cubic-bezier(.2,1.3,.4,1) both}
 @keyframes scIn{from{transform:translateY(60vh) rotate(8deg);opacity:0}to{transform:none;opacity:1}}
 .sc-head{text-align:center;padding:0 0 calc(var(--w)*.03);border-bottom:3px dashed rgba(138,59,18,.45);margin-bottom:calc(var(--w)*.035)}
-.sc-brand{font:400 calc(var(--w)*.115)/1 "Titan One",sans-serif;color:#fff6c8;letter-spacing:.02em;text-shadow:0 4px 0 #8a3b12,3px 0 0 #8a3b12,-3px 0 0 #8a3b12,0 -3px 0 #8a3b12,0 8px 14px rgba(90,20,0,.35)}
-.sc-brand span{color:#ffd23f;margin-left:.2em}
-.sc-sub{margin-top:calc(var(--w)*.022);font:700 calc(var(--w)*.035)/1.2 Quicksand,sans-serif;color:#5b2208}
+.sc-sub{font:400 calc(var(--w)*.045)/1.2 "Titan One",sans-serif;color:#7a2e0a}
 .sc-zone{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#fff6dc;box-shadow:inset 0 0 0 3px #8a3b12}
 .sc-grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:calc(var(--w)*.012);padding:calc(var(--w)*.02);
  background:repeating-linear-gradient(45deg,#fff1c9 0 10px,#ffe9b5 10px 20px)}
@@ -140,7 +139,7 @@ const CSS=`
 @keyframes scBob{50%{transform:translateY(-12px) rotate(4deg)}}
 .sc-flash{position:fixed;inset:0;z-index:9200;background:#fff7d0;pointer-events:none;animation:scFlash .7s ease-out forwards}@keyframes scFlash{from{opacity:.9}to{opacity:0}}
 .sc-pt{position:absolute;left:50%;top:45%;width:54px;height:54px;margin:-27px;z-index:1;pointer-events:none}
-@media(max-height:640px){.sc-ticket{--w:min(430px,94vw,calc((100svh - 230px) / 1.52))}.sc-btn{min-height:50px;font-size:17px}.sc-res{min-height:40px;font-size:14px}}
+@media(max-height:640px){.sc-ticket{--w:min(430px,94vw,calc((100svh - 222px - min(15svh,150px)) / 1.36))}.sc-btn{min-height:50px;font-size:17px}.sc-res{min-height:40px;font-size:14px}}
 @media(prefers-reduced-motion:reduce){.sc-ticket.new,.sc-hand,.sc-cell.hit,.sc-btn.free,.sc-rays,.sc-coin,.sc-jpt{animation:none}}
 `;
 
@@ -156,8 +155,9 @@ function build(){
    <div class="sc-pill">🍌<b id="scBal">…</b></div>
    <button type="button" class="sc-x" id="scClose" aria-label="Fermer">✕</button></div>
   <div class="sc-main">
+   <img class="sc-logo" src="packs/monkey-cash-titre.webp" alt="Monkey Cash" width="1400" height="473">
    <div class="sc-ticket" id="scTicket">
-    <div class="sc-head"><div class="sc-brand">MONKEY<span>CASH</span></div><div class="sc-sub">3 symboles identiques = tu gagnes le lot !</div></div>
+    <div class="sc-head"><div class="sc-sub">3 symboles identiques = tu gagnes le lot !</div></div>
     <div class="sc-zone" id="scZone">
      <div class="sc-grid" id="scGrid" aria-label="Cases du ticket"></div>
      <canvas class="sc-foil" id="scFoil" aria-label="Couche à gratter : glisse le doigt dessus"></canvas>
@@ -428,7 +428,7 @@ async function boot(){
   const place=()=>{const above=["slotBtn","raceBtn"].filter(id=>document.getElementById(id)).length;btn.style.top=`calc(max(12px,env(safe-area-inset-top,0px)) + ${112+56*above}px)`;};
   place();[500,1500,4000].forEach(t=>setTimeout(place,t));
   const prev=document.getElementById("raceBtn")||document.getElementById("slotBtn")||document.getElementById("rankBtn");if(prev)prev.after(btn);else document.body.appendChild(btn);
-  ORDER.forEach(e=>{const i=new Image();i.src=src(e);});
+  ORDER.forEach(e=>{const i=new Image();i.src=src(e);});{const i=new Image();i.src="packs/monkey-cash-titre.webp";}
   const refresh=()=>{if(root&&!root.hidden)return;rpc("mf_scratch_status").then(take,()=>{});};
   refresh();
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refresh();});
