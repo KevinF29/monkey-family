@@ -76,7 +76,7 @@ const CSS=`
 .sl-tbt{text-align:center;font:400 18px/1 "Titan One",sans-serif;color:#ffd23f;margin-bottom:8px}
 .sl-tbg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
 .sl-row{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:8px;font-weight:700;font-size:13.5px;line-height:1.2}
-.sl-row .ic{display:flex;flex:none}.sl-row .ic img{width:24px;height:24px}.sl-row .ic i{width:24px;text-align:center;color:#8fae6a;font-style:normal;font-size:13px}
+.sl-row .ic{display:flex;flex:none;align-items:center}.sl-row .ic img{width:24px;height:24px}.sl-row .ic i{width:24px;text-align:center;color:#8fae6a;font-style:normal;font-size:13px}
 .sl-row .dt{flex:1;border-bottom:2px dotted rgba(255,214,120,.35);height:0;margin:0 2px}
 .sl-row .pz{white-space:nowrap;color:#ffe08a;display:flex;align-items:center;gap:3px}.sl-row .pz img{width:18px;height:18px}
 .sl-row.jk{grid-column:1/-1;justify-content:center;background:rgba(255,210,63,.12);margin-bottom:4px}
@@ -113,6 +113,23 @@ const CSS=`
 .sl-side{position:absolute;top:0;right:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;overscroll-behavior:contain;background:#0c2213;border-left:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;box-shadow:-20px 0 40px rgba(0,0,0,.5);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
 .sl-side.open{transform:none;visibility:visible}
 .sl-side>*{flex-shrink:0}
+/* grand écran (PC) : la table des gains passe à gauche de la machine, et tout peut grossir */
+#mfSlot.wide .sl-stage{display:flex;align-items:center;gap:34px;width:auto}
+#mfSlot.wide .sl-m{width:560px;flex:none}
+#mfSlot.wide .sl-board{display:block;width:330px;flex:none;position:relative;padding:18px 14px 14px;border-radius:18px;
+ background:repeating-linear-gradient(0deg,rgba(0,0,0,.07) 0 2px,transparent 2px 10px),linear-gradient(180deg,#a36b35,#6e411d);box-shadow:inset 0 0 0 5px #4a2a10,0 12px 0 #3a200b,0 22px 40px rgba(0,0,0,.45)}
+#mfSlot.wide .sl-board::before,#mfSlot.wide .sl-board::after{content:"";position:absolute;top:-30px;width:3px;height:32px;background:#c9a46a}
+#mfSlot.wide .sl-board::before{left:40px}#mfSlot.wide .sl-board::after{right:40px}
+#mfSlot.wide .sl-board .sl-tb{margin:0}
+#mfSlot.wide .sl-board .sl-tbg{grid-template-columns:minmax(0,1fr)}
+#mfSlot.wide .sl-board .sl-tbt{font-size:22px;margin-bottom:10px}
+#mfSlot.wide .sl-board .sl-row{font-size:15px;padding:4px 8px}
+#mfSlot.wide .sl-board .sl-row .ic img{width:28px;height:28px}#mfSlot.wide .sl-board .sl-row .ic i{width:28px}
+#mfSlot.wide .sl-board .sl-row .pz img{width:20px;height:20px}
+#mfSlot.wide .sl-board .sl-row.jk .ic img{width:36px;height:36px}#mfSlot.wide .sl-board .sl-row.jk .pz{font-size:22px}
+#mfSlot.wide .sl-board .sl-rules{font-size:13px}
+#mfSlot.wide .sl-reel{height:210px}
+.sl-board{display:none}
 #mfSlot:not(.admin) .sl-adm,body.preview #mfSlot .sl-adm{display:none!important}
 .sl-side label.sl-chk{flex-wrap:wrap;height:auto}
 @media(max-width:560px){.sl-top h2{font-size:21px}.sl-tag{display:none}}
@@ -168,10 +185,10 @@ function build(){
   root=document.createElement("div");root.id="mfSlot";if(ADMIN)root.classList.add("admin");root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Machine à bananes");
   root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag sl-adm">Admin</span><button type="button" class="sl-tog sl-adm" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
   <div class="sl-body">
-   <div class="sl-stage"><div class="sl-m" id="slM">
+   <div class="sl-stage"><div class="sl-board" id="slBoard"></div><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
     <div class="sl-sign">MONKEY FAMILY<small>Trois singes = 7 boosters</small></div>
-    <div class="sl-tb"><div class="sl-tbt">Table des gains</div><div class="sl-tbg">${ORDER.map(k=>{const [n,e]=k.split(":");const r=n==="3"?TRI[e]:n==="2"?PAIR.find(p=>p[0]===e)[1]:{t:"ban",v:1};
+    <div class="sl-tb" id="slTb"><div class="sl-tbt">Table des gains</div><div class="sl-tbg">${ORDER.map(k=>{const [n,e]=k.split(":");const r=n==="3"?TRI[e]:n==="2"?PAIR.find(p=>p[0]===e)[1]:{t:"ban",v:1};
       return `<div class="sl-row${k==="3:singe"?" jk":""}" data-k="${k}"><span class="ic">${icons(k)}</span>${k==="3:singe"?"":'<span class="dt"></span>'}<span class="pz">${prize(r)}</span></div>`;}).join("")}</div>
      <p class="sl-rules">1 banane le tour · 10 tours par jour · les paires comptent n'importe où · la banane seule ne compte que sur le 1er rouleau · un seul gain par tour, le plus haut</p></div>
     <div class="sl-lights" aria-hidden="true">${"<i></i>".repeat(11)}</div>
@@ -213,7 +230,16 @@ function build(){
   $("#slJpBox").addEventListener("click",closeJp);
   document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if(!$("#slJpBox").hidden)closeJp();else if($("#slSide").classList.contains("open"))side(false);else close();});
 }
-function fit(){if(!root||root.hidden)return;const b=$(".sl-body"),st=$(".sl-stage");const k=Math.min(1,(b.clientWidth-8)/st.offsetWidth,(b.clientHeight-6)/st.offsetHeight);st.style.transform=`translate(-50%,-50%) scale(${k>0?k:1})`;}
+let fitting=false;
+function fit(){if(!root||root.hidden||fitting)return;fitting=true;
+  const b=$(".sl-body"),st=$(".sl-stage");
+  // PC / écran large : table des gains à gauche, sinon au-dessus des rouleaux
+  const wide=b.clientWidth>=900&&b.clientWidth/b.clientHeight>1.15;
+  if(wide!==root.classList.contains("wide")){root.classList.toggle("wide",wide);
+    const tb=$("#slTb");if(wide)$("#slBoard").appendChild(tb);else $("#slM").insertBefore(tb,$(".sl-lights"));
+    REELS.forEach(R=>{layout(R);paint(R);});}
+  const k=Math.min(wide?1.7:1,(b.clientWidth-16)/st.offsetWidth,(b.clientHeight-10)/st.offsetHeight);
+  st.style.transform=`translate(-50%,-50%) scale(${k>0?k:1})`;fitting=false;}
 function side(o){$("#slSide").classList.toggle("open",o);$("#slTog").setAttribute("aria-expanded",String(o));}
 function say(t,cls){const r=$("#slRes");r.className="sl-res"+(cls?" "+cls:"");r.textContent=t;}
 function render(){
