@@ -10,7 +10,7 @@
     inst.innerHTML = `<span class="sl"><b>Appli</b><small id="mfInstallTxt">Ajoute Monkey Family sur ton écran d'accueil</small></span><button type="button" class="sbtn" id="mfInstallBtn">Installer</button>`;
     box.insertBefore(inst, save);
     const nt = document.createElement("div"); nt.className = "srow"; nt.id = "mfPushRow";
-    nt.innerHTML = `<span class="sl"><b>Notifications</b><small id="mfPushSum">Boosters, events, enchères</small></span><button type="button" class="sbtn" id="mfNotifBtn" aria-controls="mfNotif" aria-expanded="false">Choisir ›</button>`;
+    nt.innerHTML = `<span class="sl"><b>Notifications</b><small id="mfPushSum">Boosters, events, enchères, Monkey Run</small></span><button type="button" class="sbtn" id="mfNotifBtn" aria-controls="mfNotif" aria-expanded="false">Choisir ›</button>`;
     box.insertBefore(nt, save);
     const np = document.createElement("div"); np.id = "mfNotif"; np.hidden = true;
     np.innerHTML = `<div class="nfhead"><button type="button" class="sbtn" id="mfNotifBack">‹ Retour</button><h2>Notifications</h2></div>
@@ -18,6 +18,7 @@
       <div class="srow nfsub"><label class="sl" for="nfPacks"><b>Boosters disponibles</b><small>Quand un booster est prêt à ouvrir</small></label><input type="checkbox" class="switch" id="nfPacks" data-k="packs" role="switch"></div>
       <div class="srow nfsub"><label class="sl" for="nfEvents"><b>Événements</b><small>Cadeaux, boosters offerts et événements spéciaux</small></label><input type="checkbox" class="switch" id="nfEvents" data-k="events" role="switch"></div>
       <div class="srow nfsub"><label class="sl" for="nfAuctions"><b>Enchères</b><small>Quand quelqu'un enchérit au-dessus de toi</small></label><input type="checkbox" class="switch" id="nfAuctions" data-k="auctions" role="switch"></div>
+      <div class="srow nfsub"><label class="sl" for="nfRace"><b>Monkey Run</b><small>10 minutes avant le départ de la course de 21h</small></label><input type="checkbox" class="switch" id="nfRace" data-k="race" role="switch"></div>
       <p class="savestate" id="nfMsg" role="status"></p>`;
     box.appendChild(np);
     const st = document.createElement("style");
@@ -33,11 +34,11 @@
 
   /* ---------- notifications ---------- */
   /* sous-menu des notifications : un interrupteur général (cet appareil) et un par type (enregistrés sur le serveur, pour le joueur) */
-  const PREF = {packs:true, events:true, auctions:true}; let prefOk = null;
+  const PREF = {packs:true, events:true, auctions:true, race:true}; let prefOk = null;
   function syncNotif(){
     const on = $("mfPushOn").checked;
     document.querySelectorAll("#mfNotif .nfsub").forEach(r => { const i = r.querySelector("input"); i.checked = !!PREF[i.dataset.k]; i.disabled = !on || prefOk === false; r.classList.toggle("off", !on || prefOk === false); });
-    const names = [["packs", "boosters"], ["events", "events"], ["auctions", "enchères"]].filter(([k]) => PREF[k]).map(([, n]) => n);
+    const names = [["packs", "boosters"], ["events", "events"], ["auctions", "enchères"], ["race", "Monkey Run"]].filter(([k]) => PREF[k]).map(([, n]) => n);
     $("mfPushSum").textContent = !on ? "Désactivées sur cet appareil" : names.length ? "Activées : " + names.join(", ") : "Activées, mais aucun type choisi";
   }
   async function loadPrefs(){

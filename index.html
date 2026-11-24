@@ -3884,7 +3884,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="race"){const RN=["Le Rageux","Le Tryharder","Le Chill","Le Iencli","L'Alcoolique","Le Fantôme","Le Geek","Le Séducteur"],w=RN[(+x.w||1)-1]||"Un singe",o=(+x.o||0).toFixed(1).replace(".",",");
         const gs=(Array.isArray(x.gains)?x.gains:[]).slice(0,4).map(g=>`<b>${esc(nameOf(g.uid))}</b> +${fmt(+g.v||0)} 🍌`).join(", ");
         const tail=gs?`Gagnants : ${gs}`:(+x.n?"Personne n'avait misé sur lui !":"Personne n'avait parié.");
-        return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Course de singes : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Monkey Run : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="slot_pity")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} a tout perdu à la machine à bananes… Le singe a eu pitié : +10 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       return "";}

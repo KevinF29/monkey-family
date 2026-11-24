@@ -1,4 +1,4 @@
-/* Monkey Family — Course de singes
+/* Monkey Family — Monkey Run
    1 course par jour à 21h (heure de Paris), 8 singes, cotes selon la forme du jour, 1 pari de 1 à 20 bananes par course.
    Le serveur fait foi : il fixe les cotes, prend les mises, tire l'arrivée (mf_race_*) et paie les gagnants.
    Cette page n'anime la course qu'à partir de l'arrivée et de la graine reçues : tout le monde voit la même course.
@@ -152,8 +152,8 @@ let SP=[];  // les 8 singes sur la piste
 function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   root=document.createElement("div");root.id="mfRace";if(ADMIN)root.classList.add("admin");root.hidden=true;
-  root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Course de singes");
-  root.innerHTML=`<div class="rc-top"><h2>Course de singes</h2><span class="rc-tag rc-adm" id="rcTag">Admin</span>
+  root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Monkey Run");
+  root.innerHTML=`<div class="rc-top"><h2>Monkey Run</h2><span class="rc-tag rc-adm" id="rcTag">Admin</span>
     <button type="button" class="rc-tog rc-adm" id="rcTog" aria-controls="rcSide" aria-expanded="false">Réglages</button>
     <button type="button" class="rc-x" id="rcClose" aria-label="Fermer">✕</button></div>
   <div class="rc-body"><div class="rc-wrap">
@@ -391,7 +391,7 @@ async function boot(){
   const st=document.createElement("style");
   st.textContent=`#raceBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 168px)}`;
   document.head.appendChild(st);
-  const b=document.createElement("button");b.className="socialbtn";b.id="raceBtn";b.type="button";b.setAttribute("aria-label","Course de singes");b.title="Course de singes";
+  const b=document.createElement("button");b.className="socialbtn";b.id="raceBtn";b.type="button";b.setAttribute("aria-label","Monkey Run");b.title="Monkey Run";
   b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h13l-2 4 2 4H5"/><path d="M9 4v8"/><path d="M13 4v8"/><path d="M5 8h13"/></svg>`;
   b.addEventListener("click",open);
   const prev=document.getElementById("slotBtn")||document.getElementById("rankBtn");if(prev)prev.after(b);else document.body.appendChild(b);
