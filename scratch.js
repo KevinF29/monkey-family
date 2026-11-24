@@ -45,6 +45,9 @@ const CSS=`
  background:radial-gradient(ellipse 80% 55% at 50% 38%,rgba(255,150,60,.28),transparent 70%),radial-gradient(circle at 20% 90%,rgba(120,60,200,.35),transparent 50%),linear-gradient(180deg,#2b0f4a,#14072a)}
 #mfScratch[hidden]{display:none}
 #mfScratch *{box-sizing:border-box;min-width:0}
+#mfScratch{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#mfScratch img{-webkit-user-drag:none;user-drag:none}
+.sc-ticket{touch-action:none}
 #mfScratch button{font-family:inherit}
 #mfScratch button:focus-visible,#mfScratch select:focus-visible,#mfScratch input:focus-visible{outline:3px solid #ffd23f;outline-offset:3px}
 .sc-stars{position:absolute;inset:0;pointer-events:none;opacity:.55;background-image:radial-gradient(1.5px 1.5px at 12% 18%,#ffe9a8 50%,transparent 51%),radial-gradient(1px 1px at 78% 12%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 88% 46%,#ffd23f 50%,transparent 51%),radial-gradient(1px 1px at 6% 62%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 30% 84%,#ffe9a8 50%,transparent 51%),radial-gradient(1px 1px at 64% 92%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 94% 80%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 44% 6%,#ffd23f 50%,transparent 51%)}
@@ -306,19 +309,21 @@ const foil=(()=>{
   let zone,cv,ctx,dust,dx,W=0,H=0,dpr=1,segs=[],mask=null,down=false,last=null,lastT=0,started=false,flakes=[],raf=0,checkT=0,buzzT=0,gone=false;
   const MG=24;   // grille de contrôle de la surface grattée (24 × 24)
   function init(z,c,d){zone=z;cv=c;dust=d;ctx=cv.getContext("2d");dx=dust.getContext("2d");mask=new Uint8Array(MG*MG);
+    const tk=zone.closest(".sc-ticket")||zone;   // le geste peut commencer sur le bord du ticket : il gratte dès qu'il passe sur la zone
     new ResizeObserver(size).observe(zone);
     try{document.fonts.load('400 20px "Titan One"').then(()=>size(),()=>{});}catch(e){}
-    cv.addEventListener("pointerdown",e=>{if(phase!=="scratch"||gone)return;e.preventDefault();audio();try{cv.setPointerCapture(e.pointerId);}catch(x){}
+    tk.addEventListener("pointerdown",e=>{if(phase!=="scratch"||gone)return;e.preventDefault();audio();try{tk.setPointerCapture(e.pointerId);}catch(x){}
       down=true;last=pt(e);lastT=performance.now();stroke(last,last);if(!started){started=true;$("#scHand").hidden=true;}});
-    cv.addEventListener("pointermove",e=>{if(!down)return;e.preventDefault();
+    tk.addEventListener("pointermove",e=>{if(!down)return;e.preventDefault();
       const evs=e.getCoalescedEvents?e.getCoalescedEvents():[];const from=last;
       for(const ev of (evs.length?evs:[e])){const p=pt(ev);stroke(last,p);last=p;}
       const now=performance.now(),dt=Math.max(8,now-lastT);lastT=now;
-      scrape(Math.min(1,.2+dist2(from,last)/dt*300));
+      const inside=last.x>=0&&last.x<=1&&last.y>=0&&last.y<=1;   // sur le bord du ticket : pas de bruit
+      scrape(inside?Math.min(1,.2+dist2(from,last)/dt*300):0);
       if(now-checkT>140){checkT=now;check();}});
     const up=()=>{if(!down)return;down=false;scrape(0);check();};
-    cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);cv.addEventListener("lostpointercapture",up);
-    cv.addEventListener("contextmenu",e=>e.preventDefault());
+    tk.addEventListener("pointerup",up);tk.addEventListener("pointercancel",up);tk.addEventListener("lostpointercapture",up);
+    tk.addEventListener("contextmenu",e=>e.preventDefault());
   }
   function pt(e){const r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};}
   const dist2=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -346,16 +351,17 @@ const foil=(()=>{
   function cut(a,b){ctx.globalCompositeOperation="destination-out";ctx.lineCap="round";ctx.lineJoin="round";ctx.lineWidth=R()*2*W;
     ctx.beginPath();ctx.moveTo(a.x*W,a.y*H);ctx.lineTo(b.x*W+.01,b.y*H);ctx.stroke();}
   function stroke(a,b){segs.push([a,b]);cut(a,b);mark(a,b);
-    const n=Math.min(4,1+Math.floor(dist2(a,b)*40));for(let i=0;i<n;i++)flake(b);}
+    if(b.x>=0&&b.x<=1&&b.y>=0&&b.y<=1){const n=Math.min(4,1+Math.floor(dist2(a,b)*40));for(let i=0;i<n;i++)flake(b);}}
   /* on note quelles parties de la grille de contrôle ont été grattées */
   function mark(a,b){const r=R()*.8,steps=Math.max(1,Math.ceil(dist2(a,b)/(r*.5)));
     for(let s=0;s<=steps;s++){const x=a.x+(b.x-a.x)*s/steps,y=a.y+(b.y-a.y)*s/steps;
       const i0=Math.max(0,Math.floor((x-r)*MG)),i1=Math.min(MG-1,Math.floor((x+r)*MG)),j0=Math.max(0,Math.floor((y-r)*MG)),j1=Math.min(MG-1,Math.floor((y+r)*MG));
       for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const cx=(i+.5)/MG,cy=(j+.5)/MG;if((cx-x)**2+(cy-y)**2<=r*r)mask[j*MG+i]=1;}}}
-  /* assez gratté ? (60 % du ticket, ou chacune des 9 cases à moitié) → on découvre tout */
-  function check(){if(phase!=="scratch"||gone)return;let tot=0;const cell=Array(9).fill(0);
-    for(let j=0;j<MG;j++)for(let i=0;i<MG;i++)if(mask[j*MG+i]){tot++;cell[Math.min(2,Math.floor(j*3/MG))*3+Math.min(2,Math.floor(i*3/MG))]++;}
-    const per=MG*MG/9;if(tot/(MG*MG)>=.6||cell.every(c=>c/per>=.45))reveal(false);}
+  /* on gratte jusqu'au bout : le résultat ne tombe que quand les 9 cases sont grattées (92 % de chacune) ;
+     les dernières miettes d'argent partent alors toutes seules */
+  function check(){if(phase!=="scratch"||gone)return;const cell=Array(9).fill(0);
+    for(let j=0;j<MG;j++)for(let i=0;i<MG;i++)if(mask[j*MG+i])cell[Math.min(2,Math.floor(j*3/MG))*3+Math.min(2,Math.floor(i*3/MG))]++;
+    const per=MG*MG/9;if(cell.every(c=>c/per>=.92))reveal(false);}
   function finish(){gone=true;cv.classList.add("sc-gone");down=false;scrape(0);if(!reduce)for(let i=0;i<40;i++)flake({x:Math.random(),y:Math.random()});}
   function reset(){segs=[];mask=new Uint8Array(MG*MG);started=false;gone=false;down=false;cv.classList.remove("sc-gone");size();cv.classList.toggle("sc-off",phase!=="scratch");}
   /* paillettes argentées qui tombent sous le doigt */
