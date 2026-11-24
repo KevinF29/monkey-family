@@ -33,6 +33,7 @@ function draw(){let r=Math.random()*TOTAL;for(const s of SYM){if((r-=s.w)<0)retu
 const src=e=>"packs/slot-"+e+".webp";
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const label=r=>!r?"":r.t==="ban"?r.v+" banane"+(r.v>1?"s":""):r.t==="boost"?r.v+" booster"+(r.v>1?"s":""):"−"+(r.v/60)+" h d'attente";
+const short=r=>r.t==="time"?"−"+(r.v/60)+" h ⏳":label(r);
 const mod=(n,m)=>((n%m)+m)%m;
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -47,17 +48,17 @@ let ME="Admin",unlim=false,forceJp=false,busy=false,sound=true;
 
 /* ---------- style ---------- */
 const CSS=`
-#mfSlot{position:fixed;inset:0;z-index:9000;overflow-y:auto;overscroll-behavior:contain;color:#f6f0d8;font:16px/1.5 Quicksand,system-ui,sans-serif;
+#mfSlot{position:fixed;inset:0;z-index:9000;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;display:flex;flex-direction:column;color:#f6f0d8;font:16px/1.5 Quicksand,system-ui,sans-serif;
  background:radial-gradient(ellipse 70% 60% at 50% 35%,rgba(255,176,64,.25),transparent 70%),linear-gradient(180deg,#0f3a1f,#082414)}
 #mfSlot[hidden]{display:none}
 #mfSlot *{box-sizing:border-box;min-width:0}
-.sl-top{display:flex;align-items:center;gap:12px;padding:14px max(4vw,14px);position:sticky;top:0;z-index:5;background:linear-gradient(#082414,rgba(8,36,20,.85))}
+.sl-top{flex:none;display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) max(4vw,14px) 6px;position:relative;z-index:6}
 .sl-top h2{margin:0;flex:1;font:400 clamp(22px,4vw,30px)/1.1 "Titan One",sans-serif;color:#ffd23f;text-shadow:0 3px 0 #4a2a10}
 .sl-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#3a200b;border-radius:99px;padding:3px 10px}
 .sl-x{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer}
-.sl-body{display:grid;grid-template-columns:minmax(0,560px) minmax(0,360px);gap:28px;justify-content:center;align-items:start;padding:8px max(4vw,14px) 120px}
-@media(max-width:900px){.sl-body{grid-template-columns:minmax(0,560px)}}
-.sl-stage{position:relative;padding:58px 14px 10px}
+.sl-body{flex:1;position:relative;overflow:hidden}
+.sl-stage{position:absolute;left:50%;top:50%;width:min(560px,calc(100vw - 20px));transform-origin:50% 50%}
+.sl-stage{padding:58px 14px 22px}
 .sl-m{position:relative;padding:20px 24px 24px;border-radius:20px;
  background:repeating-linear-gradient(90deg,rgba(0,0,0,.07) 0 2px,transparent 2px 11px),linear-gradient(180deg,#a36b35,#6e411d 70%,#5a3416);
  box-shadow:inset 0 0 0 5px #4a2a10,inset 0 0 0 9px rgba(255,214,150,.18),0 16px 0 #3a200b,0 30px 50px rgba(0,0,0,.5)}
@@ -83,7 +84,7 @@ const CSS=`
 .sl-row.jk .ic img{width:32px;height:32px}.sl-row.jk .pz{font:400 19px "Titan One",sans-serif;color:#ffd23f}
 .sl-row.hit{background:#ffd23f;color:#3a200b}.sl-row.hit .pz{color:#3a200b}
 .sl-rules{margin:8px 0 0;text-align:center;font-size:12px;color:#cfe0b0;line-height:1.4}
-@media(max-width:520px){.sl-tbg{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){.sl-tb{padding:10px 8px 8px}.sl-tbg{column-gap:8px}.sl-row{font-size:12px;padding:2px 4px;gap:4px}.sl-row .ic img{width:19px;height:19px}.sl-row .ic i{width:19px;font-size:11px}.sl-row .pz img{width:15px;height:15px}.sl-row.jk .ic img{width:26px;height:26px}.sl-rules{font-size:11px}}
 .sl-lights{display:flex;justify-content:space-between;margin:16px 2px 6px;padding:0 6px;background:linear-gradient(transparent 0 46%,#2b1a0a 46% 54%,transparent 54%)}
 .sl-lights i{width:13px;height:16px;border-radius:50% 50% 45% 45%;background:#ffcf6a;box-shadow:0 0 10px #ffb340}
 .sl-m.spin .sl-lights i{animation:slBlink .35s infinite alternate}.sl-lights i:nth-child(even){animation-delay:.17s!important}
@@ -92,7 +93,7 @@ const CSS=`
  box-shadow:0 0 0 7px #a8c04a,0 0 0 10px #5d7a1f,0 0 0 12px #3a200b,inset 0 8px 16px rgba(0,0,0,.7)}
 .sl-win::before,.sl-win::after{content:"";position:absolute;top:50%;margin-top:-11px;border:11px solid transparent;z-index:2}
 .sl-win::before{left:-2px;border-left-color:#ffd23f}.sl-win::after{right:-2px;border-right-color:#ffd23f}
-.sl-reel{background:linear-gradient(180deg,#cdb98a,#fff6dc 30%,#fff6dc 70%,#cdb98a);border-radius:9px;height:clamp(150px,34vw,220px);overflow:hidden;position:relative;--ch:80px}
+.sl-reel{background:linear-gradient(180deg,#cdb98a,#fff6dc 30%,#fff6dc 70%,#cdb98a);border-radius:9px;height:clamp(140px,34vw,210px);overflow:hidden;position:relative;--ch:80px}
 .sl-reel::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(50,25,0,.6),transparent 30%,transparent 70%,rgba(50,25,0,.6))}
 .sl-cells{position:absolute;inset:0}
 .sl-cells img{position:absolute;left:0;right:0;top:0;margin:0 auto;height:calc(var(--ch)*.84);width:auto;max-width:92%;object-fit:contain;filter:drop-shadow(0 3px 2px rgba(0,0,0,.25));will-change:transform}
@@ -110,7 +111,10 @@ const CSS=`
 .sl-res{margin-top:16px;min-height:56px;border-radius:12px;padding:10px 14px;font-weight:700;font-size:16px;display:flex;align-items:center;color:#3a200b;background:#f3e2b8;box-shadow:inset 0 0 0 2px #c9a46a}
 .sl-res.good{background:#d7ecb0}.sl-res.jack{background:linear-gradient(90deg,#ffd23f,#ffb300);font:400 22px "Titan One",sans-serif}
 .sl-m.shake{animation:slShake .5s 3}@keyframes slShake{25%{transform:translate(-6px,2px) rotate(-.6deg)}50%{transform:translate(5px,-2px) rotate(.5deg)}75%{transform:translate(-3px,1px)}}
-.sl-side{background:rgba(12,34,19,.85);border:2px solid #2a5a33;border-radius:18px;padding:16px;display:grid;gap:14px}
+.sl-side{position:absolute;top:0;right:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;overscroll-behavior:contain;background:#0c2213;border-left:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;box-shadow:-20px 0 40px rgba(0,0,0,.5);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
+.sl-side.open{transform:none;visibility:visible}
+.sl-tog{min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:700 14px Quicksand,sans-serif;padding:0 12px;cursor:pointer}
+.sl-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
 .sl-side h3{margin:0;font:400 20px "Titan One",sans-serif;color:#ffd23f}
 .sl-note{margin:0;font-size:13px;color:#cfe0b0}
 .sl-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -148,11 +152,11 @@ const LEAF=`<svg width="0" height="0" style="position:absolute" aria-hidden="tru
 /* ---------- interface ---------- */
 let root=null;const $=s=>root.querySelector(s);
 function icons(k){const [n,e]=k.split(":");const im=`<img src="${src(e)}" alt="${esc(NAME[e])}">`;return n==="3"?im+im+im:n==="2"?im+im+"<i>✕</i>":im+"<i>✕</i><i>✕</i>";}
-function prize(r){return r.t==="ban"?r.v+` <img src="${src("banane")}" alt="bananes">`:label(r);}
+function prize(r){return r.t==="ban"?r.v+` <img src="${src("banane")}" alt="bananes">`:esc(short(r));}
 function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   root=document.createElement("div");root.id="mfSlot";root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Machine à bananes");
-  root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag">Test · admin</span><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
+  root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag">Test · admin</span><button type="button" class="sl-tog" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
   <div class="sl-body">
    <div class="sl-stage"><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
@@ -166,7 +170,7 @@ function build(){
      <div class="sl-pills"><div class="sl-pill">Bananes<b id="slBal"></b></div><div class="sl-pill">Tours<b id="slLeft"></b></div></div></div>
     <div class="sl-res" id="slRes" role="status">Mise 1 banane et tente ta chance.</div>
    </div></div>
-   <aside class="sl-side">
+   <aside class="sl-side" id="slSide" aria-label="Réglages du test">
     <h3>Réglages du test</h3>
     <p class="sl-note">Bananes, boosters et temps gagnés sont fictifs : ton vrai solde n'est pas touché, et les annonces restent ici.</p>
     <div class="sl-bar"><button type="button" class="sl-btn" id="slAdd">+50 🍌 de test</button><button type="button" class="sl-btn" id="slDay">Jour suivant</button><button type="button" class="sl-btn" id="slJp">Forcer un jackpot</button></div>
@@ -184,6 +188,8 @@ function build(){
     const imgs=Array.from({length:5},()=>{const im=document.createElement("img");im.alt="";box.appendChild(im);return im;});
     return {el,box,strip,imgs,p:Math.floor(Math.random()*strip.length),ch:80,h:160};}));
   new ResizeObserver(()=>REELS.forEach(R=>{layout(R);paint(R);})).observe($("#slM"));
+  new ResizeObserver(fit).observe($(".sl-body"));new ResizeObserver(fit).observe($(".sl-stage"));
+  $("#slTog").addEventListener("click",()=>side(!$("#slSide").classList.contains("open")));
   $("#slClose").addEventListener("click",close);
   $("#slGo").addEventListener("click",spin);
   $("#slAdd").addEventListener("click",()=>{S.bal+=50;save();render();});
@@ -193,8 +199,10 @@ function build(){
   $("#slSnd").addEventListener("change",e=>{sound=e.target.checked;});
   $("#slReset").addEventListener("click",()=>{S={bal:20,left:TURNS,day:today(),pity:false,feed:[],spins:0,spent:0,won:0,boosters:0,mins:0};save();say("Test remis à zéro.");render();});
   $("#slJpBox").addEventListener("click",closeJp);
-  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if(!$("#slJpBox").hidden)closeJp();else close();});
+  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if(!$("#slJpBox").hidden)closeJp();else if($("#slSide").classList.contains("open"))side(false);else close();});
 }
+function fit(){if(!root||root.hidden)return;const b=$(".sl-body"),st=$(".sl-stage");const k=Math.min(1,(b.clientWidth-8)/st.offsetWidth,(b.clientHeight-6)/st.offsetHeight);st.style.transform=`translate(-50%,-50%) scale(${k>0?k:1})`;}
+function side(o){$("#slSide").classList.toggle("open",o);$("#slTog").setAttribute("aria-expanded",String(o));}
 function say(t,cls){const r=$("#slRes");r.className="sl-res"+(cls?" "+cls:"");r.textContent=t;}
 function render(){
   $("#slBal").textContent=S.bal;$("#slLeft").textContent=unlim?"∞":S.left;
@@ -281,7 +289,7 @@ let opener=null,prevOverflow="";
 function open(){
   if(!root)build();
   S=load();root.hidden=false;opener=document.activeElement;prevOverflow=document.body.style.overflow;document.body.style.overflow="hidden";
-  REELS.forEach(R=>{layout(R);paint(R);});render();$("#slGo").focus({preventScroll:true});
+  REELS.forEach(R=>{layout(R);paint(R);});render();fit();$("#slGo").focus({preventScroll:true});
 }
 function close(){if(busy)return;root.hidden=true;document.body.style.overflow=prevOverflow;if(opener&&opener.focus)opener.focus();}
 
