@@ -4054,7 +4054,13 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       const n=pending(),D=+ST.day||0;
       $("advNote").textContent=!ST.active?"":D>24?(n?`Noël est passé, mais tu peux encore ouvrir ${n>1?`tes ${n} cases oubliées`:"ta case oubliée"} jusqu'au 31 décembre.`:"Joyeuses fêtes ! Toutes les cases sont ouvertes."):
         n>1?`${n} cases t'attendent, dont celles que tu as oubliées : elles restent ouvrables jusqu'au 31 décembre.`:n?"Une case t'attend aujourd'hui.":"Reviens demain pour la case suivante !";}
-    function badge(){const on=!!(ST&&ST.active);btn.hidden=!on;dot.hidden=!on||!pending();}
+    function badge(){const on=!!(ST&&ST.active);btn.hidden=!on;dot.hidden=!on||!pending();if(on)place();}
+    /* the gift sits under the lowest round button of the right column (Classement, then Casino or the game buttons) */
+    function place(){if(btn.hidden)return;let low=0;
+      document.querySelectorAll(".socialbtn").forEach(b=>{if(b===btn||b.hidden||!b.getClientRects().length)return;const r=b.getBoundingClientRect();if(r.left<innerWidth/2)return;low=Math.max(low,r.bottom);});
+      if(low)btn.style.top=Math.round(low+10)+"px";}
+    let pq=0;new MutationObserver(()=>{if(!pq)pq=requestAnimationFrame(()=>{pq=0;place();});}).observe(document.body,{childList:true,attributes:true,attributeFilter:["hidden"],subtree:true});
+    addEventListener("resize",place);
     function applySeason(){const s=ST&&ST.season&&SKINS[ST.season]?ST.season:"";if(s!==SEASON){SEASON=s;try{renderPacks();}catch(e){}try{coverImg();BIND.repaint();}catch(e){}}}
     async function refresh(){if(!SRV||!CLOUD)return;try{ST=await window.MF_RPC("mf_advent_status");}catch(e){return;}
       applySeason();badge();if(!root.hidden)render();}
