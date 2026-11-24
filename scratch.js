@@ -55,7 +55,7 @@ const CSS=`
 .sc-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#2a1145;border-radius:99px;padding:3px 10px}
 .sc-pill{margin-left:auto;background:#2a1145;border-radius:12px;padding:6px 12px;font-weight:700;color:#ffd23f;white-space:nowrap;box-shadow:inset 0 0 0 2px #6a3aa0}
 .sc-pill b{font:400 20px "Titan One",sans-serif;color:#fff;margin-left:4px}
-#mfScratch:not(.admin) .sc-adm,body.preview #mfScratch .sc-adm{display:none!important}
+#mfScratch:not(.sc-admin) .sc-adm,body.preview #mfScratch .sc-adm{display:none!important}
 
 .sc-main{flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:4px 12px max(14px,env(safe-area-inset-bottom))}
 .sc-logo{flex:0 1 auto;min-height:0;object-fit:contain;display:block;height:min(15svh,calc(94vw * .338),150px);width:auto;max-width:94vw;margin:0 0 -6px;pointer-events:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45))}
@@ -64,7 +64,7 @@ const CSS=`
  box-shadow:0 0 0 3px #8a3b12,0 14px 0 #5b2208,0 24px 44px rgba(0,0,0,.55)}
 .sc-ticket::before,.sc-ticket::after{content:"";position:absolute;top:calc(var(--w)*.108);width:18px;height:18px;border-radius:50%;background:#1f0b38;box-shadow:inset 0 0 0 3px #8a3b12}
 .sc-ticket::before{left:-9px}.sc-ticket::after{right:-9px}
-.sc-ticket.new{animation:scIn .55s cubic-bezier(.2,1.3,.4,1) both}
+.sc-ticket.sc-new{animation:scIn .55s cubic-bezier(.2,1.3,.4,1) both}
 @keyframes scIn{from{transform:translateY(24px) scale(.88) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
 .sc-head{text-align:center;padding:0 0 calc(var(--w)*.03);border-bottom:3px dashed rgba(138,59,18,.45);margin-bottom:calc(var(--w)*.035)}
 .sc-sub{font:400 calc(var(--w)*.045)/1.2 "Titan One",sans-serif;color:#7a2e0a}
@@ -74,14 +74,14 @@ const CSS=`
 .sc-cell{position:relative;border-radius:10px;background:#fffaf0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:inset 0 0 0 2px rgba(138,59,18,.25)}
 .sc-cell img{width:62%;height:auto;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 3px 2px rgba(0,0,0,.2))}
 .sc-cell span{font:400 calc(var(--w)*.032)/1 "Titan One",sans-serif;color:#8a3b12;white-space:nowrap}
-.sc-cell.hit{background:radial-gradient(circle,#fff6b0,#ffd23f);box-shadow:0 0 0 3px #ff7b00,0 0 22px #ffb300;animation:scHit .6s cubic-bezier(.2,1.6,.4,1) both;z-index:1}
-.sc-cell.hit:nth-child(n){animation-delay:var(--d,0s)}
+.sc-cell.sc-hit{background:radial-gradient(circle,#fff6b0,#ffd23f);box-shadow:0 0 0 3px #ff7b00,0 0 22px #ffb300;animation:scHit .6s cubic-bezier(.2,1.6,.4,1) both;z-index:1}
+.sc-cell.sc-hit:nth-child(n){animation-delay:var(--d,0s)}
 @keyframes scHit{0%{transform:scale(1)}50%{transform:scale(1.14) rotate(-3deg)}100%{transform:scale(1.04)}}
-.sc-cell.dim{opacity:.45;filter:grayscale(.5)}
+.sc-cell.sc-dim{opacity:.45;filter:grayscale(.5)}
 .sc-foil,.sc-dust{position:absolute;inset:0;width:100%;height:100%}
 .sc-foil{touch-action:none;cursor:grab;transition:opacity .6s ease}
-.sc-foil.gone{opacity:0;pointer-events:none}
-.sc-foil.off{pointer-events:none}
+.sc-foil.sc-gone{opacity:0;pointer-events:none}
+.sc-foil.sc-off{pointer-events:none}
 .sc-dust{pointer-events:none;z-index:2}
 .sc-hand{position:absolute;left:50%;top:55%;z-index:3;pointer-events:none;font-size:calc(var(--w)*.13);filter:drop-shadow(0 4px 4px rgba(0,0,0,.4));animation:scHand 1.6s ease-in-out infinite}
 .sc-hand[hidden]{display:none}
@@ -93,34 +93,34 @@ const CSS=`
 .sc-lg{display:flex;align-items:center;gap:4px;font:700 calc(var(--w)*.032)/1.1 Quicksand,sans-serif;color:#5b2208;white-space:nowrap}
 .sc-lg img{width:calc(var(--w)*.062);height:calc(var(--w)*.062);flex:none}
 .sc-lg b{font:400 calc(var(--w)*.034)/1 "Titan One",sans-serif;color:#8a3b12}
-.sc-lg.jk b{color:#c2410c}
+.sc-lg.sc-jk b{color:#c2410c}
 .sc-foot{display:flex;justify-content:space-between;gap:8px;margin-top:calc(var(--w)*.022);font:700 calc(var(--w)*.026)/1 Quicksand,sans-serif;color:#7a3410;letter-spacing:.03em}
 
 .sc-res{width:min(430px,94vw);min-height:48px;border-radius:12px;padding:8px 14px;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;text-align:center;color:#2a1145;background:#f3e6ff;box-shadow:inset 0 0 0 2px #b48be0}
-.sc-res.good{background:#d7f5b0;box-shadow:inset 0 0 0 2px #7cbf3c}
-.sc-res.jack{background:linear-gradient(90deg,#ffd23f,#ffb300);font:400 20px "Titan One",sans-serif}
-.sc-res.bad{background:#ffd6d6;box-shadow:inset 0 0 0 2px #e07a7a}
+.sc-res.sc-good{background:#d7f5b0;box-shadow:inset 0 0 0 2px #7cbf3c}
+.sc-res.sc-jack{background:linear-gradient(90deg,#ffd23f,#ffb300);font:400 20px "Titan One",sans-serif}
+.sc-res.sc-bad{background:#ffd6d6;box-shadow:inset 0 0 0 2px #e07a7a}
 .sc-ctl{width:min(430px,94vw);display:flex;gap:10px}
 .sc-ctl[hidden]{display:none}
 .sc-btn{flex:1 1 0;min-height:58px;border:0;border-radius:16px;cursor:pointer;color:#4a2a10;font:400 19px/1.05 "Titan One",sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 10px;
  background:linear-gradient(180deg,#ffe066,#f5b700);box-shadow:0 5px 0 #a86c00,0 9px 14px rgba(0,0,0,.35)}
 .sc-btn small{font:700 12px/1.1 Quicksand,sans-serif;opacity:.85}
-.sc-btn.alt{background:linear-gradient(180deg,#d6b4ff,#9b5de5);color:#1f0b38;box-shadow:0 5px 0 #5b2d99,0 9px 14px rgba(0,0,0,.35)}
-.sc-btn.ghost{background:#2a1145;color:#ffd23f;box-shadow:inset 0 0 0 2px #6a3aa0;min-height:48px;font-size:16px}
+.sc-btn.sc-alt{background:linear-gradient(180deg,#d6b4ff,#9b5de5);color:#1f0b38;box-shadow:0 5px 0 #5b2d99,0 9px 14px rgba(0,0,0,.35)}
+.sc-btn.sc-ghost{background:#2a1145;color:#ffd23f;box-shadow:inset 0 0 0 2px #6a3aa0;min-height:48px;font-size:16px}
 .sc-btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #a86c00}
 .sc-btn:disabled{background:#5d4a72;color:#c9b8de;box-shadow:0 5px 0 #3a2a4e;cursor:not-allowed}
-.sc-btn.free:not(:disabled){animation:scGlow 1.4s ease-in-out infinite alternate}
+.sc-btn.sc-free:not(:disabled){animation:scGlow 1.4s ease-in-out infinite alternate}
 @keyframes scGlow{to{box-shadow:0 5px 0 #a86c00,0 0 24px rgba(255,210,63,.85)}}
 
 .sc-side{position:absolute;top:0;left:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;overscroll-behavior:contain;background:#1c0b33;border-right:2px solid #6a3aa0;padding:max(14px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;box-shadow:20px 0 40px rgba(0,0,0,.5)}
-.sc-side:not(.open){display:none}
+.sc-side:not(.sc-open){display:none}
 .sc-side>*{flex-shrink:0}
 .sc-sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .sc-side h3{margin:0;font:400 20px "Titan One",sans-serif;color:#ffd23f}
 .sc-note{margin:0;font-size:13px;color:#d9c6f2}
 .sc-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sc-sbtn{min-height:44px;border-radius:10px;border:2px solid #6a3aa0;background:#2a1145;color:#fff4dc;font:700 14px Quicksand,sans-serif;padding:8px 12px;cursor:pointer}
-.sc-sbtn.warn{border-color:#ff9a3d;color:#ffd23f}
+.sc-sbtn.sc-warn{border-color:#ff9a3d;color:#ffd23f}
 .sc-chk{display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px;min-height:44px;flex-wrap:wrap}.sc-chk input{width:20px;height:20px}
 .sc-chk select{min-height:44px;border-radius:10px;border:2px solid #6a3aa0;background:#2a1145;color:#fff4dc;font:700 14px Quicksand,sans-serif;padding:0 8px}
 .sc-odds{margin:0;padding:0;list-style:none;font-size:13px;color:#d9c6f2}
@@ -140,14 +140,14 @@ const CSS=`
 .sc-flash{position:fixed;inset:0;z-index:9200;background:#fff7d0;pointer-events:none;animation:scFlash .7s ease-out forwards}@keyframes scFlash{from{opacity:.9}to{opacity:0}}
 .sc-pt{position:absolute;left:50%;top:45%;width:54px;height:54px;margin:-27px;z-index:1;pointer-events:none}
 @media(max-height:640px){.sc-ticket{--w:min(430px,94vw,calc((100svh - 222px - min(15svh,150px)) / 1.36))}.sc-btn{min-height:50px;font-size:17px}.sc-res{min-height:40px;font-size:14px}}
-@media(prefers-reduced-motion:reduce){.sc-ticket.new,.sc-hand,.sc-cell.hit,.sc-btn.free,.sc-rays,.sc-coin,.sc-jpt{animation:none}}
+@media(prefers-reduced-motion:reduce){.sc-ticket.sc-new,.sc-hand,.sc-cell.sc-hit,.sc-btn.sc-free,.sc-rays,.sc-coin,.sc-jpt{animation:none}}
 `;
 
 /* ---------- interface ---------- */
 let root=null;const $=s=>root.querySelector(s);
 function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
-  root=document.createElement("div");root.id="mfScratch";if(ADMIN)root.classList.add("admin");root.hidden=true;
+  root=document.createElement("div");root.id="mfScratch";if(ADMIN)root.classList.add("sc-admin");root.hidden=true;
   root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Monkey Cash, ticket à gratter");
   root.innerHTML=`<div class="sc-stars"></div>
   <div class="sc-top"><h2>Monkey Cash</h2>
@@ -165,14 +165,14 @@ function build(){
      <div class="sc-hand" id="scHand" aria-hidden="true" hidden>👆</div>
      <div class="sc-cover" id="scCover"><span>Prends un ticket<br>pour gratter !</span></div>
     </div>
-    <div class="sc-legend">${ORDER.map(e=>`<div class="sc-lg${e==="singe"?" jk":""}"><img src="${src(e)}" alt="${esc(SYM[e].n)}"><b>${esc(SYM[e].p)}</b></div>`).join("")}</div>
+    <div class="sc-legend">${ORDER.map(e=>`<div class="sc-lg${e==="singe"?" sc-jk":""}"><img src="${src(e)}" alt="${esc(SYM[e].n)}"><b>${esc(SYM[e].p)}</b></div>`).join("")}</div>
     <div class="sc-foot"><span>N° <b id="scNo">——</b></span><span>Jeu de grattage · Monkey Family</span></div>
    </div>
    <div class="sc-res" id="scRes" role="status">…</div>
    <div class="sc-ctl" id="scBuy">
-    <button type="button" class="sc-btn free" id="scFree">Ticket gratuit<small id="scFreeS">1 par jour</small></button>
-    <button type="button" class="sc-btn alt" id="scPaid">Acheter<small id="scPaidS">…</small></button></div>
-   <div class="sc-ctl" id="scPlay" hidden><button type="button" class="sc-btn ghost" id="scAll">Tout gratter d'un coup</button></div>
+    <button type="button" class="sc-btn sc-free" id="scFree">Ticket gratuit<small id="scFreeS">1 par jour</small></button>
+    <button type="button" class="sc-btn sc-alt" id="scPaid">Acheter<small id="scPaidS">…</small></button></div>
+   <div class="sc-ctl" id="scPlay" hidden><button type="button" class="sc-btn sc-ghost" id="scAll">Tout gratter d'un coup</button></div>
   </div>
   <aside class="sc-side sc-adm" id="scSide" aria-label="Réglages admin">
    <div class="sc-sidehead"><h3>Réglages admin</h3><button type="button" class="sc-x" id="scSideX" aria-label="Fermer les réglages">✕</button></div>
@@ -183,7 +183,7 @@ function build(){
    <div class="sc-bar"><label class="sc-chk"><input type="checkbox" id="scSnd" checked> Sons</label><label class="sc-chk"><input type="checkbox" id="scVib" checked> Vibrations</label></div>
    <h3>Joueurs</h3>
    <p class="sc-note" id="scOpenNote"></p>
-   <div class="sc-bar"><button type="button" class="sc-sbtn warn" id="scOpen"></button></div>
+   <div class="sc-bar"><button type="button" class="sc-sbtn sc-warn" id="scOpen"></button></div>
    <h3>Chances par ticket</h3>
    <ul class="sc-odds">${[["Jackpot · 3 boosters","0,4 %"],["1 booster","2,5 %"],["25 🍌","3 %"],["−2 h d'attente","4 %"],["10 🍌","7 %"],["5 🍌","15 %"],["Perdu","68,1 %"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("")}</ul>
    <p class="sc-note">Un ticket gagne 1 fois sur 3. Un ticket payant rend en moyenne 3,7 🍌 pour 5 🍌 (en comptant un booster à 40 🍌), sans compter le sablier.</p>
@@ -192,7 +192,7 @@ function build(){
   document.body.appendChild(root);
   new ResizeObserver(()=>fit()).observe($(".sc-main"));
   $("#scClose").addEventListener("click",close);
-  $("#scTog").addEventListener("click",()=>side(!$("#scSide").classList.contains("open")));
+  $("#scTog").addEventListener("click",()=>side(!$("#scSide").classList.contains("sc-open")));
   $("#scSideX").addEventListener("click",()=>{side(false);$("#scTog").focus({preventScroll:true});});
   $("#scFree").addEventListener("click",()=>buy(false));
   $("#scPaid").addEventListener("click",()=>buy(true));
@@ -204,7 +204,7 @@ function build(){
   $("#scReset").addEventListener("click",async e=>{e.target.disabled=true;try{take(await rpc("mf_scratch_admin",{p_action:"reset"}));T=null;phase="none";paintGrid();foil.reset();say("Ton ticket gratuit et tes tickets payants du jour sont rendus.");}catch(x){say(errText(x),"bad");}e.target.disabled=false;render();});
   $("#scOpen").addEventListener("click",openToAll);
   $("#scJp").addEventListener("click",e=>{if(e.target.id==="scJp"||e.target.id==="scJpOk"||e.target.closest(".sc-jpin"))closeJp();});
-  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!root||root.hidden)return;if(!$("#scJp").hidden)closeJp();else if($("#scSide").classList.contains("open"))side(false);else close();});
+  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!root||root.hidden)return;if(!$("#scJp").hidden)closeJp();else if($("#scSide").classList.contains("sc-open"))side(false);else close();});
   foil.init($("#scZone"),$("#scFoil"),$("#scDust"));
   paintGrid();
 }
@@ -220,8 +220,8 @@ function fit(){
   const w=Math.floor(Math.max(200,Math.min(430,m.clientWidth*.94,(avail-others)/ratio)));
   t.style.setProperty("--w",w+"px");
 }
-function side(o){$("#scSide").classList.toggle("open",o);$("#scTog").setAttribute("aria-expanded",String(o));if(o)render();}
-function say(t,cls){const r=$("#scRes");r.className="sc-res"+(cls?" "+cls:"");r.textContent=t;}
+function side(o){$("#scSide").classList.toggle("sc-open",o);$("#scTog").setAttribute("aria-expanded",String(o));if(o)render();}
+function say(t,cls){const r=$("#scRes");r.className="sc-res"+(cls?" sc-"+cls:"");r.textContent=t;}
 function paintGrid(){
   const g=T&&T.grid?T.grid:Array(9).fill(null);
   $("#scGrid").innerHTML=g.map((e,i)=>e?`<div class="sc-cell" data-e="${esc(e)}" data-i="${i}"><img src="${src(e)}" alt="${esc(SYM[e]?SYM[e].n:e)}"><span>${esc(SYM[e]?SYM[e].p:"")}</span></div>`:`<div class="sc-cell"></div>`).join("");
@@ -236,7 +236,7 @@ function render(){
   $("#scCover").hidden=phase!=="none";
   const ok=!!INFO&&!busy;
   const fr=$("#scFree"),pd=$("#scPaid");
-  fr.disabled=!ok||!INFO.free;fr.classList.toggle("free",ok&&INFO.free);
+  fr.disabled=!ok||!INFO.free;fr.classList.toggle("sc-free",ok&&INFO.free);
   fr.firstChild.textContent=INFO&&!INFO.free?"Gratuit pris":"Ticket gratuit";
   $("#scFreeS").textContent=!INFO?"…":INFO.free?"offert aujourd'hui":"nouveau dans "+hm(+INFO.nextFree-(Date.now()+skew));
   const price=INFO?+INFO.price:5,left=INFO?+INFO.paidLeft:0;
@@ -269,7 +269,7 @@ async function buy(paid){
 }
 function show(p,fresh){
   T=p;phase="scratch";paintGrid();foil.reset();
-  const t=$("#scTicket");t.classList.remove("new");if(fresh&&!reduce){void t.offsetWidth;t.classList.add("new");}
+  const t=$("#scTicket");t.classList.remove("sc-new");if(fresh&&!reduce){void t.offsetWidth;t.classList.add("sc-new");}
   $("#scHand").hidden=false;
   say("Gratte avec ton doigt !");render();
   if(fresh)tone("triangle",520,780,.12,.18);
@@ -285,7 +285,7 @@ async function reveal(all){
   const p=T,w=p.win&&typeof p.win==="object"?p.win:null;
   phase="done";render();
   const cells=[...root.querySelectorAll(".sc-cell")];
-  if(w){let k=0;cells.forEach(c=>{if(c.dataset.e===w.k){c.classList.add("hit");c.style.setProperty("--d",(k++*.12)+"s");}else c.classList.add("dim");});
+  if(w){let k=0;cells.forEach(c=>{if(c.dataset.e===w.k){c.classList.add("sc-hit");c.style.setProperty("--d",(k++*.12)+"s");}else c.classList.add("sc-dim");});
     if(w.k==="singe"){say("JACKPOT ! 3 boosters dans ton stock !","jack");celebrate("singe");}
     else if(w.k==="booster"){say("Gagné : 1 booster dans ton stock !","good");celebrate("booster");}
     else if(w.k==="maman"){say("Gagné : 25 bananes ! Planquez vos mamans…","good");celebrate("maman");}
@@ -356,8 +356,8 @@ const foil=(()=>{
   function check(){if(phase!=="scratch"||gone)return;let tot=0;const cell=Array(9).fill(0);
     for(let j=0;j<MG;j++)for(let i=0;i<MG;i++)if(mask[j*MG+i]){tot++;cell[Math.min(2,Math.floor(j*3/MG))*3+Math.min(2,Math.floor(i*3/MG))]++;}
     const per=MG*MG/9;if(tot/(MG*MG)>=.6||cell.every(c=>c/per>=.45))reveal(false);}
-  function finish(){gone=true;cv.classList.add("gone");down=false;scrape(0);if(!reduce)for(let i=0;i<40;i++)flake({x:Math.random(),y:Math.random()});}
-  function reset(){segs=[];mask=new Uint8Array(MG*MG);started=false;gone=false;down=false;cv.classList.remove("gone");size();cv.classList.toggle("off",phase!=="scratch");}
+  function finish(){gone=true;cv.classList.add("sc-gone");down=false;scrape(0);if(!reduce)for(let i=0;i<40;i++)flake({x:Math.random(),y:Math.random()});}
+  function reset(){segs=[];mask=new Uint8Array(MG*MG);started=false;gone=false;down=false;cv.classList.remove("sc-gone");size();cv.classList.toggle("sc-off",phase!=="scratch");}
   /* paillettes argentées qui tombent sous le doigt */
   function flake(p){if(reduce||flakes.length>160)return;
     flakes.push({x:p.x*W,y:p.y*H,vx:(Math.random()-.5)*3*dpr,vy:(-Math.random()*2.2)*dpr,s:(1.5+Math.random()*3)*dpr,r:Math.random()*6,c:Math.random()<.5?"#c8cdd8":"#eef1f6",l:1});
