@@ -10,6 +10,16 @@
 const M=[
   {n:"Le Rageux",c:"#9b4fe0"},{n:"Le Tryharder",c:"#2f6fe0"},{n:"Le Chill",c:"#2fa84f"},{n:"Le Iencli",c:"#e8b800"},
   {n:"L'Alcoolique",c:"#e0352f"},{n:"Le Fantôme",c:"#cfe6ff"},{n:"Le Geek",c:"#ff8a1e"},{n:"Le Séducteur",c:"#9a6232"}];
+/* la fête du gagnant : son animation et ses confettis à lui */
+const FX=[
+  {a:"rcShake",d:".5s",p:["🎮","💢","💥"],glow:"#c77dff"},          // le Rageux casse tout
+  {a:"rcFlex",d:".9s",p:["⚡","💧","🏅"],glow:"#4d8dff"},           // le Tryharder célèbre comme un pro
+  {a:"rcSway",d:"2.4s",p:["🍃","😎","🎧"],glow:"#5bd17a"},          // le Chill, tranquille
+  {a:"rcHop",d:"1s",p:["🛍️","💸","🏷️"],glow:"#ffd23f"},            // le Iencli dépense déjà ses gains
+  {a:"rcWobble",d:"1.6s",p:["🍺","🫧","⭐"],glow:"#ff5a4f"},         // l'Alcoolique trinque
+  {a:"rcFloat",d:"2.2s",p:["👻","✨","💙"],glow:"#8fd3ff"},          // le Fantôme hante le podium
+  {a:"rcGlitch",d:"1.8s",p:["👾","🕹️","💾"],glow:"#ff9a3c"},        // le Geek bug de joie
+  {a:"rcCharm",d:"1.3s",p:["❤️","🌹","💋"],glow:"#ff6b8b"}];        // le Séducteur fait son numéro
 const TW=1672,TH=941;                                        // taille de l'image de la piste
 const LINES=[253,312,379,450,524,600,680,759,843];            // bambous qui séparent les 8 couloirs
 const X0=300;                                                 // le museau des singes au départ
@@ -105,6 +115,33 @@ const CSS=`
 .rc-btn{min-height:44px;border-radius:10px;border:2px solid #5a3416;background:#3a200b;color:#fff3cf;font:700 14px Quicksand,sans-serif;padding:8px 12px;cursor:pointer;text-align:left}
 .rc-chk{display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px;min-height:44px}.rc-chk input{width:20px;height:20px}
 .rc-sel{min-height:44px;border-radius:10px;border:2px solid #5a3416;background:#3a200b;color:#fff3cf;font:700 14px Quicksand,sans-serif;padding:0 8px;width:100%}
+.rc-win{position:fixed;inset:0;z-index:9100;display:grid;place-items:center;overflow:hidden;cursor:pointer;background:radial-gradient(circle at 50% 45%,var(--wc2,rgba(120,60,0,.8)),rgba(5,20,10,.95) 70%)}
+.rc-win[hidden]{display:none}
+.rc-wrays{position:absolute;left:50%;top:42%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(var(--wc,rgba(255,210,63,.35)) 0 9deg,transparent 9deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 45%);mask:radial-gradient(circle,#000 0,transparent 45%);animation:rcTurn 16s linear infinite}
+@keyframes rcTurn{to{transform:rotate(360deg)}}
+.rc-win-in{position:relative;z-index:2;text-align:center;padding:16px;max-width:100%}
+.rc-trophy{font-size:clamp(34px,7vw,56px);line-height:1;animation:rcDrop .7s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes rcDrop{from{transform:translateY(-60vh) rotate(-30deg)}to{transform:none}}
+.rc-wimg{display:block;margin:0 auto;width:min(88vw,560px);height:auto;filter:drop-shadow(0 0 34px var(--wglow,#ffd23f)) drop-shadow(0 14px 10px rgba(0,0,0,.5));animation:rcEnter 1s cubic-bezier(.2,1.5,.4,1) both,var(--wanim,rcBob) var(--wdur,1.4s) 1s ease-in-out infinite}
+@keyframes rcEnter{from{transform:translateX(-90vw) scale(.4) rotate(-12deg);opacity:0}70%{transform:translateX(4vw) scale(1.05)}to{transform:none;opacity:1}}
+@keyframes rcBob{50%{transform:translateY(-14px) rotate(2deg)}}
+@keyframes rcShake{0%,100%{transform:none}20%{transform:translate(-8px,2px) rotate(-3deg)}40%{transform:translate(7px,-3px) rotate(3deg)}60%{transform:translate(-6px,1px) rotate(-2deg)}80%{transform:translate(5px,-1px) rotate(2deg)}}
+@keyframes rcFlex{0%,100%{transform:none}30%{transform:translateY(-22px) scale(1.06)}60%{transform:translateY(0) scale(.98,1.02)}}
+@keyframes rcSway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg) translateY(-6px)}}
+@keyframes rcHop{0%,100%{transform:none}25%{transform:translateY(-30px) rotate(-5deg)}50%{transform:none}75%{transform:translateY(-16px) rotate(5deg)}}
+@keyframes rcWobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg) translateX(-14px)}75%{transform:rotate(9deg) translateX(14px)}}
+@keyframes rcFloat{0%,100%{transform:translateY(0);opacity:.95}50%{transform:translateY(-26px);opacity:.7}}
+@keyframes rcGlitch{0%,92%,100%{transform:none}94%{transform:translate(-6px,0) skewX(8deg)}96%{transform:translate(6px,0) skewX(-8deg)}}
+@keyframes rcCharm{0%,100%{transform:none}40%{transform:scale(1.07) rotate(-3deg)}55%{transform:scale(1.04) rotate(2deg)}}
+.rc-wt{font:400 clamp(40px,9vw,88px)/1 "Titan One",sans-serif;color:#ffd23f;margin-top:4px;text-shadow:0 6px 0 #8a4b00,4px 0 0 #8a4b00,-4px 0 0 #8a4b00,0 0 40px #ffb300;animation:rcPop .7s .5s cubic-bezier(.2,1.7,.4,1) both}
+.rc-ws{font:700 clamp(17px,3vw,22px) Quicksand,sans-serif;color:#fff3cf;margin:8px 0 4px;animation:rcPop .5s .8s both}
+.rc-wme{display:inline-block;margin:10px 0 18px;padding:8px 18px;border-radius:14px;font:400 clamp(20px,4vw,30px) "Titan One",sans-serif;animation:rcPop .6s 1.2s cubic-bezier(.2,1.7,.4,1) both}
+.rc-wme.won{background:linear-gradient(90deg,#ffd23f,#ffb300);color:#3a200b;box-shadow:0 0 30px rgba(255,200,60,.8)}
+.rc-wme.lost{background:rgba(0,0,0,.45);color:#f3e2b8;font-size:clamp(16px,3vw,20px);font-family:Quicksand,sans-serif;font-weight:700}
+.rc-wme:empty{display:none}
+.rc-pt{position:absolute;left:50%;top:42%;z-index:1;pointer-events:none;font-size:42px;line-height:1;margin:-21px}
+.rc-flash{position:fixed;inset:0;z-index:9200;background:#fff7d0;pointer-events:none;animation:rcFlash .7s ease-out forwards}@keyframes rcFlash{from{opacity:.9}to{opacity:0}}
+@media(prefers-reduced-motion:reduce){.rc-wrays,.rc-wimg,.rc-trophy,.rc-wt,.rc-ws,.rc-wme{animation:none!important}}
 #mfRace:not(.admin) .rc-adm{display:none!important}
 #mfRace button:focus-visible,#mfRace select:focus-visible,#mfRace input:focus-visible{outline:3px solid #ffd23f;outline-offset:3px}
 `;
@@ -146,7 +183,10 @@ function build(){
     <button type="button" class="rc-btn" id="rcAdd">+50 🍌 sur mon compte</button>
     <label class="rc-chk"><input type="checkbox" id="rcSnd" checked> Sons</label>
     <p class="rc-note" id="rcAdmMsg" role="status"></p>
-  </aside></div>`;
+  </aside></div>
+  <div class="rc-win" id="rcWin" hidden role="dialog" aria-modal="true" aria-label="Vainqueur de la course"><div class="rc-wrays"></div>
+    <div class="rc-win-in"><div class="rc-trophy" aria-hidden="true">🏆</div><img class="rc-wimg" id="rcWImg" alt=""><div class="rc-wt" id="rcWT"></div><div class="rc-ws" id="rcWS"></div><div class="rc-wme" id="rcWMe"></div><br>
+    <button type="button" class="rc-go" id="rcWOk">Super !</button></div></div>`;
   document.body.appendChild(root);
   SP=[...root.querySelectorAll(".rc-sp")];
   new ResizeObserver(fit).observe($("#rcView").parentElement);
@@ -166,7 +206,8 @@ function build(){
   $("#rcNow").addEventListener("click",()=>admin("now",null,"Course lancée.").then(ok=>{if(ok&&S.last)play(S.last,true);}));
   $("#rcAdd").addEventListener("click",async()=>{try{const st=await rpc("mf_admin_bananas",{p_n:50});S.state=st;applyState(st);render();adminMsg("+50 bananes.");}catch(x){adminMsg(errText(x));}});
   $("#rcSnd").addEventListener("change",e=>{sound=e.target.checked;});
-  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!root||root.hidden)return;if($("#rcSide").classList.contains("open"))side(false);else close();});
+  $("#rcWin").addEventListener("click",()=>closeWin());
+  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!root||root.hidden)return;if(!$("#rcWin").hidden){closeWin();return;}if($("#rcSide").classList.contains("open"))side(false);else close();});
   pose(null);
 }
 function side(o){$("#rcSide").classList.toggle("open",o);$("#rcTog").setAttribute("aria-expanded",String(o));}
@@ -273,11 +314,11 @@ function play(L,live){if(!L||!L.result||playing)return;if(!root.hidden)side(fals
   const big=$("#rcBig"),lead=$("#rcLead");let leader=-1;
   const finish=()=>{playing.over=true;
     order.forEach((k,r)=>{const el=SP[k-1];el.classList.toggle("win",r===0);el.classList.toggle("dim",r>2);const b=el.querySelector("b");b.textContent=r+1;b.className=r?"r"+(r+1):"";b.style.opacity=r<3?1:0;});
-    big.innerHTML=`<span style="font-size:.42em;text-align:center;display:block">🏆 ${esc(M[order[0]-1].n)}<br>gagne !</span>`;
-    [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone("triangle",f,0,.2,.35),i*140));
+    big.innerHTML=`<span style="font-size:.5em">ARRIVÉE !</span>`;tone("sawtooth",880,440,.12,.4);
     lead.classList.remove("on");
     if(L.day!=="essai")markSeen(String(L.day));
-    setTimeout(()=>{big.innerHTML="";playing=null;render();},reduce?1500:4500);};
+    const mine=S&&S.last&&S.last.day===L.day?S.last.mine:null;
+    setTimeout(()=>{big.innerHTML="";celebrate(order[0]-1,L.odds?L.odds[order[0]-1]:null,mine,()=>{playing=null;render();});},reduce?300:1300);};
   if(reduce){pose(pl,total,true);finish();return;}
   // 3, 2, 1, partez !
   const steps=["3","2","1","PARTEZ !"];
@@ -291,6 +332,34 @@ function play(L,live){if(!L||!L.result||playing)return;if(!root.hidden)side(fals
       if(el<total)requestAnimationFrame(frame);else finish();};
     requestAnimationFrame(frame);},steps.length*800-200);
 }
+
+/* ---------- le vainqueur en grand ---------- */
+let winT=[],winDone=null;
+function celebrate(i,o,mine,done){
+  const box=$("#rcWin"),F=FX[i],m=M[i];winDone=done;
+  box.style.setProperty("--wc",hexA(m.c,.35));box.style.setProperty("--wc2",hexA(m.c,.55));
+  const im=$("#rcWImg");im.src=img(i);im.alt=m.n;im.style.setProperty("--wanim",F.a);im.style.setProperty("--wdur",F.d);im.style.setProperty("--wglow",F.glow);
+  $("#rcWT").textContent=m.n.toUpperCase();
+  $("#rcWS").textContent="remporte la course"+(o?" · cote "+odd(o):"")+" !";
+  const me=$("#rcWMe");
+  if(mine&&mine.m===i+1){me.className="rc-wme won";me.textContent="+"+mine.p+" 🍌 pour toi !";}
+  else if(mine){me.className="rc-wme lost";me.textContent=`Ton ${M[mine.m-1].n.replace(/^(Le |L')/,"")} n'a pas gagné… ${mine.a} 🍌 envolées.`;}
+  else{me.className="rc-wme";me.textContent="";}
+  box.hidden=false;$("#rcWOk").focus({preventScroll:true});
+  [523,659,784,1047,784,1047].forEach((f,k)=>setTimeout(()=>tone("triangle",f,0,.2,k>3?.5:.3),k*150));
+  if(mine&&mine.m===i+1)setTimeout(()=>[1047,1319,1568].forEach((f,k)=>setTimeout(()=>tone("sine",f,0,.16,.3),k*90)),1200);
+  if(reduce)return;
+  const fl=document.createElement("div");fl.className="rc-flash";root.appendChild(fl);setTimeout(()=>fl.remove(),800);
+  const add=(kf,dur)=>{const p=document.createElement("div");p.className="rc-pt";p.textContent=F.p[Math.floor(Math.random()*F.p.length)];box.appendChild(p);p.animate(kf,{duration:dur,easing:"cubic-bezier(.15,.7,.4,1)"}).onfinish=()=>p.remove();};
+  const burst=n=>{for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,d=200+Math.random()*Math.max(innerWidth,innerHeight)*.6,x=Math.cos(a)*d,y=Math.sin(a)*d*.8,sc=.5+Math.random()*.9,rot=(Math.random()-.5)*720;
+    add([{transform:"translate(0,0) scale(.2)",opacity:1},{transform:`translate(${x*.85}px,${y*.85-120}px) scale(${sc}) rotate(${rot*.6}deg)`,opacity:1,offset:.45},{transform:`translate(${x}px,${y+400}px) scale(${sc}) rotate(${rot}deg)`,opacity:0}],1700+Math.random()*1300);}};
+  const rain=n=>{for(let k=0;k<n;k++){const x=(Math.random()-.5)*innerWidth,y0=-innerHeight*.42-60-Math.random()*160,rot=(Math.random()-.5)*540,sc=.5+Math.random()*.6;
+    setTimeout(()=>{if(!box.hidden)add([{transform:`translate(${x}px,${y0}px) scale(${sc})`,opacity:1},{transform:`translate(${x+(Math.random()-.5)*90}px,${innerHeight*.65}px) scale(${sc}) rotate(${rot}deg)`,opacity:1}],1600+Math.random()*900);},Math.random()*2400);}};
+  burst(36);winT=[setTimeout(()=>burst(24),900),setTimeout(()=>rain(40),1600),setTimeout(()=>burst(20),3200)];
+}
+function closeWin(){const box=$("#rcWin");if(box.hidden)return;winT.forEach(clearTimeout);winT=[];box.hidden=true;box.querySelectorAll(".rc-pt").forEach(x=>x.remove());
+  const d=winDone;winDone=null;if(d)d();}
+function hexA(h,a){const n=parseInt(h.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
 
 /* ---------- sons ---------- */
 let ac=null;
@@ -309,7 +378,7 @@ async function open(){
     if(r.last&&r.last.day&&seen()!==String(r.last.day)&&now()-r.last.settled<86400000)play(r.last,true);}
   catch(e){msg(errText(e),"bad");}
 }
-function close(){root.hidden=true;document.body.style.overflow=prevOverflow;clearInterval(clock);clock=null;clearInterval(poll);poll=null;if(opener&&opener.focus)opener.focus();}
+function close(){closeWin();root.hidden=true;document.body.style.overflow=prevOverflow;clearInterval(clock);clock=null;clearInterval(poll);poll=null;if(opener&&opener.focus)opener.focus();}
 
 /* ---------- démarrage : bouton visible par l'admin, et par tous une fois la course ouverte ---------- */
 async function boot(){
