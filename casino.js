@@ -5,7 +5,7 @@
    Tant que OPEN_TO_ALL est faux, seul l'admin voit le Casino ; les autres joueurs gardent les anciens boutons ronds. */
 (function(){
 "use strict";
-const OPEN_TO_ALL=false;          // passer à true pour lancer le Casino chez tous les joueurs
+const OPEN_TO_ALL=true;           // passer à true pour lancer le Casino chez tous les joueurs
 const TOP=112,STEP=56;            // position sous le bouton Classement (et espacement des anciens boutons)
 const LOGO="packs/casino-titre.webp";
 const GAMES=[];                   // {id,name,icon,order,open,status,root,line,hot}
