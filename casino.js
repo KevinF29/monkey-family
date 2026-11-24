@@ -7,6 +7,7 @@
 "use strict";
 const OPEN_TO_ALL=false;          // passer à true pour lancer le Casino chez tous les joueurs
 const TOP=112,STEP=56;            // position sous le bouton Classement (et espacement des anciens boutons)
+const LOGO="packs/casino-titre.webp";
 const GAMES=[];                   // {id,name,icon,order,open,status,root,line,hot}
 let ADMIN=null,adminP=null,btn=null,hub=null,watch=null,want=null,wantT=0;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -27,9 +28,10 @@ const CSS=`
  padding:max(16px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));box-sizing:border-box;color:#f6f0d8;font:16px/1.45 Quicksand,system-ui,sans-serif;
  background:radial-gradient(ellipse 90% 45% at 50% 0,rgba(255,200,60,.18),transparent 70%),linear-gradient(180deg,#2a1450,#140a26)}
 #mfCasino[hidden]{display:none}
-.cs-top{width:min(520px,100%);display:flex;align-items:center;gap:12px;margin:6px 0 18px}
-.cs-top h2{flex:1;margin:0;font:400 clamp(30px,8vw,42px)/1 "Titan One",sans-serif;color:#ffd23f;letter-spacing:.02em;text-shadow:0 4px 0 #8a4b00,0 0 24px rgba(255,180,0,.45)}
-.cs-x{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:22px;cursor:pointer}
+.cs-top{position:relative;width:min(520px,100%);margin:0 0 14px;padding-top:44px}
+.cs-top h2{margin:0}
+.cs-top img{display:block;width:100%;height:auto;aspect-ratio:1100/367;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
+.cs-x{position:absolute;top:0;right:0;z-index:1;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:22px;cursor:pointer}
 .cs-list{width:min(520px,100%);display:flex;flex-direction:column;gap:12px}
 .cs-card{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:14px 16px;border-radius:18px;cursor:pointer;color:inherit;font:inherit;
  background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.03));border:1px solid rgba(255,217,138,.28);box-shadow:0 8px 22px rgba(0,0,0,.35);transition:transform .12s ease,border-color .12s}
@@ -59,6 +61,7 @@ function ensureBtn(){
   // jeton de casino
   btn.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="M5.6 5.6l2.9 2.9"/><path d="M15.5 15.5l2.9 2.9"/><path d="M18.4 5.6l-2.9 2.9"/><path d="M8.5 15.5l-2.9 2.9"/></svg><span class="sbadge" hidden></span>`;
   btn.addEventListener("click",openHub);
+  {const i=new Image();i.src=LOGO;}
   const rank=document.getElementById("rankBtn");if(rank)rank.after(btn);else document.body.appendChild(btn);
 }
 function badge(){
@@ -78,7 +81,7 @@ function legacy(g){
 /* ---------- la salle ---------- */
 function build(){
   hub=document.createElement("div");hub.id="mfCasino";hub.hidden=true;hub.setAttribute("role","dialog");hub.setAttribute("aria-modal","true");hub.setAttribute("aria-label","Casino");
-  hub.innerHTML=`<div class="cs-top"><h2>Casino</h2><button type="button" class="cs-x" id="csClose" aria-label="Fermer">✕</button></div>
+  hub.innerHTML=`<div class="cs-top"><h2><img src="${LOGO}" alt="Monkey Family Casino"></h2><button type="button" class="cs-x" id="csClose" aria-label="Fermer">✕</button></div>
     <div class="cs-list" id="csList"></div><p class="cs-note">Joue avec modération, singe 🐒</p>`;
   document.body.appendChild(hub);
   hub.querySelector("#csClose").addEventListener("click",closeHub);
