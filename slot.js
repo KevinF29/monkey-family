@@ -17,7 +17,7 @@ const SYM=[
   {e:"singe",n:"Singe Monkey Family",d:"Le jackpot",w:2}];
 const TOTAL=SYM.reduce((a,s)=>a+s.w,0);
 const NAME=Object.fromEntries(SYM.map(s=>[s.e,s.n]));
-const TRI={singe:{t:"boost",v:5},booster:{t:"boost",v:3},sablier:{t:"time",v:360},maman:{t:"ban",v:40},camera:{t:"ban",v:25},remboursement:{t:"ban",v:15},rage:{t:"ban",v:10},banane:{t:"ban",v:5}};
+const TRI={singe:{t:"boost",v:7},booster:{t:"boost",v:3},sablier:{t:"time",v:360},maman:{t:"ban",v:40},camera:{t:"ban",v:25},remboursement:{t:"ban",v:15},rage:{t:"ban",v:10},banane:{t:"ban",v:5}};
 const PAIR=[["booster",{t:"boost",v:1}],["sablier",{t:"time",v:120}],["banane",{t:"ban",v:3}]];
 const ORDER=["3:singe","3:booster","3:sablier","3:maman","3:camera","3:remboursement","3:rage","3:banane","2:booster","2:sablier","2:banane","1:banane"];
 const COST=1,TURNS=10,PITY=10,LS="mf-slot-test";
@@ -160,7 +160,7 @@ function build(){
   <div class="sl-body">
    <div class="sl-stage"><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
-    <div class="sl-sign">MONKEY FAMILY<small>Trois singes = 5 boosters</small></div>
+    <div class="sl-sign">MONKEY FAMILY<small>Trois singes = 7 boosters</small></div>
     <div class="sl-tb"><div class="sl-tbt">Table des gains</div><div class="sl-tbg">${ORDER.map(k=>{const [n,e]=k.split(":");const r=n==="3"?TRI[e]:n==="2"?PAIR.find(p=>p[0]===e)[1]:{t:"ban",v:1};
       return `<div class="sl-row${k==="3:singe"?" jk":""}" data-k="${k}"><span class="ic">${icons(k)}</span>${k==="3:singe"?"":'<span class="dt"></span>'}<span class="pz">${prize(r)}</span></div>`;}).join("")}</div>
      <p class="sl-rules">1 banane le tour · 10 tours par jour · les paires comptent n'importe où · la banane seule ne compte que sur le 1er rouleau · un seul gain par tour, le plus haut</p></div>
@@ -181,7 +181,7 @@ function build(){
     <div class="sl-bar"><button type="button" class="sl-btn" id="slReset">Remettre le test à zéro</button></div>
    </aside>
   </div>
-  <div class="sl-jp" id="slJpBox" hidden><div class="sl-rays"></div><div class="sl-jpin"><img class="sl-coin" src="${src("singe")}" alt=""><div class="sl-jpt">JACKPOT !</div><div class="sl-jps"><b id="slJpWho"></b> gagne 5 boosters</div><button type="button" class="sl-go" style="display:inline-flex;min-height:52px;padding:0 26px;font-size:21px" id="slJpOk">Récupérer</button></div></div>`;
+  <div class="sl-jp" id="slJpBox" hidden><div class="sl-rays"></div><div class="sl-jpin"><img class="sl-coin" src="${src("singe")}" alt=""><div class="sl-jpt">JACKPOT !</div><div class="sl-jps"><b id="slJpWho"></b> gagne 7 boosters</div><button type="button" class="sl-go" style="display:inline-flex;min-height:52px;padding:0 26px;font-size:21px" id="slJpOk">Récupérer</button></div></div>`;
   document.body.appendChild(root);
   REELS.push(...[0,1,2].map(i=>{const el=$("#slR"+i),box=el.querySelector(".sl-cells");
     const strip=shuffle(SYM.flatMap(s=>Array(s.w).fill(s.e)));
@@ -259,7 +259,7 @@ function spin(){
     if(r){if(r.t==="ban"){S.bal+=r.v;S.won+=r.v;}else if(r.t==="boost")S.boosters+=r.v;else S.mins+=r.v;
       hit(r.k);const tri=s[0]===s[1]&&s[1]===s[2];
       s.forEach((e,i)=>{if(tri||(r.k.startsWith("2:")&&r.k.slice(2)===e)||(r.k==="1:banane"&&i===0))REELS[i].el.classList.add("win");});
-      if(r.k==="3:singe"){say("JACKPOT ! 5 boosters !","jack");post(`🐒 JACKPOT ! ${ME} a aligné les trois singes et gagne 5 boosters !`);jackpot();}
+      if(r.k==="3:singe"){say("JACKPOT ! 7 boosters !","jack");post(`🐒 JACKPOT ! ${ME} a aligné les trois singes et gagne 7 boosters !`);jackpot();}
       else{say("Gagné : "+label(r)+(r.k==="1:banane"?" (mise rendue)":""),"good");tone("sine",660,990,.15,.25);
         if(r.t!=="ban"||r.v>=10)post(`${ME} a gagné ${label(r)} à la machine à bananes.`);}
     }else say("Perdu. La banane est partie.");
@@ -300,8 +300,16 @@ async function boot(){
   let admin=false;try{admin=user?await user.isOwner():false;}catch(e){}
   if(!admin)return;
   try{const me=await user.me();if(me&&me.name)ME=me.name;}catch(e){}
-  const bar=document.querySelector(".adminbar");
-  if(bar&&!document.getElementById("slotBtn")){const b=document.createElement("button");b.className="btn";b.id="slotBtn";b.type="button";b.textContent="🎰 Machine à sous";b.addEventListener("click",open);bar.appendChild(b);}
+  // bouton rond « 777 », sous le bouton Classement
+  if(!document.getElementById("slotBtn")){
+    const st=document.createElement("style");
+    st.textContent=`#slotBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 112px)}#slotBtn svg{width:36px;height:auto;overflow:visible}`;
+    document.head.appendChild(st);
+    const b=document.createElement("button");b.className="socialbtn";b.id="slotBtn";b.type="button";b.setAttribute("aria-label","Machine à bananes");b.title="Machine à bananes";
+    b.innerHTML=`<svg viewBox="0 0 40 22" aria-hidden="true"><text x="20" y="18" text-anchor="middle" font-family="'Titan One','Arial Black',sans-serif" font-size="19" letter-spacing="-1.5" fill="#ff3b2f" stroke="#ffd23f" stroke-width="3" stroke-linejoin="round" paint-order="stroke">777</text></svg>`;
+    b.addEventListener("click",open);
+    const rank=document.getElementById("rankBtn");if(rank)rank.after(b);else document.body.appendChild(b);
+  }
   SYM.forEach(s=>{const i=new Image();i.src=src(s.e);});
 }
 window.MF_SLOT={open};
