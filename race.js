@@ -46,7 +46,7 @@ const markSeen=d=>{try{localStorage.setItem(seenKey,d);}catch(e){}};
 
 /* ---------- style ---------- */
 const CSS=`
-#mfRace{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;color:#f6f0d8;font:16px/1.45 Quicksand,system-ui,sans-serif;
+#mfRace{position:fixed;inset:0;z-index:9000;overflow:hidden;overscroll-behavior:none;display:flex;flex-direction:column;color:#f6f0d8;font:16px/1.45 Quicksand,system-ui,sans-serif;
  background:radial-gradient(ellipse 80% 50% at 50% 0,rgba(120,200,80,.22),transparent 70%),linear-gradient(180deg,#0f3a1f,#082414)}
 #mfRace[hidden]{display:none}
 #mfRace *{box-sizing:border-box;min-width:0}
@@ -55,7 +55,7 @@ const CSS=`
 .rc-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#3a200b;border-radius:99px;padding:3px 10px}
 .rc-x,.rc-tog{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer}
 .rc-tog{font:700 14px Quicksand,sans-serif;padding:0 12px}.rc-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
-.rc-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 max(3vw,10px) max(20px,env(safe-area-inset-bottom));position:relative}
+.rc-body{flex:1;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;padding:0 max(3vw,10px) max(20px,env(safe-area-inset-bottom));position:relative}
 .rc-wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .rc-view{position:relative;overflow:hidden;border-radius:16px;background:#2b5a1d;box-shadow:0 0 0 4px #5a3416,0 0 0 7px #a8c04a,0 12px 30px rgba(0,0,0,.5)}
 .rc-world{position:absolute;left:0;top:0;width:${TW}px;height:${TH}px;transform-origin:0 0;background:url(${TRACK}) 0 0/100% 100% no-repeat;will-change:transform}
@@ -110,6 +110,7 @@ const CSS=`
 .rc-rules{font-size:13px;color:#cfe0b0;margin:0}
 .rc-side{position:absolute;top:0;right:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;background:#0c2213;border-left:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;box-shadow:-20px 0 40px rgba(0,0,0,.5);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
 .rc-side.open{transform:none;visibility:visible}
+.rc-side:not(.open){display:none}
 .rc-side h3{margin:0;font:400 20px "Titan One",sans-serif;color:#ffd23f}
 .rc-note{margin:0;font-size:13px;color:#cfe0b0}
 .rc-btn{min-height:44px;border-radius:10px;border:2px solid #5a3416;background:#3a200b;color:#fff3cf;font:700 14px Quicksand,sans-serif;padding:8px 12px;cursor:pointer;text-align:left}
