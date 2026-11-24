@@ -136,10 +136,10 @@ const CSS=`
 const IMG={fond:"packs/coco-fond.webp",arbre:"packs/coco-arbre.webp",singe:"packs/coco-singe.webp",chute:"packs/coco-chute.webp",sonne:"packs/coco-sonne.webp",sommet:"packs/coco-sommet.webp",titre:"packs/coco-titre.webp"};
 const TW=666,TH=1100;                                     // taille de l'image du cocotier (unités du dessin)
 // milieu du tronc, du bas (où le singe démarre) jusque sous les noix de coco : [y, x, demi-largeur]
-const TRUNK=[[950,290,44],[900,271,38],[860,258,35],[820,249,33],[780,242,30],[740,240,28],[700,241,26],[660,247,25],[620,255,23],[580,265,21],[540,277,21],[500,290,19],[460,303,17],[425,316,16]];
+const TRUNK=[[915,277,40],[900,271,38],[860,258,35],[820,249,33],[780,242,30],[740,240,28],[700,241,26],[660,247,25],[620,255,23],[580,265,21],[540,277,21],[500,290,19],[460,303,17],[425,316,16]];
 const TRUNK_D="M"+TRUNK.map(t=>t[1]+" "+t[0]).join(" L");
 const GROUND=1062,BASEX=262;                              // le sable au pied de l'arbre
-const MK={singe:{h:175,w:105},chute:{h:175,w:169},sonne:{h:170,w:157}};
+const MK={singe:{h:176,w:108,cx:98,ry:.21},chute:{h:175,w:169},sonne:{h:170,w:157}};
 function hwAt(y){for(let i=1;i<TRUNK.length;i++){const a=TRUNK[i-1],b=TRUNK[i];if(y>=b[0]){const k=(a[0]-y)/(a[0]-b[0]);return a[2]+(b[2]-a[2])*k;}}return TRUNK[TRUNK.length-1][2];}
 function sceneSVG(){
   return `<div class="co-bg"></div><img class="co-logo" src="${IMG.titre}" alt="" width="900" height="475">
@@ -224,8 +224,11 @@ const frac=m=>Math.max(0,Math.min(1,Math.log(Math.max(1,m))/Math.log(cap())));
 const pointAt=m=>path.getPointAtLength(plen*frac(m));
 // le singe est à gauche du tronc, mains posées sur l'écorce
 function sprite(k,x,y){const i=$("#coMkImg"),d=MK[k];i.setAttribute("href",IMG[k]);i.setAttribute("width",d.w);i.setAttribute("height",d.h);i.setAttribute("x",x.toFixed(1));i.setAttribute("y",y.toFixed(1));}
-function place(m){const p=pointAt(m),hw=hwAt(p.y);$("#coMk").setAttribute("transform",`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
-  if(mode!=="done")sprite("singe",-hw-MK.singe.w+8,-MK.singe.h*.5);}
+// repère du singe = hauteur de sa tête (c'est là que l'œil lit le palier) ; il penche avec le tronc pour garder les mains dessus
+function lean(m){const L=plen*frac(m),a=path.getPointAtLength(Math.max(0,L-8)),b=path.getPointAtLength(Math.min(plen,L+8));return Math.atan2(b.x-a.x,-(b.y-a.y))*180/Math.PI;}
+function place(m){const p=pointAt(m),hw=hwAt(p.y),d=MK.singe;
+  $("#coMk").setAttribute("transform",`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${lean(m).toFixed(1)})`);
+  if(mode!=="done")sprite("singe",-hw-d.cx,-d.h*d.ry);}
 function marks(){
   const c=cap(),list=[1.5,2,3,5,10,c].filter((x,i,a)=>x<=c&&a.indexOf(x)===i&&(x===c||x<c*.8));
   $("#coMarks").innerHTML=list.map(m=>{const p=pointAt(m),top=m===c,x=p.x+hwAt(p.y)+10;
@@ -368,6 +371,7 @@ function fall(c,ghost,late){
     vib([80,40,120]);}
   // le singe lâche le tronc (image de chute), tombe jusqu'au sable, puis reste assis, sonné, au pied de l'arbre
   const p=pointAt(c),inner=$("#coMkIn"),hw=hwAt(p.y),drop=Math.max(0,GROUND-MK.chute.h*.5-p.y);
+  $("#coMk").setAttribute("transform",`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
   sprite("chute",-hw-MK.chute.w+24,-MK.chute.h*.5);
   const land=()=>{thud();sonne();};
   if(!reduce&&inner.animate&&drop>20){
