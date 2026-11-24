@@ -306,7 +306,7 @@ async function boot(){
     st.textContent=`#slotBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 112px)}`;
     document.head.appendChild(st);
     const b=document.createElement("button");b.className="socialbtn";b.id="slotBtn";b.type="button";b.setAttribute("aria-label","Machine à bananes");b.title="Machine à bananes";
-    b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 7h5.2l-3.4 10"/><path d="M9.4 7h5.2l-3.4 10"/><path d="M16.3 7h5.2l-3.4 10"/></svg>`;
+    b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5v-1.5a.5 .5 0 0 1 .5 -.5h7a.5 .5 0 0 1 .5 .5v1.5"/><rect x="3" y="5" width="14" height="15.5" rx="2"/><rect x="5.5" y="8" width="9" height="5" rx="1"/><path d="M8.5 8v5"/><path d="M11.5 8v5"/><path d="M7.5 17h5"/><path d="M17 14h2a1 1 0 0 0 1 -1v-5.5"/><circle cx="20" cy="5.5" r="1.5"/></svg>`;
     b.addEventListener("click",open);
     const rank=document.getElementById("rankBtn");if(rank)rank.after(b);else document.body.appendChild(b);
   }
