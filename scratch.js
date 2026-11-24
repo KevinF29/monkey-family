@@ -10,7 +10,7 @@
 
 /* ---------- symboles et lots (mêmes valeurs que _scratch_prize côté serveur) ---------- */
 const SYM={
-  singe:{n:"Singe Monkey Family",p:"5 boosters"},
+  singe:{n:"Singe Monkey Family",p:"3 boosters"},
   booster:{n:"Booster",p:"1 booster"},
   maman:{n:"Planquez vos mamans",p:"25 🍌"},
   sablier:{n:"Sablier",p:"−2 h"},
@@ -185,8 +185,8 @@ function build(){
    <p class="sc-note" id="scOpenNote"></p>
    <div class="sc-bar"><button type="button" class="sc-sbtn warn" id="scOpen"></button></div>
    <h3>Chances par ticket</h3>
-   <ul class="sc-odds">${[["Jackpot · 5 boosters","0,4 %"],["1 booster","2,5 %"],["25 🍌","3 %"],["−2 h d'attente","4 %"],["10 🍌","7 %"],["5 🍌","15 %"],["Perdu","68,1 %"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("")}</ul>
-   <p class="sc-note">Un ticket gagne 1 fois sur 3. Un ticket payant rend en moyenne 4 🍌 pour 5 🍌 (en comptant un booster à 40 🍌), sans compter le sablier.</p>
+   <ul class="sc-odds">${[["Jackpot · 3 boosters","0,4 %"],["1 booster","2,5 %"],["25 🍌","3 %"],["−2 h d'attente","4 %"],["10 🍌","7 %"],["5 🍌","15 %"],["Perdu","68,1 %"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("")}</ul>
+   <p class="sc-note">Un ticket gagne 1 fois sur 3. Un ticket payant rend en moyenne 3,7 🍌 pour 5 🍌 (en comptant un booster à 40 🍌), sans compter le sablier.</p>
   </aside>
   <div class="sc-jp" id="scJp" hidden><div class="sc-rays"></div><div class="sc-jpin"><img class="sc-coin" id="scJpImg" alt=""><div class="sc-jpt" id="scJpT"></div><div class="sc-jps" id="scJpS"></div><button type="button" class="sc-btn" id="scJpOk">Récupérer</button></div></div>`;
   document.body.appendChild(root);
@@ -272,7 +272,7 @@ async function reveal(all){
   phase="done";render();
   const cells=[...root.querySelectorAll(".sc-cell")];
   if(w){let k=0;cells.forEach(c=>{if(c.dataset.e===w.k){c.classList.add("hit");c.style.setProperty("--d",(k++*.12)+"s");}else c.classList.add("dim");});
-    if(w.k==="singe"){say("JACKPOT ! 5 boosters dans ton stock !","jack");celebrate("singe");}
+    if(w.k==="singe"){say("JACKPOT ! 3 boosters dans ton stock !","jack");celebrate("singe");}
     else if(w.k==="booster"){say("Gagné : 1 booster dans ton stock !","good");celebrate("booster");}
     else if(w.k==="maman"){say("Gagné : 25 bananes ! Planquez vos mamans…","good");celebrate("maman");}
     else{say("Gagné : "+label(w)+(w.t==="time"&&p.kept?", gardées pour ta prochaine attente":"")+" !","good");win();}
@@ -374,7 +374,7 @@ function tone(type,f0,f1,vol,len){if(!sound||!ac)return;try{const t=ac.currentTi
 /* ---------- grands gains ---------- */
 let jpT=[];
 const BIG={
-  singe:{t:"JACKPOT !",s:"<b>5 boosters</b> dans ton stock",parts:["singe","banane","booster"],ray:"rgba(255,210,63,.32)",waves:[40,30,24],notes:[523,659,784,1047]},
+  singe:{t:"JACKPOT !",s:"<b>3 boosters</b> dans ton stock",parts:["singe","banane","booster"],ray:"rgba(255,210,63,.32)",waves:[40,30,24],notes:[523,659,784,1047]},
   booster:{t:"1 BOOSTER !",s:"ajouté à ton stock",parts:["booster"],ray:"rgba(255,95,60,.32)",waves:[24],notes:[523,659,784]},
   maman:{t:"25 BANANES !",s:"Planquez vos mamans…",parts:["banane"],ray:"rgba(255,150,200,.3)",waves:[30],notes:[659,784,880]}};
 function celebrate(kind){

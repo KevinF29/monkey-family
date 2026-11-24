@@ -34,7 +34,7 @@ insert into public.mf_scratch_cfg(id) values (1) on conflict do nothing;
 create or replace function public._scratch_prize(sym text)
 returns jsonb language sql immutable set search_path = public as $$
   select case sym
-    when 'singe'   then '{"k":"singe","t":"boost","v":5}'
+    when 'singe'   then '{"k":"singe","t":"boost","v":3}'
     when 'booster' then '{"k":"booster","t":"boost","v":1}'
     when 'maman'   then '{"k":"maman","t":"ban","v":25}'
     when 'sablier' then '{"k":"sablier","t":"time","v":120}'
