@@ -3891,9 +3891,9 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="scratch"){const v=+x.v||0,what=x.k==="singe"?`le <b>JACKPOT</b> : ${v} boosters`:x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎟️</span><p>${who} a gagné ${what} au Monkey Cash<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="coco"){const fm=v=>"×"+(+v).toFixed(2).replace(".",",").replace(",00",""),m=x.m==null?null:+x.m,c=+x.c||0,v=+x.v||0;
-        const t=x.top?`${who} a emmené le singe <b>au sommet du Cocotier</b> (${fm(c)}) : +${fmt(v)} 🍌 !`
-          :m!=null&&c>=10&&c>=m*4?`${who} a lâché à ${fm(m)} au Cocotier… le singe est monté jusqu'à <b>${fm(c)}</b> 🙈`
-          :`${who} a encaissé à <b>${fm(m||0)}</b> au Cocotier : +${fmt(v)} 🍌`;
+        const t=x.top?`${who} a emmené le singe <b>au sommet du Crash Cocotier</b> (${fm(c)}) : +${fmt(v)} 🍌 !`
+          :m!=null&&c>=10&&c>=m*4?`${who} a lâché à ${fm(m)} au Crash Cocotier… le singe est monté jusqu'à <b>${fm(c)}</b> 🙈`
+          :`${who} a encaissé à <b>${fm(m||0)}</b> au Crash Cocotier : +${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🌴</span><p>${t}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="slot_pity")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} a tout perdu à la Banana Machine… Le singe a eu pitié : +10 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;

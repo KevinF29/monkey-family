@@ -1,4 +1,4 @@
-/* Monkey Family — Le Cocotier (jeu « crash »)
+/* Monkey Family — Crash Cocotier (jeu « crash »)
    Le joueur mise, le singe grimpe au cocotier et le multiplicateur monte (×1,2… ×2… ×5…). À tout moment il peut tomber.
    Encaisser avant la chute = mise × multiplicateur ; sinon la mise est perdue. Le singe qui atteint le sommet encaisse tout seul.
    Le serveur fait foi (mf_coco_*) : il tire le point de chute au départ et ne l'envoie qu'à la fin, il vérifie l'encaissement
@@ -11,7 +11,7 @@
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
-const ERR={no_bananas:"Pas assez de bananes.",coco_limit:"Plus de parties aujourd'hui : reviens demain !",coco_bad_amount:"Mise hors limites.",coco_closed:"Le Cocotier n'est pas encore ouvert.",not_member:"Ton accès est en pause."};
+const ERR={no_bananas:"Pas assez de bananes.",coco_limit:"Plus de parties aujourd'hui : reviens demain !",coco_bad_amount:"Mise hors limites.",coco_closed:"Crash Cocotier n'est pas encore ouvert.",not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
 const fx=m=>"×"+(+m).toFixed(2).replace(".",",");
 const pct=x=>(Math.round(x*1000)/10).toString().replace(".",",")+" %";
@@ -41,7 +41,7 @@ const CSS=`
 #mfCoco button{font-family:inherit}
 #mfCoco button:focus-visible,#mfCoco select:focus-visible,#mfCoco input:focus-visible{outline:3px solid #ffd23f;outline-offset:3px}
 .co-top{flex:none;position:relative;z-index:6;display:flex;align-items:center;gap:8px;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 6px max(12px,env(safe-area-inset-left));background:linear-gradient(180deg,rgba(27,15,51,.95),rgba(27,15,51,.6))}
-.co-top h2{margin:0;font:400 clamp(22px,6vw,30px)/1 "Titan One",sans-serif;color:#ffd23f;text-shadow:0 3px 0 #7a3b0a;white-space:nowrap}
+.co-top h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;margin:0}
 .co-x,.co-gear,.co-snd{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #6a3aa0;background:#2a1145;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer;display:grid;place-items:center;flex:none}
 .co-snd{font:400 19px/1 system-ui,sans-serif}
 .co-gear[aria-expanded=true]{background:#ffd23f;color:#2a1145}
@@ -61,15 +61,17 @@ const CSS=`
 .co-mult b.wait{color:#ffe7a8;font-size:clamp(34px,10vw,60px)}
 .co-mult small{display:block;margin-top:6px;font:700 clamp(14px,3.8vw,17px)/1.25 Quicksand,sans-serif;color:#fff3cf;text-shadow:0 2px 4px rgba(0,0,0,.6);min-height:1.25em}
 @keyframes coShake{20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(2deg)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
-#coMkIn{transition:none}
-.co-climb #coMkIn{animation:coBob .32s ease-in-out infinite alternate}
-.co-climb .co-armA{animation:coArm .32s ease-in-out infinite alternate}
-.co-climb .co-armB{animation:coArm .32s ease-in-out infinite alternate-reverse}
-.co-armA,.co-armB{transform-box:fill-box;transform-origin:0 50%}
-@keyframes coBob{to{transform:translateY(-3px)}}
-@keyframes coArm{from{transform:rotate(-14deg)}to{transform:rotate(12deg)}}
+.co-bg{position:absolute;inset:0;background:url(packs/coco-fond.webp) center 62%/cover no-repeat}
+.co-logo{position:absolute;left:50%;top:2%;z-index:2;width:min(88%,440px);height:auto;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));transition:opacity .25s,transform .25s}
+#mfCoco:not(.co-idle) .co-logo{opacity:0;transform:translateX(-50%) scale(.9)}
+.co-idle .co-mult{visibility:hidden}
+.co-idle .co-marks{opacity:0}
+.co-marks{transition:opacity .25s}
+.co-mklt{transform-box:fill-box;transform-origin:50% 50%}
+.co-climb #coMkIn{animation:coBob .3s ease-in-out infinite alternate}
+@keyframes coBob{from{transform:translateY(0) rotate(-3deg) scaleY(.97)}to{transform:translateY(-9px) rotate(3deg) scaleY(1.03)}}
 .co-ghost #coMk{opacity:.5}
-.co-dizzy{font-size:22px}
+.co-marks text{paint-order:stroke;stroke:#2a1145;stroke-width:7px;stroke-linejoin:round}
 .co-flag{opacity:0;transition:opacity .25s}.co-flag.on{opacity:1}
 
 .co-panel{flex:none;position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px max(12px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
@@ -120,60 +122,33 @@ const CSS=`
 .co-rays{position:absolute;left:50%;top:45%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(157,255,122,.28) 0 9deg,transparent 9deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 45%);mask:radial-gradient(circle,#000 0,transparent 45%);animation:coTurn 14s linear infinite}
 @keyframes coTurn{to{transform:rotate(360deg)}}
 .co-jpin{position:relative;z-index:2;text-align:center;padding:16px}
-.co-jpe{font-size:min(30vw,150px);line-height:1;animation:coPop .9s cubic-bezier(.2,1.7,.4,1) both}
+.co-jpe{display:block;margin:0 auto;height:min(42svh,360px);width:auto;filter:drop-shadow(0 0 30px rgba(255,220,90,.7));animation:coPop .9s cubic-bezier(.2,1.7,.4,1) both}
 .co-jpt{font:400 clamp(48px,12vw,110px)/1 "Titan One",sans-serif;color:#ffd23f;margin-top:6px;text-shadow:0 7px 0 #8a4b00,5px 0 0 #8a4b00,-5px 0 0 #8a4b00,0 0 40px #ffb300;animation:coPop .8s .25s cubic-bezier(.2,1.7,.4,1) both}
 .co-jps{font:700 clamp(18px,3vw,24px) Quicksand,sans-serif;color:#fff3cf;margin:10px 0 20px;animation:coPop .6s .6s both}
 .co-jp .co-go{display:inline-flex;min-height:52px;padding:0 26px}
 .co-pt{position:absolute;left:50%;top:45%;font-size:40px;line-height:1;pointer-events:none;z-index:1}
 @keyframes coPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 @media(max-height:620px){.co-go{min-height:54px;font-size:19px}.co-res{min-height:38px;font-size:14px}.co-panel{gap:7px}}
-@media(prefers-reduced-motion:reduce){.co-climb #coMkIn,.co-climb .co-armA,.co-climb .co-armB,.co-go.cash,.co-rays,.co-jpe,.co-jpt,.co-mult b.dead{animation:none}}
+@media(prefers-reduced-motion:reduce){.co-climb #coMkIn,.co-go.cash,.co-rays,.co-jpe,.co-jpt,.co-mult b.dead{animation:none}}
 `;
 
-/* ---------- le décor : coucher de soleil, mer, sable et le cocotier (dessinés ici, sans image) ---------- */
-const TRUNK="M196 640 C 184 540, 214 440, 204 340 S 206 200, 222 150";
-const GROUND=652;
+/* ---------- le décor : images de Kévin (plage, cocotier, singe), le tronc relevé sur l'image du cocotier ---------- */
+const IMG={fond:"packs/coco-fond.webp",arbre:"packs/coco-arbre.webp",singe:"packs/coco-singe.webp",chute:"packs/coco-chute.webp",sonne:"packs/coco-sonne.webp",sommet:"packs/coco-sommet.webp",titre:"packs/coco-titre.webp"};
+const TW=666,TH=1100;                                     // taille de l'image du cocotier (unités du dessin)
+// milieu du tronc, du bas (où le singe démarre) jusque sous les noix de coco : [y, x, demi-largeur]
+const TRUNK=[[950,290,44],[900,271,38],[860,258,35],[820,249,33],[780,242,30],[740,240,28],[700,241,26],[660,247,25],[620,255,23],[580,265,21],[540,277,21],[500,290,19],[460,303,17],[425,316,16]];
+const TRUNK_D="M"+TRUNK.map(t=>t[1]+" "+t[0]).join(" L");
+const GROUND=1062,BASEX=262;                              // le sable au pied de l'arbre
+const MK={singe:{h:175,w:105},chute:{h:175,w:169},sonne:{h:170,w:157}};
+function hwAt(y){for(let i=1;i<TRUNK.length;i++){const a=TRUNK[i-1],b=TRUNK[i];if(y>=b[0]){const k=(a[0]-y)/(a[0]-b[0]);return a[2]+(b[2]-a[2])*k;}}return TRUNK[TRUNK.length-1][2];}
 function sceneSVG(){
-  return `<svg viewBox="0 0 400 700" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-  <defs>
-   <linearGradient id="coSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a6fa0"/><stop offset="1" stop-color="#1d3f6b"/></linearGradient>
-   <linearGradient id="coSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6d79f"/><stop offset="1" stop-color="#d9a866"/></linearGradient>
-   <linearGradient id="coWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b4220"/><stop offset=".5" stop-color="#a06a35"/><stop offset="1" stop-color="#6b4220"/></linearGradient>
-   <radialGradient id="coSun"><stop offset="0" stop-color="#fff2b0"/><stop offset=".6" stop-color="#ffcf5c"/><stop offset="1" stop-color="#ff9f43" stop-opacity="0"/></radialGradient>
-  </defs>
-  <circle cx="300" cy="545" r="110" fill="url(#coSun)" opacity=".85"/>
-  <circle cx="300" cy="545" r="52" fill="#ffd76a"/>
-  <rect x="-900" y="560" width="2200" height="80" fill="url(#coSea)"/>
-  <path d="M-900 572h2200" stroke="#ffd98a" stroke-width="2" opacity=".5" stroke-dasharray="18 26"/>
-  <path d="M230 590h140M250 606h90" stroke="#ffd98a" stroke-width="3" stroke-linecap="round" opacity=".55"/>
-  <path d="M-900 640 C -300 620, 0 628, 200 632 S 700 622, 1300 640 V 1400 H -900 Z" fill="url(#coSand)"/>
-  <g id="coMarks"></g>
-  <path d="${TRUNK}" fill="none" stroke="url(#coWood)" stroke-width="28" stroke-linecap="round"/>
-  <path d="${TRUNK}" fill="none" stroke="#5a3417" stroke-width="28" stroke-dasharray="2.5 15" opacity=".75"/>
-  <path id="coPath" d="${TRUNK}" fill="none" stroke="none"/>
-  <g transform="translate(222 146)">
-   <path d="M0 0 C -40 -40, -100 -30, -130 10 C -95 -12, -50 -10, 0 0Z" fill="#2f8a3a"/>
-   <path d="M0 0 C -30 -60, -80 -80, -115 -70 C -75 -55, -40 -35, 0 0Z" fill="#3fa34a"/>
-   <path d="M0 0 C 10 -60, 50 -90, 90 -88 C 55 -70, 25 -40, 0 0Z" fill="#2f8a3a"/>
-   <path d="M0 0 C 40 -40, 100 -40, 135 0 C 95 -18, 50 -16, 0 0Z" fill="#3fa34a"/>
-   <path d="M0 0 C 40 -10, 90 20, 105 60 C 75 25, 40 12, 0 0Z" fill="#2a7a33"/>
-   <path d="M0 0 C -35 -5, -85 25, -100 65 C -70 30, -38 15, 0 0Z" fill="#2a7a33"/>
-   <circle cx="-9" cy="10" r="9" fill="#5a3417"/><circle cx="9" cy="11" r="9" fill="#6b4220"/><circle cx="0" cy="20" r="9" fill="#4a2a10"/>
-  </g>
-  <g id="coFlag" class="co-flag"><path d="M0 0v-26" stroke="#fff" stroke-width="2.5"/><path d="M0 -26h34v14H0z" fill="#3fbf3a"/><text id="coFlagT" x="17" y="-15.5" text-anchor="middle" font-family="Titan One,sans-serif" font-size="9.5" fill="#0f3a0c"></text></g>
-  <g id="coMk"><g id="coMkIn">
-   <path d="M-12 20 C -36 30, -40 4, -26 2" fill="none" stroke="#6b3d1c" stroke-width="5" stroke-linecap="round"/>
-   <ellipse cx="-16" cy="6" rx="14" ry="17" fill="#8b5a2b"/>
-   <ellipse cx="-12" cy="10" rx="7.5" ry="10.5" fill="#e3b98a"/>
-   <path class="co-armA" d="M-8 -6 Q 4 -16 13 -20" fill="none" stroke="#7a4a22" stroke-width="7" stroke-linecap="round"/>
-   <path class="co-armB" d="M-8 2 Q 4 4 13 -2" fill="none" stroke="#7a4a22" stroke-width="7" stroke-linecap="round"/>
-   <ellipse cx="-4" cy="21" rx="10" ry="5" fill="#7a4a22"/>
-   <circle cx="-29" cy="-19" r="5.5" fill="#8b5a2b"/><circle cx="-29" cy="-19" r="3" fill="#e3b98a"/>
-   <circle cx="-16" cy="-19" r="13" fill="#8b5a2b"/>
-   <ellipse cx="-12" cy="-16" rx="9" ry="8" fill="#e3b98a"/>
-   <circle cx="-15" cy="-20" r="2.1" fill="#2a160a"/><circle cx="-8" cy="-20" r="2.1" fill="#2a160a"/>
-   <path id="coMouth" d="M-15 -12 Q -11 -8.5 -7 -12" fill="none" stroke="#2a160a" stroke-width="1.6" stroke-linecap="round"/>
-  </g><text id="coDizzy" class="co-dizzy" x="-16" y="-38" text-anchor="middle" opacity="0">💫</text></g>
+  return `<div class="co-bg"></div><img class="co-logo" src="${IMG.titre}" alt="" width="900" height="475">
+  <svg viewBox="0 0 ${TW} ${TH}" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+  <image href="${IMG.arbre}" x="0" y="0" width="${TW}" height="${TH}"/>
+  <g id="coMarks" class="co-marks"></g>
+  <path id="coPath" d="${TRUNK_D}" fill="none" stroke="none"/>
+  <g id="coFlag" class="co-flag"><g transform="scale(2.3)"><path d="M0 0v-26" stroke="#fff" stroke-width="2.5"/><path d="M0 -26h34v14H0z" fill="#3fbf3a" stroke="#0f3a0c" stroke-width="1"/><text id="coFlagT" x="17" y="-15.5" text-anchor="middle" font-family="Titan One,sans-serif" font-size="9.5" fill="#0f3a0c"></text></g></g>
+  <g id="coMk"><g id="coMkIn" class="co-mklt"><image id="coMkImg" href="${IMG.singe}" width="${MK.singe.w}" height="${MK.singe.h}"/></g></g>
  </svg>`;
 }
 
@@ -182,10 +157,10 @@ let root=null,path=null,plen=0;const $=s=>root.querySelector(s);
 function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   root=document.createElement("div");root.id="mfCoco";if(ADMIN)root.classList.add("co-admin");root.hidden=true;
-  root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Le Cocotier");
+  root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Crash Cocotier");
   root.innerHTML=`<div class="co-top">
     <button type="button" class="co-gear co-adm" id="coTog" aria-controls="coSide" aria-expanded="false" aria-label="Réglages admin">⚙</button>
-    <h2>Le Cocotier</h2><span class="co-tag co-adm">Admin</span>
+    <h2>Crash Cocotier</h2><span class="co-tag co-adm">Admin</span>
     <div class="co-pill">🍌<b id="coBal">…</b></div>
     <button type="button" class="co-snd" id="coSnd" aria-pressed="true" aria-label="Son">🔊</button>
     <button type="button" class="co-x" id="coClose" aria-label="Fermer">✕</button></div>
@@ -213,7 +188,7 @@ function build(){
     <ul class="co-odds" id="coOdds"></ul>
     <p class="co-note" id="coOddsNote"></p>
    </aside>
-   <div class="co-jp" id="coJp" hidden><div class="co-rays"></div><div class="co-jpin"><div class="co-jpe">🥥</div><div class="co-jpt">SOMMET !</div><div class="co-jps" id="coJpS"></div><button type="button" class="co-go" id="coJpOk">Récupérer</button></div></div>`;
+   <div class="co-jp" id="coJp" hidden><div class="co-rays"></div><div class="co-jpin"><img class="co-jpe" src="${IMG.sommet}" alt=""><div class="co-jpt">SOMMET !</div><div class="co-jps" id="coJpS"></div><button type="button" class="co-go" id="coJpOk">Récupérer</button></div></div>`;
   document.body.appendChild(root);
   path=$("#coPath");plen=path.getTotalLength();
   $("#coClose").addEventListener("click",close);
@@ -247,17 +222,21 @@ function setBet(v){const mn=INFO?+INFO.min:1,mx=INFO?+INFO.max:10;bet=Math.max(m
 /* hauteur sur le tronc : le singe grimpe à vitesse constante, ×1 en bas, le plafond tout en haut */
 const frac=m=>Math.max(0,Math.min(1,Math.log(Math.max(1,m))/Math.log(cap())));
 const pointAt=m=>path.getPointAtLength(plen*frac(m));
-function place(m){const p=pointAt(m);$("#coMk").setAttribute("transform",`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);}
+// le singe est à gauche du tronc, mains posées sur l'écorce
+function sprite(k,x,y){const i=$("#coMkImg"),d=MK[k];i.setAttribute("href",IMG[k]);i.setAttribute("width",d.w);i.setAttribute("height",d.h);i.setAttribute("x",x.toFixed(1));i.setAttribute("y",y.toFixed(1));}
+function place(m){const p=pointAt(m),hw=hwAt(p.y);$("#coMk").setAttribute("transform",`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+  if(mode!=="done")sprite("singe",-hw-MK.singe.w+8,-MK.singe.h*.5);}
 function marks(){
   const c=cap(),list=[1.5,2,3,5,10,c].filter((x,i,a)=>x<=c&&a.indexOf(x)===i&&(x===c||x<c*.8));
-  $("#coMarks").innerHTML=list.map(m=>{const p=pointAt(m),top=m===c;
-    return `<g transform="translate(${(p.x+20).toFixed(1)} ${(p.y+(top?92:0)).toFixed(1)})">${top?`<text x="16" y="-12" font-size="13" fill="#ffd23f">▲</text>`:`<path d="M0 0h12" stroke="#fff3cf" stroke-width="2" opacity=".7"/>`}
-     <text x="16" y="5" font-family="Titan One,sans-serif" font-size="${top?15:14}" fill="${top?"#ffd23f":"#fff3cf"}" opacity=".9">${top?"Sommet "+fx(m).replace(",00",""):fx(m).replace(",00","")}</text></g>`;}).join("");
+  $("#coMarks").innerHTML=list.map(m=>{const p=pointAt(m),top=m===c,x=p.x+hwAt(p.y)+10;
+    return `<g transform="translate(${x.toFixed(1)} ${p.y.toFixed(1)})"><path d="M0 0h22" stroke="#fff3cf" stroke-width="5" stroke-linecap="round"/>
+     <text x="30" y="11" font-family="Titan One,sans-serif" font-size="${top?34:32}" fill="${top?"#ffd23f":"#fff3cf"}">${top?"Sommet "+fx(m).replace(",00",""):fx(m).replace(",00","")}</text></g>`;}).join("");
 }
 function setM(m,cls,sub){const b=$("#coM");b.textContent=typeof m==="string"?m:fx(m);b.className=cls||(m>=10?"fire":m>=2?"hot":"");$("#coSub").textContent=sub||"";}
 
 function render(){
   if(!root)return;
+  root.classList.toggle("co-idle",mode==="idle");
   const b=bal();$("#coBal").textContent=b==null?"…":b;
   const playing=mode==="wait"||mode==="climb";
   const mn=INFO?+INFO.min:1,mx=INFO?+INFO.max:10;if(INFO&&(bet<mn||bet>mx))bet=Math.max(mn,Math.min(mx,bet));
@@ -272,17 +251,17 @@ function render(){
     g.disabled=!INFO||busy||mode==="ghost"||left<1||(b!=null&&b<bet);
     $("#coGoS").textContent=!INFO?"…":left<1?"plus de parties aujourd'hui":b!=null&&b<bet?"pas assez de bananes":`encore ${left} partie${left>1?"s":""} aujourd'hui`;}
   if(ADMIN&&INFO){const o=!!INFO.open;
-    $("#coOpenNote").textContent=o?"Le Cocotier est ouvert : tous les joueurs le voient au Casino.":"Le Cocotier est caché : toi seul le vois au Casino.";
+    $("#coOpenNote").textContent=o?"Crash Cocotier est ouvert : tous les joueurs le voient au Casino.":"Crash Cocotier est caché : toi seul le vois au Casino.";
     $("#coOpen").textContent=armed?(o?"Sûr ? Cacher le jeu":"Sûr ? Ouvrir à tous les joueurs"):(o?"Cacher aux joueurs":"Ouvrir à tous les joueurs");
     const rtp=+INFO.rtp,c=+INFO.cap;
     $("#coOdds").innerHTML=[["Tombe tout de suite (×1,00)",1-rtp],["Dépasse ×2",rtp/2],["Dépasse ×5",rtp/5],["Dépasse ×10",rtp/10],[`Atteint le sommet (${fx(c).replace(",00","")})`,rtp/c]].map(([a,p])=>`<li><span>${a}</span><b>${pct(p)}</b></li>`).join("");
-    $("#coOddsNote").textContent=`Quelle que soit la façon de jouer, le Cocotier rend en moyenne ${pct(rtp)} des mises. Mise ${INFO.min} à ${INFO.max} 🍌, ${INFO.daily} parties par jour, gain maximum ${Math.floor(+INFO.max*c)} 🍌.`;}
+    $("#coOddsNote").textContent=`Quelle que soit la façon de jouer, Crash Cocotier rend en moyenne ${pct(rtp)} des mises. Mise ${INFO.min} à ${INFO.max} 🍌, ${INFO.daily} parties par jour, gain maximum ${Math.floor(+INFO.max*c)} 🍌.`;}
 }
 function idleText(){if(!INFO)return "…";if(+INFO.left<1)return "C'est tout pour aujourd'hui : reviens demain !";return "Mise, puis encaisse avant que le singe tombe !";}
 async function openToAll(){
   if(!armed){armed=true;render();setTimeout(()=>{armed=false;render();},4000);return;}
   armed=false;const b=$("#coOpen");b.disabled=true;
-  try{take(await rpc("mf_coco_admin",{p_action:INFO&&INFO.open?"close":"open"}));say(INFO.open?"Le Cocotier est ouvert à tous les joueurs !":"Le Cocotier est de nouveau caché.");}catch(x){say(errText(x),"bad");}
+  try{take(await rpc("mf_coco_admin",{p_action:INFO&&INFO.open?"close":"open"}));say(INFO.open?"Crash Cocotier est ouvert à tous les joueurs !":"Crash Cocotier est de nouveau caché.");}catch(x){say(errText(x),"bad");}
   b.disabled=false;render();}
 
 /* ---------- historique de tes dernières parties (sur ce téléphone) ---------- */
@@ -362,7 +341,7 @@ async function cash(){
 }
 function won(l){
   cashing=false;cashM=+l.cash;crashM=+l.crash;result=l;
-  const p=pointAt(cashM);$("#coFlag").setAttribute("transform",`translate(${(p.x+16).toFixed(1)} ${(p.y+4).toFixed(1)})`);$("#coFlagT").textContent=fx(cashM);$("#coFlag").classList.add("on");
+  const p=pointAt(cashM);$("#coFlag").setAttribute("transform",`translate(${(p.x+hwAt(p.y)+4).toFixed(1)} ${(p.y+10).toFixed(1)})`);$("#coFlagT").textContent=fx(cashM);$("#coFlag").classList.add("on");
   setM(cashM,"cash","");
   if(l.top){pushHist(crashM,cashM);mode="done";root.classList.remove("co-climb");place(cap());say(`SOMMET ! Le singe a décroché les noix de coco : +${l.gain} 🍌`,"jack");celebrate(l);render();return;}
   mode="ghost";root.classList.add("co-ghost");
@@ -387,19 +366,22 @@ function fall(c,ghost,late){
   else{setM(c,"dead",c<=1?"il a glissé tout de suite !":"le singe est tombé !");pushHist(c,null);
     say(late?`Trop tard ! Le singe est tombé à ${fx(c)}. Perdu : −${R.bet} 🍌`:c<=1?`Le singe a glissé dès le départ… Perdu : −${R.bet} 🍌`:`Le singe est tombé à ${fx(c)}. Perdu : −${R.bet} 🍌`,"bad");
     vib([80,40,120]);}
-  $("#coMouth").setAttribute("d","M-15 -10 Q -11 -13.5 -7 -10");
-  const p=pointAt(c),inner=$("#coMkIn"),drop=Math.max(0,GROUND-p.y);
-  if(!reduce&&inner.animate){
-    inner.animate([{transform:"translate(0,0) rotate(0)"},{transform:`translate(-16px,${drop*.15}px) rotate(-60deg)`,offset:.25},{transform:`translate(-30px,${drop}px) rotate(-200deg)`}],{duration:Math.min(900,350+drop*1.1),easing:"cubic-bezier(.5,0,1,.6)",fill:"forwards"})
-      .onfinish=()=>{thud();dizzy();};
-  }else{inner.setAttribute("transform",`translate(-30 ${drop}) rotate(-200)`);dizzy();}
-  whistle(drop);
+  // le singe lâche le tronc (image de chute), tombe jusqu'au sable, puis reste assis, sonné, au pied de l'arbre
+  const p=pointAt(c),inner=$("#coMkIn"),hw=hwAt(p.y),drop=Math.max(0,GROUND-MK.chute.h*.5-p.y);
+  sprite("chute",-hw-MK.chute.w+24,-MK.chute.h*.5);
+  const land=()=>{thud();sonne();};
+  if(!reduce&&inner.animate&&drop>20){
+    inner.animate([{transform:"translate(0,0) rotate(0)"},{transform:`translate(-14px,${drop*.12}px) rotate(-14deg)`,offset:.25},{transform:`translate(-34px,${drop}px) rotate(-28deg)`}],{duration:Math.min(950,380+drop*.9),easing:"cubic-bezier(.5,0,1,.6)",fill:"forwards"})
+      .onfinish=land;
+    whistle(drop/1.6);
+  }else setTimeout(land,reduce?0:250);
   render();
 }
-function dizzy(){const d=$("#coDizzy"),p=pointAt(crashM||1),drop=Math.max(0,GROUND-p.y);d.setAttribute("y",String(drop-14));d.setAttribute("x","-40");d.setAttribute("opacity","1");
-  if(!reduce&&d.animate)d.animate([{transform:"translateX(0)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}],{duration:700,iterations:3});}
-function resetMonkey(){const inner=$("#coMkIn");inner.getAnimations&&inner.getAnimations().forEach(a=>a.cancel());inner.removeAttribute("transform");
-  $("#coDizzy").setAttribute("opacity","0");$("#coMouth").setAttribute("d","M-15 -12 Q -11 -8.5 -7 -12");root.classList.remove("co-ghost");place(1);}
+function sonne(){const inner=$("#coMkIn");inner.getAnimations&&inner.getAnimations().forEach(a=>a.cancel());
+  $("#coMk").setAttribute("transform",`translate(${BASEX} ${GROUND})`);sprite("sonne",-MK.sonne.w+8,-MK.sonne.h+6);
+  if(!reduce&&inner.animate)inner.animate([{transform:"scale(1.12,.86)"},{transform:"scale(.95,1.06)"},{transform:"scale(1)"}],{duration:380,easing:"ease-out"});}
+function resetMonkey(){const inner=$("#coMkIn");inner.getAnimations&&inner.getAnimations().forEach(a=>a.cancel());
+  root.classList.remove("co-ghost");const md=mode;mode="idle";place(1);mode=md;}
 function vib(p){if(buzz&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}}
 
 /* ---------- sons ---------- */
@@ -452,7 +434,8 @@ async function boot(){
   try{ADMIN=!!(await USER.isOwner());}catch(e){}
   let ok=ADMIN;if(!ok){try{ok=!!(await rpc("mf_coco_open"));}catch(e){}}
   if(!ok||!window.MF_CASINO)return;
-  window.MF_CASINO.add({id:"coco",name:"Le Cocotier",order:4,root:"mfCoco",open,
+  preload();
+  window.MF_CASINO.add({id:"coco",name:"Crash Cocotier",order:4,root:"mfCoco",open,
     icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 21c.6-4 .4-8.2-1-12"/><path d="M11.5 9C9.6 6.6 6.6 6 3.6 7c2.4.4 4 1.5 5 3"/><path d="M11.5 9c1-3 4-4.6 7-4.1-2 1-3.4 2.2-4 3.6"/><path d="M11.5 9c3-.5 6 .8 8 3.6-2.6-.9-4.8-1-6.5-.4"/><path d="M11.5 9c-2.6.2-4.8 2-6 4.7 2-1.1 3.9-1.6 5.6-1.5"/><path d="M8 21h9"/></svg>`,
     status:async()=>{if(!(root&&!root.hidden))take(await rpc("mf_coco_status"));const I=INFO;if(!I)return null;
       if(I.round)return {line:"Ton singe est en train de grimper !",hot:true};
@@ -460,5 +443,6 @@ async function boot(){
       return {line:"Plus de parties aujourd'hui",pre:"Nouvelles parties dans ",in:+I.nextDay-(Date.now()+skew),hot:false};}});
 }
 window.MF_COCO={open};
+function preload(){Object.values(IMG).forEach(u=>{const i=new Image();i.src=u;});}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
