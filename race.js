@@ -25,7 +25,7 @@ const LINES=[253,312,379,450,524,600,680,759,843];            // bambous qui sé
 const X0=300;                                                 // le museau des singes au départ
 const finishX=i=>{const y=(LINES[i]+LINES[i+1])/2;return 1455+(y-253)*95/590;};  // la ligne d'arrivée est un peu penchée
 const SH=165,SW=248;                                          // taille des singes sur la piste (ils débordent de leur couloir, comme aux courses de chevaux)
-const img=i=>"packs/race-"+(i+1)+".webp",TRACK="packs/race-piste.webp";
+const img=i=>"packs/race-"+(i+1)+".webp",TRACK="packs/race-piste.webp",LOGO="packs/race-logo.webp";
 const MIN=1,MAX=20;
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -50,11 +50,14 @@ const CSS=`
  background:radial-gradient(ellipse 80% 50% at 50% 0,rgba(120,200,80,.22),transparent 70%),linear-gradient(180deg,#0f3a1f,#082414)}
 #mfRace[hidden]{display:none}
 #mfRace *{box-sizing:border-box;min-width:0}
-.rc-top{flex:none;display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) max(4vw,14px) 8px}
-.rc-top h2{margin:0;flex:1;font:400 clamp(21px,4vw,30px)/1.1 "Titan One",sans-serif;color:#ffd23f;text-shadow:0 3px 0 #4a2a10}
+.rc-top{flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:max(8px,env(safe-area-inset-top)) max(3vw,10px) 6px}
+.rc-top h2{margin:0;grid-column:2;display:flex;justify-content:center;line-height:0}
+.rc-logo{display:block;height:clamp(52px,12vw,92px);width:auto;max-width:100%;filter:drop-shadow(0 5px 6px rgba(0,0,0,.45))}
+.rc-ctl{grid-column:3;justify-self:end;display:flex;align-items:center;gap:8px}
+@media(max-width:700px){.rc-tag{display:none}.rc-logo{height:auto;width:min(62vw,300px)}#mfRace.admin .rc-logo{width:min(48vw,300px)}}
 .rc-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#3a200b;border-radius:99px;padding:3px 10px}
 .rc-x,.rc-tog{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer}
-.rc-tog{font:700 14px Quicksand,sans-serif;padding:0 12px}.rc-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
+.rc-tog{font:700 20px Quicksand,sans-serif;padding:0;width:44px;flex:none}.rc-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
 .rc-body{flex:1;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;padding:0 max(3vw,10px) max(20px,env(safe-area-inset-bottom));position:relative}
 .rc-wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .rc-view{position:relative;overflow:hidden;border-radius:16px;background:#2b5a1d;box-shadow:0 0 0 4px #5a3416,0 0 0 7px #a8c04a,0 12px 30px rgba(0,0,0,.5)}
@@ -154,9 +157,9 @@ function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   root=document.createElement("div");root.id="mfRace";if(ADMIN)root.classList.add("admin");root.hidden=true;
   root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Monkey Run");
-  root.innerHTML=`<div class="rc-top"><h2>Monkey Run</h2><span class="rc-tag rc-adm" id="rcTag">Admin</span>
-    <button type="button" class="rc-tog rc-adm" id="rcTog" aria-controls="rcSide" aria-expanded="false">Réglages</button>
-    <button type="button" class="rc-x" id="rcClose" aria-label="Fermer">✕</button></div>
+  root.innerHTML=`<div class="rc-top"><h2><img class="rc-logo" src="${LOGO}" alt="Monkey Run"></h2><div class="rc-ctl"><span class="rc-tag rc-adm" id="rcTag">Admin</span>
+    <button type="button" class="rc-tog rc-adm" id="rcTog" aria-controls="rcSide" aria-expanded="false" aria-label="Réglages admin">⚙</button>
+    <button type="button" class="rc-x" id="rcClose" aria-label="Fermer">✕</button></div></div>
   <div class="rc-body"><div class="rc-wrap">
     <div class="rc-view" id="rcView"><div class="rc-world" id="rcWorld">${M.map((m,i)=>`<div class="rc-sp" data-i="${i}"><img src="${img(i)}" alt="${esc(m.n)}"><b></b></div>`).join("")}</div>
       <div class="rc-hud"><div class="rc-lead" id="rcLead" aria-live="polite"></div></div>
@@ -396,7 +399,7 @@ async function boot(){
   b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h13l-2 4 2 4H5"/><path d="M9 4v8"/><path d="M13 4v8"/><path d="M5 8h13"/></svg>`;
   b.addEventListener("click",open);
   const prev=document.getElementById("slotBtn")||document.getElementById("rankBtn");if(prev)prev.after(b);else document.body.appendChild(b);
-  [TRACK,...M.map((m,i)=>img(i))].forEach(s=>{const i=new Image();i.src=s;});
+  [TRACK,LOGO,...M.map((m,i)=>img(i))].forEach(s=>{const i=new Image();i.src=s;});
 }
 window.MF_RACE={open};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
