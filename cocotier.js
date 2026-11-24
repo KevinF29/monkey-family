@@ -251,7 +251,7 @@ function render(){
   if(mode==="climb"){g.firstChild.textContent=cashing?"Encaissement…":"Encaisser";g.disabled=cashing;}
   else if(mode==="wait"){g.firstChild.textContent="Le singe s'élance…";g.disabled=true;$("#coGoS").textContent=`mise ${R?R.bet:bet} 🍌`;}
   else{g.firstChild.textContent=`${mode==="idle"?"Grimper":"Rejouer"} · ${bet} 🍌`;
-    g.disabled=!INFO||busy||mode==="ghost"||left<1||(b!=null&&b<bet);
+    g.disabled=!INFO||busy||left<1||(b!=null&&b<bet);
     $("#coGoS").textContent=!INFO?"…":left<1?"plus de parties aujourd'hui":b!=null&&b<bet?"pas assez de bananes":`encore ${left} partie${left>1?"s":""} aujourd'hui`;}
   if(ADMIN&&INFO){const o=!!INFO.open;
     $("#coOpenNote").textContent=o?"Crash Cocotier est ouvert : tous les joueurs le voient au Casino.":"Crash Cocotier est caché : toi seul le vois au Casino.";
@@ -273,9 +273,12 @@ function pushHist(c,cash){const h=hist();h.unshift({c,k:cash!=null});store.set("
 function paintHist(){const h=hist();$("#coHist").innerHTML=h.length?`<span>Tes chutes :</span>`+h.map(x=>`<i class="${x.c>=10?"hi":x.c>=2?"mid":""}${x.k?" me":""}" title="${x.k?"encaissé":"perdu"}">${fx(x.c).replace(",00","")}</i>`).join(""):`<span>Tes dernières chutes s'afficheront ici.</span>`;}
 
 /* ---------- partie ---------- */
-function go(){if(mode==="climb")cash();else if(mode!=="wait"&&mode!=="ghost")start();}
+function go(){if(mode==="climb")cash();else if(mode!=="wait")start();}
 async function start(){
-  if(busy||!INFO)return;busy=true;closeJp();audio();
+  if(busy||!INFO)return;
+  // rejouer sans attendre la chute du singe « fantôme » : sa chute est quand même notée dans l'historique
+  if(mode==="ghost"){cancelAnimationFrame(raf);raf=0;pushHist(crashM,cashM);mode="done";root.classList.remove("co-climb");}
+  busy=true;closeJp();audio();
   const f=force;force="";const fs=$("#coForce");if(fs)fs.value="";
   say("…");render();
   try{const r=await rpc("mf_coco_start",{p_bet:bet,p_force:f?+f:null});take(r);applyState(r.state);
@@ -424,7 +427,7 @@ async function open(){
   catch(e){say(errText(e),"bad");}
 }
 function close(){
-  if(mode==="climb"&&!cashing){say("Le singe grimpe encore : encaisse ou attends sa chute !");return;}   // on ne quitte pas en pleine grimpe
+  if((mode==="climb"||mode==="wait")&&!cashing){say(mode==="wait"?"Le singe s'élance : reste pour encaisser !":"Le singe grimpe encore : encaisse ou attends sa chute !");return;}   // on ne quitte pas en pleine grimpe
   closeJp();side(false);root.hidden=true;document.body.style.overflow=prevOverflow;
   if(mode==="done"||mode==="ghost"){mode="idle";R=null;cancelAnimationFrame(raf);raf=0;resetMonkey();$("#coFlag").classList.remove("on");setM(1,"","");say(idleText());}
   if(opener&&opener.focus)opener.focus();

@@ -213,3 +213,13 @@ end $$;
 revoke execute on function public._coco_lead(), public._coco_draw(numeric, numeric), public._coco_mult(numeric, numeric),
   public._coco_at(numeric, numeric), public._coco_now(), public._coco_end(uuid, numeric), public._coco_settle(uuid),
   public._coco_info(uuid, boolean) from public, anon, authenticated;
+
+-- durcissement (24/11/2026) : chemin de recherche fixé, fonctions réservées aux joueurs connectés
+alter function public._coco_lead() set search_path = public;
+alter function public._coco_at(numeric, numeric) set search_path = public;
+alter function public._coco_mult(numeric, numeric) set search_path = public;
+alter function public._coco_now() set search_path = public;
+revoke execute on function public.mf_coco_open(), public.mf_coco_status(), public.mf_coco_start(int, numeric),
+  public.mf_coco_poll(), public.mf_coco_cash(numeric), public.mf_coco_admin(text) from public, anon;
+grant execute on function public.mf_coco_open(), public.mf_coco_status(), public.mf_coco_start(int, numeric),
+  public.mf_coco_poll(), public.mf_coco_cash(numeric), public.mf_coco_admin(text) to authenticated;
