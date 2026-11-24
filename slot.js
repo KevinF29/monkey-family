@@ -1,7 +1,7 @@
 /* Monkey Family — Machine à bananes (mode caché : visible seulement par l'admin)
-   Machine à sous de test : 1 banane le tour, 10 tours par jour, table de gains ci-dessous.
-   Mode test : les bananes, boosters et réductions d'attente sont fictifs (gardés sur cet appareil).
-   Rien ici ne touche au solde réel ni au serveur des boosters. */
+   1 banane le tour, 10 tours par jour, table de gains ci-dessous.
+   Le tirage, les gains, les limites et l'aide du singe sont décidés par le serveur (mf_slot_spin) :
+   cette page ne fait qu'animer les rouleaux jusqu'au résultat reçu, puis affiche le nouvel état du jeu. */
 (function(){
 "use strict";
 
@@ -20,7 +20,7 @@ const NAME=Object.fromEntries(SYM.map(s=>[s.e,s.n]));
 const TRI={singe:{t:"boost",v:7},booster:{t:"boost",v:3},sablier:{t:"time",v:360},maman:{t:"ban",v:40},camera:{t:"ban",v:25},remboursement:{t:"ban",v:15},rage:{t:"ban",v:10},banane:{t:"ban",v:5}};
 const PAIR=[["booster",{t:"boost",v:1}],["sablier",{t:"time",v:120}],["banane",{t:"ban",v:3}]];
 const ORDER=["3:singe","3:booster","3:sablier","3:maman","3:camera","3:remboursement","3:rage","3:banane","2:booster","2:sablier","2:banane","1:banane"];
-const COST=1,TURNS=10,PITY=10,LS="mf-slot-test";
+const COST=1,TURNS=10,PITY=10;
 
 function pay(s){
   const [a,b,c]=s;
@@ -37,14 +37,13 @@ const short=r=>r.t==="time"?"−"+(r.v/60)+" h ⏳":label(r);
 const mod=(n,m)=>((n%m)+m)%m;
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/* ---------- état de test (sur cet appareil) ---------- */
-const today=()=>new Date().toLocaleDateString("fr-CA");
-function load(){let v=null;try{v=JSON.parse(localStorage.getItem(LS));}catch(e){}
-  v=Object.assign({bal:20,left:TURNS,day:today(),pity:false,feed:[],spins:0,spent:0,won:0,boosters:0,mins:0},v||{});
-  if(v.day!==today()){v.day=today();v.left=TURNS;v.pity=false;}return v;}
-let S=load();
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}};
-let ME="Admin",unlim=false,forceJp=false,busy=false,sound=true;
+/* ---------- état (le serveur fait foi) ---------- */
+let S={bal:0,left:TURNS,feed:[],spins:0,spent:0,won:0,boosters:0,mins:0};
+let ME="Admin",force="",busy=false,sound=true,loaded=false;
+const ERR={no_bananas:"Pas assez de bananes.",slot_limit:"Plus de tours aujourd'hui : reviens demain !",slot_closed:"La machine n'est pas encore ouverte.",not_member:"Ton accès est en pause."};
+const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
+const rpc=(n,a)=>window.MF_RPC(n,a||{});
+function applyState(st){if(!st)return;S.bal=+st.bananas||0;try{if(window.MF_APPLY)window.MF_APPLY(st);}catch(e){}}
 
 /* ---------- style ---------- */
 const CSS=`
@@ -156,7 +155,7 @@ function prize(r){return r.t==="ban"?r.v+` <img src="${src("banane")}" alt="bana
 function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   root=document.createElement("div");root.id="mfSlot";root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Machine à bananes");
-  root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag">Test · admin</span><button type="button" class="sl-tog" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
+  root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag">Admin seulement</span><button type="button" class="sl-tog" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
   <div class="sl-body">
    <div class="sl-stage"><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
@@ -170,15 +169,19 @@ function build(){
      <div class="sl-pills"><div class="sl-pill">Bananes<b id="slBal"></b></div><div class="sl-pill">Tours<b id="slLeft"></b></div></div></div>
     <div class="sl-res" id="slRes" role="status">Mise 1 banane et tente ta chance.</div>
    </div></div>
-   <aside class="sl-side" id="slSide" aria-label="Réglages du test">
-    <h3>Réglages du test</h3>
-    <p class="sl-note">Bananes, boosters et temps gagnés sont fictifs : ton vrai solde n'est pas touché, et les annonces restent ici.</p>
-    <div class="sl-bar"><button type="button" class="sl-btn" id="slAdd">+50 🍌 de test</button><button type="button" class="sl-btn" id="slDay">Jour suivant</button><button type="button" class="sl-btn" id="slJp">Forcer un jackpot</button></div>
-    <div class="sl-bar"><label class="sl-chk"><input type="checkbox" id="slUnlim"> Tours illimités</label><label class="sl-chk"><input type="checkbox" id="slSnd" checked> Sons</label></div>
-    <h3>Annonces (aperçu du fil)</h3>
+   <aside class="sl-side" id="slSide" aria-label="Réglages admin">
+    <h3>Réglages admin</h3>
+    <p class="sl-note">Ici tout est réel : tes vraies bananes sont misées, et les boosters et heures d'attente gagnés vont sur ton compte.</p>
+    <label class="sl-chk" for="slForce" style="flex-wrap:wrap">Prochain tour
+     <select id="slForce" style="min-height:44px;border-radius:10px;border:2px solid #5a3416;background:#3a200b;color:#fff3cf;font:700 14px Quicksand,sans-serif;padding:0 8px">
+      <option value="">Tirage normal</option>${SYM.slice().reverse().map(x=>`<option value="${x.e}">Forcer 3 × ${esc(x.n)}</option>`).join("")}</select></label>
+    <div class="sl-bar"><button type="button" class="sl-btn" id="slAdd">+50 🍌</button><button type="button" class="sl-btn" id="slDay">Rendre mes 10 tours</button></div>
+    <div class="sl-bar"><label class="sl-chk"><input type="checkbox" id="slSnd" checked> Sons</label></div>
+    <h3>Annonces envoyées</h3>
+    <p class="sl-note">L'admin n'apparaît jamais dans le fil d'actu : voici ce que verraient tes potes.</p>
     <ul class="sl-feed" id="slFeed"></ul>
+    <h3>Cette session</h3>
     <div class="sl-stats" id="slStats"></div>
-    <div class="sl-bar"><button type="button" class="sl-btn" id="slReset">Remettre le test à zéro</button></div>
    </aside>
   </div>
   <div class="sl-jp" id="slJpBox" hidden><div class="sl-rays"></div><div class="sl-jpin"><img class="sl-coin" src="${src("singe")}" alt=""><div class="sl-jpt">JACKPOT !</div><div class="sl-jps"><b id="slJpWho"></b> gagne 7 boosters</div><button type="button" class="sl-go" style="display:inline-flex;min-height:52px;padding:0 26px;font-size:21px" id="slJpOk">Récupérer</button></div></div>`;
@@ -192,12 +195,10 @@ function build(){
   $("#slTog").addEventListener("click",()=>side(!$("#slSide").classList.contains("open")));
   $("#slClose").addEventListener("click",close);
   $("#slGo").addEventListener("click",spin);
-  $("#slAdd").addEventListener("click",()=>{S.bal+=50;save();render();});
-  $("#slDay").addEventListener("click",()=>{S.left=TURNS;S.pity=false;save();say("Nouveau jour : 10 tours disponibles.");render();});
-  $("#slJp").addEventListener("click",()=>{forceJp=true;if(!busy){if(S.bal<COST)S.bal=COST;if(!unlim&&S.left<1)S.left=1;spin();}});
-  $("#slUnlim").addEventListener("change",e=>{unlim=e.target.checked;render();});
+  $("#slAdd").addEventListener("click",async e=>{e.target.disabled=true;try{applyState(await rpc("mf_admin_bananas",{p_n:50}));say("+50 bananes sur ton compte.");}catch(x){say(errText(x));}e.target.disabled=false;render();});
+  $("#slDay").addEventListener("click",async e=>{e.target.disabled=true;try{const r=await rpc("mf_slot_admin_reset");S.left=+r.left;applyState(r.state);say("Tes 10 tours sont rendus.");}catch(x){say(errText(x));}e.target.disabled=false;render();});
+  $("#slForce").addEventListener("change",e=>{force=e.target.value;});
   $("#slSnd").addEventListener("change",e=>{sound=e.target.checked;});
-  $("#slReset").addEventListener("click",()=>{S={bal:20,left:TURNS,day:today(),pity:false,feed:[],spins:0,spent:0,won:0,boosters:0,mins:0};save();say("Test remis à zéro.");render();});
   $("#slJpBox").addEventListener("click",closeJp);
   document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if(!$("#slJpBox").hidden)closeJp();else if($("#slSide").classList.contains("open"))side(false);else close();});
 }
@@ -205,14 +206,14 @@ function fit(){if(!root||root.hidden)return;const b=$(".sl-body"),st=$(".sl-stag
 function side(o){$("#slSide").classList.toggle("open",o);$("#slTog").setAttribute("aria-expanded",String(o));}
 function say(t,cls){const r=$("#slRes");r.className="sl-res"+(cls?" "+cls:"");r.textContent=t;}
 function render(){
-  $("#slBal").textContent=S.bal;$("#slLeft").textContent=unlim?"∞":S.left;
-  $("#slGo").disabled=busy||S.bal<COST||(!unlim&&S.left<1);
-  $("#slFeed").innerHTML=S.feed.length?S.feed.slice(0,40).map(f=>`<li class="${f.c||""}">${esc(f.t)}</li>`).join(""):'<li class="pity">Rien pour l\'instant.</li>';
+  $("#slBal").textContent=loaded?S.bal:"…";$("#slLeft").textContent=loaded?S.left:"…";
+  $("#slGo").disabled=busy||!loaded||S.bal<COST||S.left<1;
+  $("#slFeed").innerHTML=S.feed.length?S.feed.slice(0,20).map(f=>`<li class="${f.c||""}">${esc(f.t)}</li>`).join(""):'<li class="pity">Rien pour l\'instant.</li>';
   $("#slStats").innerHTML=[[S.spins,"tours"],[S.spent?Math.round(S.won/S.spent*100)+" %":"—","rendu"],[S.boosters,"boosters"],[S.won,"bananes gagnées"],[S.mins?(S.mins/60)+" h":"0","d'attente en moins"],[S.spent,"bananes misées"]]
     .map(([v,l])=>`<div class="sl-stat"><b>${esc(v)}</b><span>${l}</span></div>`).join("");
 }
 function hit(k){root.querySelectorAll(".sl-row").forEach(x=>x.classList.toggle("hit",!!k&&x.dataset.k===k));}
-function post(t,c){S.feed.unshift({t,c});S.feed=S.feed.slice(0,40);}
+function post(t,c){S.feed.unshift({t,c});S.feed=S.feed.slice(0,20);}
 
 /* ---------- rouleaux : vrai défilement ---------- */
 const REELS=[];
@@ -226,15 +227,18 @@ function tone(type,f0,f1,vol,len){if(!sound||!ac)return;try{const t=ac.currentTi
 const clunk=f=>tone("triangle",f||170,55,.3,.16),tick=()=>tone("square",900,0,.025,.03);
 const easeBack=x=>{const c1=1.3,c3=c1+1;return 1+c3*(x-1)**3+c1*(x-1)**2;};
 const VMAX=20;
-function roll(s,done){
-  if(reduce){REELS.forEach((R,i)=>{const j=Math.floor(R.p);R.strip[mod(j,R.strip.length)]=s[i];R.p=j;paint(R);});done();return;}
-  const stops=[800,1250,1700],tense=s[0]===s[1]&&(s[0]==="singe"||s[0]==="booster");if(tense)stops[2]+=1300;
+/* les rouleaux partent tout de suite ; ils ne s'arrêtent qu'une fois le résultat du serveur reçu (got() renvoie les 3 symboles, ou null tant qu'il n'est pas là) */
+function roll(got,done){
+  if(reduce){const wait=()=>{const s=got();if(!s){setTimeout(wait,30);return;}REELS.forEach((R,i)=>{const j=Math.floor(R.p);R.strip[mod(j,R.strip.length)]=s[i];R.p=j;paint(R);});done();};wait();return;}
+  const stops=[800,1250,1700];let s=null,tense=false;
   const q=REELS.map(()=>({ph:"run",v:0}));const t0=performance.now();let last=t0,lastTick=0;
   function frame(t){const dt=Math.min(.05,(t-last)/1000);last=t;const el=t-t0;let all=true,fast=false;
+    if(!s){s=got();if(s){tense=s[0]===s[1]&&(s[0]==="singe"||s[0]==="booster");if(tense)stops[2]+=1300;
+      const late=el+100-stops[0];if(late>0)for(let i=0;i<3;i++)stops[i]+=late;}}
     REELS.forEach((R,i)=>{const Q=q[i],before=R.p;
       if(Q.ph==="run"){Q.v=el<110?-4:Math.min(VMAX,(el-110)/260*VMAX);R.p-=Q.v*dt;
-        if(tense&&i===2&&el>stops[1]+300)R.el.classList.add("tense");
-        if(el>=stops[i]){Q.ph="dec";const j=Math.floor(R.p)-4;R.strip[mod(j,R.strip.length)]=s[i];Q.from=R.p;Q.dist=R.p-j;Q.dur=Q.dist*4.2/VMAX*1000*(tense&&i===2?1.6:1);Q.ts=t;}}
+        if(s&&tense&&i===2&&el>stops[1]+300)R.el.classList.add("tense");
+        if(s&&el>=stops[i]){Q.ph="dec";const j=Math.floor(R.p)-4;R.strip[mod(j,R.strip.length)]=s[i];Q.from=R.p;Q.dist=R.p-j;Q.dur=Q.dist*4.2/VMAX*1000*(tense&&i===2?1.6:1);Q.ts=t;}}
       if(Q.ph==="dec"){const u=Math.min(1,(t-Q.ts)/Q.dur);R.p=Q.from-Q.dist*easeBack(u);
         if(Math.floor(before)!==Math.floor(R.p))tick();
         if(u>=1){R.p=Math.round(R.p);Q.ph="done";R.el.classList.remove("tense");clunk(i===2?140:170);}}
@@ -247,24 +251,32 @@ function roll(s,done){
 
 /* ---------- un tour ---------- */
 function spin(){
-  if(busy||S.bal<COST||(!unlim&&S.left<1))return;
+  if(busy||!loaded||S.bal<COST||S.left<1)return;
   busy=true;
   if(!ac&&sound){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}
   if(ac&&ac.state==="suspended")ac.resume().catch(()=>{});
-  const s=forceJp?["singe","singe","singe"]:[draw(),draw(),draw()];forceJp=false;const r=pay(s);
-  S.bal-=COST;S.spent+=COST;S.spins++;if(!unlim)S.left--;save();render();
+  const f=force;force="";const fs=$("#slForce");if(fs)fs.value="";
+  let res=null,err=null;
+  rpc("mf_slot_spin",{p_force:f||null}).then(r=>{res=r;},e=>{err=e;});
+  S.bal-=COST;render();
   REELS.forEach(R=>R.el.classList.remove("win"));hit(null);$("#slM").classList.add("spin");say("…");
-  roll(s,()=>{
+  // en cas d'erreur, les rouleaux s'arrêtent sur des symboles qui ne gagnent rien
+  const loser=()=>{for(;;){const x=[draw(),draw(),draw()];if(!pay(x))return x;}};let errS=null;
+  roll(()=>res?res.s:err?(errS=errS||loser()):null,()=>{
     $("#slM").classList.remove("spin");
-    if(r){if(r.t==="ban"){S.bal+=r.v;S.won+=r.v;}else if(r.t==="boost")S.boosters+=r.v;else S.mins+=r.v;
+    if(err){S.bal+=COST;say(errText(err));busy=false;rpc("mf_slot_status").then(r=>{S.left=+r.left;applyState(r.state);render();},()=>{});render();return;}
+    const s=res.s,r=res.win;S.left=+res.left;applyState(res.state);
+    S.spins++;S.spent+=COST;
+    if(r){if(r.t==="ban")S.won+=r.v;else if(r.t==="boost")S.boosters+=r.v;else S.mins+=r.v;
       hit(r.k);const tri=s[0]===s[1]&&s[1]===s[2];
       s.forEach((e,i)=>{if(tri||(r.k.startsWith("2:")&&r.k.slice(2)===e)||(r.k==="1:banane"&&i===0))REELS[i].el.classList.add("win");});
-      if(r.k==="3:singe"){say("JACKPOT ! 7 boosters !","jack");post(`🐒 JACKPOT ! ${ME} a aligné les trois singes et gagne 7 boosters !`);jackpot();}
-      else{say("Gagné : "+label(r)+(r.k==="1:banane"?" (mise rendue)":""),"good");tone("sine",660,990,.15,.25);
-        if(r.t!=="ban"||r.v>=10)post(`${ME} a gagné ${label(r)} à la machine à bananes.`);}
+      if(r.k==="3:singe"){say("JACKPOT ! 7 boosters ajoutés à ton stock !","jack");post(`🎰 ${ME} a touché le JACKPOT à la machine à bananes : 7 boosters !`);jackpot();}
+      else{const kept=r.t==="time"&&+res.bank>0;
+        say("Gagné : "+label(r)+(r.k==="1:banane"?" (mise rendue)":r.t==="boost"?" dans ton stock":kept?", gardé pour ta prochaine attente":""),"good");tone("sine",660,990,.15,.25);
+        if(r.t!=="ban"||r.v>=10)post(`🎰 ${ME} a gagné ${label(r)} à la machine à bananes.`);}
     }else say("Perdu. La banane est partie.");
-    if(S.bal<COST&&!S.pity){S.bal+=PITY;S.pity=true;post(`${ME} a tout perdu… Le singe a pitié de toi : +${PITY} bananes.`,"pity");say(`Tu as tout perdu… Le singe a pitié de toi : +${PITY} bananes.`);}
-    busy=false;save();render();
+    if(res.pity){post(`🐒 ${ME} a tout perdu à la machine… Le singe a eu pitié : +${PITY} bananes.`,"pity");say(`Tu as tout perdu… Le singe a pitié de toi : +${PITY} bananes.`);}
+    busy=false;render();
   });
 }
 
@@ -288,8 +300,9 @@ function closeJp(){jpT.forEach(clearTimeout);$("#slJpBox").hidden=true;$("#slJpB
 let opener=null,prevOverflow="";
 function open(){
   if(!root)build();
-  S=load();root.hidden=false;opener=document.activeElement;prevOverflow=document.body.style.overflow;document.body.style.overflow="hidden";
+  root.hidden=false;opener=document.activeElement;prevOverflow=document.body.style.overflow;document.body.style.overflow="hidden";
   REELS.forEach(R=>{layout(R);paint(R);});render();fit();$("#slGo").focus({preventScroll:true});
+  if(!busy)rpc("mf_slot_status").then(r=>{S.left=+r.left;applyState(r.state);loaded=true;render();},e=>{say(errText(e));});
 }
 function close(){if(busy)return;root.hidden=true;document.body.style.overflow=prevOverflow;if(opener&&opener.focus)opener.focus();}
 
