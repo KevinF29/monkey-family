@@ -367,21 +367,57 @@ const foil=(()=>{
     flakes.forEach(f=>{f.vy+=.25*dpr;f.x+=f.vx;f.y+=f.vy;f.r+=.2;dx.save();dx.globalAlpha=Math.min(1,f.l*1.5);dx.translate(f.x,f.y);dx.rotate(f.r);dx.fillStyle=f.c;dx.fillRect(-f.s/2,-f.s/3,f.s,f.s*.66);dx.restore();});
     raf=flakes.length?requestAnimationFrame(tickDust):0;if(!raf)dx.clearRect(0,0,W,H);}
   /* bruit de grattage (et petites vibrations sur Android) */
+  let stopT=0;
   function scrape(level){
-    if(noise){try{const t=ac.currentTime;noise.g.gain.cancelScheduledValues(t);noise.g.gain.setTargetAtTime(sound?level*.22:0,t,level?.02:.06);noise.f.frequency.setTargetAtTime(2200+level*2600,t,.05);}catch(e){}}
+    clearTimeout(stopT);
+    if(noise){try{const t=ac.currentTime;noise.g.gain.cancelScheduledValues(t);
+      noise.g.gain.setTargetAtTime(sound?level*.6:0,t,level?.012:.025);                 // part et s'arrête net, comme le vrai
+      noise.s.playbackRate.setTargetAtTime(.75+level*.55,t,.03);                         // plus on gratte vite, plus ça crépite serré
+      noise.pk.frequency.setTargetAtTime(2800+level*1200,t,.04);}catch(e){}}
+    if(level>0)stopT=setTimeout(()=>scrape(0),70);                                       // doigt immobile mais posé : silence
     const now=performance.now();if(level>.3&&buzz&&navigator.vibrate&&now-buzzT>70){buzzT=now;try{navigator.vibrate(6);}catch(e){}}}
   return {init,reset,finish,size};
 })();
 
 /* ---------- sons ---------- */
 let ac=null,noise=null;
+/* son de grattage : une pièce sur la pellicule, c'est un crépitement sec fait de milliers de petits « grains »
+   irréguliers (frottement qui accroche puis lâche), pas un souffle continu. On fabrique 3 s de cette texture une fois,
+   puis on la joue en boucle : volume et vitesse suivent la vitesse du doigt, et le son se coupe net quand le doigt s'arrête. */
+function grit(sr){
+  const len=Math.floor(sr*3),d=new Float32Array(len);
+  let i=0;
+  while(i<len){
+    // un « accroc » : salve de grains serrés (8 à 40 ms), puis une petite pause
+    const burst=Math.floor(sr*(.008+Math.random()*.032)),end=Math.min(len,i+burst),loud=.35+Math.random()*.65;
+    let j=i;
+    while(j<end){
+      const g=Math.floor(sr*(.0003+Math.random()*.0018));          // grain de 0,3 à 2,1 ms
+      const a=loud*(Math.random()<.12?1:.25+Math.random()*.45);      // quelques craquements plus forts
+      for(let k=0;k<g&&j+k<len;k++)d[j+k]+=a*(Math.random()*2-1)*Math.exp(-k/(g*.35));
+      j+=Math.floor(g*(.4+Math.random()*1.2));                      // grains qui se chevauchent un peu, à rythme irrégulier
+    }
+    i=end+Math.floor(sr*Math.random()*.006);
+  }
+  // fond râpeux très léger (le carton sous la pellicule), modulé par le frottement
+  for(let k=0;k<len;k++)d[k]+=(Math.random()*2-1)*.07*(.5+.5*Math.sin(k/sr*2*Math.PI*(90+30*Math.sin(k/sr*7))));
+  let m=0;for(let k=0;k<len;k++)m=Math.max(m,Math.abs(d[k]));for(let k=0;k<len;k++)d[k]/=m||1;
+  // fondu aux deux bouts pour une boucle sans « clic »
+  const f=Math.floor(sr*.01);for(let k=0;k<f;k++){d[k]*=k/f;d[len-1-k]*=k/f;}
+  return d;
+}
 function audio(){
   if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}}
   if(ac.state==="suspended")ac.resume().catch(()=>{});
-  if(!noise){try{const len=ac.sampleRate*2,buf=ac.createBuffer(1,len,ac.sampleRate),d=buf.getChannelData(0);
-    for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(.6+.4*Math.sin(i/37));
-    const s=ac.createBufferSource();s.buffer=buf;s.loop=true;const f=ac.createBiquadFilter();f.type="bandpass";f.frequency.value=3000;f.Q.value=.9;
-    const g=ac.createGain();g.gain.value=0;s.connect(f).connect(g).connect(ac.destination);s.start();noise={s,f,g};}catch(e){}}
+  if(!noise){try{
+    const buf=ac.createBuffer(1,Math.floor(ac.sampleRate*3),ac.sampleRate);buf.getChannelData(0).set(grit(ac.sampleRate));
+    const s=ac.createBufferSource();s.buffer=buf;s.loop=true;
+    const hp=ac.createBiquadFilter();hp.type="highpass";hp.frequency.value=1400;hp.Q.value=.7;     // pas de grave : c'est sec
+    const pk=ac.createBiquadFilter();pk.type="peaking";pk.frequency.value=3200;pk.Q.value=1.1;pk.gain.value=7;  // le « crr » métallique
+    const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.value=6500;
+    const g=ac.createGain();g.gain.value=0;
+    s.connect(hp).connect(pk).connect(lp).connect(g).connect(ac.destination);s.start(0,Math.random()*2.5);
+    noise={s,pk,g};}catch(e){}}
 }
 function tone(type,f0,f1,vol,len){if(!sound||!ac)return;try{const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+len*.8);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+len);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+len+.01);}catch(e){}}
 
