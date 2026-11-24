@@ -1,4 +1,4 @@
-/* Monkey Family — Machine à bananes (ouverte à tous ; réglages et résultats forcés réservés à l'admin)
+/* Monkey Family — Banana Machine (ouverte à tous ; réglages et résultats forcés réservés à l'admin)
    1 banane le tour, 10 tours par jour, table de gains ci-dessous.
    Le tirage, les gains, les limites et l'aide du singe sont décidés par le serveur (mf_slot_spin) :
    cette page ne fait qu'animer les rouleaux jusqu'au résultat reçu, puis affiche le nouvel état du jeu. */
@@ -182,8 +182,8 @@ function icons(k){const [n,e]=k.split(":");const im=`<img src="${src(e)}" alt="$
 function prize(r){return r.t==="ban"?r.v+` <img src="${src("banane")}" alt="bananes">`:esc(short(r));}
 function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
-  root=document.createElement("div");root.id="mfSlot";if(ADMIN)root.classList.add("admin");root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Machine à bananes");
-  root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag sl-adm">Admin</span><button type="button" class="sl-tog sl-adm" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
+  root=document.createElement("div");root.id="mfSlot";if(ADMIN)root.classList.add("admin");root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Banana Machine");
+  root.innerHTML=LEAF+`<div class="sl-top"><h2>Banana Machine</h2><span class="sl-tag sl-adm">Admin</span><button type="button" class="sl-tog sl-adm" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
   <div class="sl-body">
    <div class="sl-stage"><div class="sl-board" id="slBoard"></div><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
@@ -307,10 +307,10 @@ function spin(){
     if(r){if(r.t==="ban")S.won+=r.v;else if(r.t==="boost")S.boosters+=r.v;else S.mins+=r.v;
       hit(r.k);const tri=s[0]===s[1]&&s[1]===s[2];
       s.forEach((e,i)=>{if(tri||(r.k.startsWith("2:")&&r.k.slice(2)===e)||(r.k==="1:banane"&&i===0))REELS[i].el.classList.add("win");});
-      if(r.k==="3:singe"){say("JACKPOT ! 7 boosters ajoutés à ton stock !","jack");post(`🎰 ${ME} a touché le JACKPOT à la machine à bananes : 7 boosters !`);celebrate("singe");}
+      if(r.k==="3:singe"){say("JACKPOT ! 7 boosters ajoutés à ton stock !","jack");post(`🎰 ${ME} a touché le JACKPOT à la Banana Machine : 7 boosters !`);celebrate("singe");}
       else{const kept=r.t==="time"&&+res.bank>0;
         say("Gagné : "+label(r)+(r.k==="1:banane"?" (mise rendue)":r.t==="boost"?" dans ton stock":kept?", gardé pour ta prochaine attente":""),"good");tone("sine",660,990,.15,.25);
-        if(r.t!=="ban"||r.v>=10)post(`🎰 ${ME} a gagné ${label(r)} à la machine à bananes.`);
+        if(r.t!=="ban"||r.v>=10)post(`🎰 ${ME} a gagné ${label(r)} à la Banana Machine.`);
         if(r.k==="3:booster"||r.k==="3:maman")celebrate(r.k.slice(2));
         if(r.k==="3:sablier")celebrate("sablier",kept?"d'attente, gardées pour ton prochain booster":"d'attente en moins sur ton prochain booster");}
     }else say("Perdu. La banane est partie.");
@@ -376,7 +376,7 @@ async function boot(){
     const st=document.createElement("style");
     st.textContent=`#slotBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 112px)}`;
     document.head.appendChild(st);
-    const b=document.createElement("button");b.className="socialbtn";b.id="slotBtn";b.type="button";b.setAttribute("aria-label","Machine à bananes");b.title="Machine à bananes";
+    const b=document.createElement("button");b.className="socialbtn";b.id="slotBtn";b.type="button";b.setAttribute("aria-label","Banana Machine");b.title="Banana Machine";
     b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5v-1.5a.5 .5 0 0 1 .5 -.5h7a.5 .5 0 0 1 .5 .5v1.5"/><rect x="3" y="5" width="14" height="15.5" rx="2"/><rect x="5.5" y="8" width="9" height="5" rx="1"/><path d="M8.5 8v5"/><path d="M11.5 8v5"/><path d="M7.5 17h5"/><path d="M17 14h2a1 1 0 0 0 1 -1v-5.5"/><circle cx="20" cy="5.5" r="1.5"/></svg>`;
     b.addEventListener("click",open);
     const rank=document.getElementById("rankBtn");if(rank)rank.after(b);else document.body.appendChild(b);

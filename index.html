@@ -1792,7 +1792,7 @@ td.n{text-align:right}
     try{syncBananas();renderStats();renderPacks();renderEvents();}catch(e){}try{BIND.repaint();}catch(e){}try{MARKET.badge();}catch(e){}
     if(Array.isArray(st.gifts)&&st.gifts.length)try{GIFTS.show(st.gifts);}catch(e){}
     try{if(mode==="pack"||mode==="summary")shown.forEach(s=>paint(s.cv,s.c,0));}catch(e){}}
-  window.MF_APPLY=applyServer;  // la machine à bananes (slot.js) renvoie ici le nouvel état après chaque tour
+  window.MF_APPLY=applyServer;  // la Banana Machine (slot.js) renvoie ici le nouvel état après chaque tour
   const SRV_MSG={no_pack:"Plus de booster pour le moment. Tu peux en acheter à la Boutique avec tes bananes.",no_bananas:"Pas assez de bananes.",owned:"Tu as déjà cette carte.",no_cards:"Le catalogue n'est pas encore prêt : réessaie dans un instant.",not_member:"Ton accès est en pause."};
   let srvRefreshT=0;
   function srvRefresh(){clearTimeout(srvRefreshT);srvRefreshT=setTimeout(()=>{window.MF_RPC("mf_state").then(applyServer,()=>{});},300);}
@@ -3878,14 +3878,14 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         return `<div class="fitem"><span class="fi" aria-hidden="true">🔨</span><p>${t}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="pull")return `<div class="fitem"><span class="fi" aria-hidden="true">${icon(String(x.rarity||""))}</span><p>${who} a tiré une carte ${rpill(String(x.rarity||""))}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete"&&x.cat===ULT_CAT)return `<div class="fitem"><span class="fi" aria-hidden="true">👑</span><p>${who} a complété <b>toute la collection</b> et décroché la carte ultime !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
-      if(x.kind==="slot"&&x.k==="3:singe")return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>${who} a touché le <b>JACKPOT</b> à la machine à bananes : 7 boosters !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="slot"&&x.k==="3:singe")return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>${who} a touché le <b>JACKPOT</b> à la Banana Machine : 7 boosters !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="slot"){const v=+x.v||0,what=x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;
-        return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>${who} a gagné ${what} à la machine à bananes<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>${who} a gagné ${what} à la Banana Machine<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="race"){const RN=["Le Rageux","Le Tryharder","Le Chill","Le Iencli","L'Alcoolique","Le Fantôme","Le Geek","Le Séducteur"],w=RN[(+x.w||1)-1]||"Un singe",o=(+x.o||0).toFixed(1).replace(".",",");
         const gs=(Array.isArray(x.gains)?x.gains:[]).slice(0,4).map(g=>`<b>${esc(nameOf(g.uid))}</b> +${fmt(+g.v||0)} 🍌`).join(", ");
         const tail=gs?`Gagnants : ${gs}`:(+x.n?"Personne n'avait misé sur lui !":"Personne n'avait parié.");
         return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Monkey Run : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
-      if(x.kind==="slot_pity")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} a tout perdu à la machine à bananes… Le singe a eu pitié : +10 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="slot_pity")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} a tout perdu à la Banana Machine… Le singe a eu pitié : +10 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       return "";}
     /* reactions under the news: one per player and per item, tap again to remove it */
