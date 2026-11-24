@@ -849,6 +849,7 @@ td.n{text-align:right}
 <script src="admin.js"></script>
 <script src="pop.js"></script>
 <script src="slot.js"></script>
+<script src="race.js"></script>
 <script>
 (function(){
   const W=750,H=1050;
@@ -3880,6 +3881,10 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="slot"&&x.k==="3:singe")return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>${who} a touché le <b>JACKPOT</b> à la machine à bananes : 7 boosters !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="slot"){const v=+x.v||0,what=x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>${who} a gagné ${what} à la machine à bananes<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="race"){const RN=["Le Rageux","Le Tryharder","Le Chill","Le Iencli","L'Alcoolique","Le Fantôme","Le Geek","Le Séducteur"],w=RN[(+x.w||1)-1]||"Un singe",o=(+x.o||0).toFixed(1).replace(".",",");
+        const gs=(Array.isArray(x.gains)?x.gains:[]).slice(0,4).map(g=>`<b>${esc(nameOf(g.uid))}</b> +${fmt(+g.v||0)} 🍌`).join(", ");
+        const tail=gs?`Gagnants : ${gs}`:(+x.n?"Personne n'avait misé sur lui !":"Personne n'avait parié.");
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Course de singes : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="slot_pity")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} a tout perdu à la machine à bananes… Le singe a eu pitié : +10 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       return "";}
