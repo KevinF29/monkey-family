@@ -126,12 +126,19 @@ const CSS=`
 .sl-stat{background:#0c2213;border-radius:10px;padding:8px}.sl-stat b{display:block;font:400 20px "Titan One",sans-serif;color:#fff}.sl-stat span{font-size:12px;color:#b9c99a}
 .sl-jp{position:fixed;inset:0;z-index:9100;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 45%,rgba(120,60,0,.78),rgba(5,20,10,.94) 70%);cursor:pointer}
 .sl-jp[hidden]{display:none}
-.sl-rays{position:absolute;left:50%;top:45%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(255,210,63,.32) 0 9deg,transparent 9deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 45%);mask:radial-gradient(circle,#000 0,transparent 45%);animation:slTurn 14s linear infinite}
+.sl-rays{position:absolute;left:50%;top:45%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(var(--ray,rgba(255,210,63,.32)) 0 9deg,transparent 9deg 18deg);-webkit-mask:radial-gradient(circle,#000 0,transparent 45%);mask:radial-gradient(circle,#000 0,transparent 45%);animation:slTurn 14s linear infinite}
 @keyframes slTurn{to{transform:rotate(360deg)}}
 .sl-jpin{position:relative;z-index:2;text-align:center;padding:16px}
 .sl-coin{width:min(52vw,260px);filter:drop-shadow(0 0 40px rgba(255,200,60,.9));animation:slPop .9s cubic-bezier(.2,1.7,.4,1) both,slBob 2.2s .9s ease-in-out infinite}
 .sl-jpt{font:400 clamp(56px,13vw,120px)/1 "Titan One",sans-serif;color:#ffd23f;margin-top:6px;text-shadow:0 7px 0 #8a4b00,5px 0 0 #8a4b00,-5px 0 0 #8a4b00,0 0 40px #ffb300;animation:slPop .8s .25s cubic-bezier(.2,1.7,.4,1) both,slGlow .45s 1.1s ease-in-out 8 alternate}
 .sl-jps{font:700 clamp(18px,3vw,24px) Quicksand,sans-serif;color:#fff3cf;margin:10px 0 20px;animation:slPop .6s .6s both}
+.sl-jp.flip .sl-coin{animation:slPop .9s cubic-bezier(.2,1.7,.4,1) both,slFlip 1.6s 1s ease-in-out infinite}
+@keyframes slFlip{0%,35%{transform:rotate(0)}65%,100%{transform:rotate(180deg)}}
+.sl-jp.tilt .sl-coin{animation:slPop .9s cubic-bezier(.2,1.7,.4,1) both,slWig .9s .9s ease-in-out infinite}
+@keyframes slWig{25%{transform:rotate(-7deg) scale(1.04)}75%{transform:rotate(7deg) scale(1.04)}}
+.sl-jp.peek .sl-coin{animation:slPeek 1s cubic-bezier(.2,1.5,.4,1) both,slBob 1.4s 1s ease-in-out infinite}
+@keyframes slPeek{from{transform:translateX(60vw) rotate(25deg);opacity:0}to{transform:none;opacity:1}}
+.sl-jpt.small{font-size:clamp(44px,10vw,96px)}
 @keyframes slPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes slBob{50%{transform:translateY(-12px) rotate(4deg)}}
 @keyframes slGlow{to{color:#fff6c2;text-shadow:0 7px 0 #8a4b00,5px 0 0 #8a4b00,-5px 0 0 #8a4b00,0 0 70px #ffd23f}}
@@ -184,7 +191,7 @@ function build(){
     <div class="sl-stats" id="slStats"></div>
    </aside>
   </div>
-  <div class="sl-jp" id="slJpBox" hidden><div class="sl-rays"></div><div class="sl-jpin"><img class="sl-coin" src="${src("singe")}" alt=""><div class="sl-jpt">JACKPOT !</div><div class="sl-jps"><b id="slJpWho"></b> gagne 7 boosters</div><button type="button" class="sl-go" style="display:inline-flex;min-height:52px;padding:0 26px;font-size:21px" id="slJpOk">Récupérer</button></div></div>`;
+  <div class="sl-jp" id="slJpBox" hidden><div class="sl-rays"></div><div class="sl-jpin"><img class="sl-coin" id="slJpImg" src="${src("singe")}" alt=""><div class="sl-jpt" id="slJpT">JACKPOT !</div><div class="sl-jps" id="slJpSub"></div><button type="button" class="sl-go" style="display:inline-flex;min-height:52px;padding:0 26px;font-size:21px" id="slJpOk">Récupérer</button></div></div>`;
   document.body.appendChild(root);
   REELS.push(...[0,1,2].map(i=>{const el=$("#slR"+i),box=el.querySelector(".sl-cells");
     const strip=shuffle(SYM.flatMap(s=>Array(s.w).fill(s.e)));
@@ -270,10 +277,12 @@ function spin(){
     if(r){if(r.t==="ban")S.won+=r.v;else if(r.t==="boost")S.boosters+=r.v;else S.mins+=r.v;
       hit(r.k);const tri=s[0]===s[1]&&s[1]===s[2];
       s.forEach((e,i)=>{if(tri||(r.k.startsWith("2:")&&r.k.slice(2)===e)||(r.k==="1:banane"&&i===0))REELS[i].el.classList.add("win");});
-      if(r.k==="3:singe"){say("JACKPOT ! 7 boosters ajoutés à ton stock !","jack");post(`🎰 ${ME} a touché le JACKPOT à la machine à bananes : 7 boosters !`);jackpot();}
+      if(r.k==="3:singe"){say("JACKPOT ! 7 boosters ajoutés à ton stock !","jack");post(`🎰 ${ME} a touché le JACKPOT à la machine à bananes : 7 boosters !`);celebrate("singe");}
       else{const kept=r.t==="time"&&+res.bank>0;
         say("Gagné : "+label(r)+(r.k==="1:banane"?" (mise rendue)":r.t==="boost"?" dans ton stock":kept?", gardé pour ta prochaine attente":""),"good");tone("sine",660,990,.15,.25);
-        if(r.t!=="ban"||r.v>=10)post(`🎰 ${ME} a gagné ${label(r)} à la machine à bananes.`);}
+        if(r.t!=="ban"||r.v>=10)post(`🎰 ${ME} a gagné ${label(r)} à la machine à bananes.`);
+        if(r.k==="3:booster"||r.k==="3:maman")celebrate(r.k.slice(2));
+        if(r.k==="3:sablier")celebrate("sablier",kept?"d'attente, gardées pour ton prochain booster":"d'attente en moins sur ton prochain booster");}
     }else say("Perdu. La banane est partie.");
     if(res.pity){post(`🐒 ${ME} a tout perdu à la machine… Le singe a eu pitié : +${PITY} bananes.`,"pity");say(`Tu as tout perdu… Le singe a pitié de toi : +${PITY} bananes.`);}
     busy=false;render();
@@ -282,17 +291,36 @@ function spin(){
 
 /* ---------- jackpot ---------- */
 let jpT=[];
-function jackpot(){
-  $("#slJpWho").textContent=ME;const box=$("#slJpBox");box.hidden=false;$("#slJpOk").focus({preventScroll:true});
-  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone("triangle",f,0,.2,.35),i*140));
+/* grands gains : jackpot (3 singes), 3 boosters, −6 h (3 sabliers), 40 bananes (3 mamans) */
+const BIG={
+  singe:{t:"JACKPOT !",s:()=>`${esc(ME)} gagne <b>7 boosters</b>`,parts:["singe","banane"],mode:"burst",waves:[40,30,30,24],ray:"rgba(255,210,63,.32)",shake:true,notes:[523,659,784,1047]},
+  booster:{t:"3 BOOSTERS !",s:()=>"ajoutés à ton stock",parts:["booster"],mode:"burst",waves:[26,20],ray:"rgba(255,95,60,.32)",cls:"tilt",shake:true,notes:[523,659,784]},
+  sablier:{t:"−6 H !",s:x=>esc(x||"d'attente en moins"),parts:["sablier"],mode:"spiral",ray:"rgba(120,220,255,.28)",cls:"flip",notes:[784,659,523,659,784]},
+  maman:{t:"40 BANANES !",count:40,s:()=>"Planquez vos mamans…",parts:["banane"],mode:"rain",ray:"rgba(255,150,200,.30)",cls:"peek",notes:[659,784,880]}};
+function celebrate(kind,sub){
+  const C=BIG[kind],box=$("#slJpBox");
+  box.className="sl-jp"+(C.cls?" "+C.cls:"");box.style.setProperty("--ray",C.ray);
+  const img=$("#slJpImg");img.src=src(kind);
+  const T=$("#slJpT");T.className="sl-jpt"+(kind==="singe"?"":" small");T.textContent=C.t;
+  $("#slJpSub").innerHTML=C.s(sub);
+  box.hidden=false;$("#slJpOk").focus({preventScroll:true});
+  C.notes.forEach((f,i)=>setTimeout(()=>tone("triangle",f,0,.2,.35),i*140));
+  if(C.count&&!reduce){const t0=performance.now(),run=t=>{const u=Math.min(1,(t-t0)/1300);T.textContent=Math.round(C.count*(1-(1-u)**3))+" BANANES !";if(u<1&&!box.hidden)requestAnimationFrame(run);else T.textContent=C.t;};requestAnimationFrame(run);}
   if(reduce)return;
-  const m=$("#slM");m.classList.remove("shake");void m.offsetWidth;m.classList.add("shake");
-  const f=document.createElement("div");f.className="sl-flash";root.appendChild(f);setTimeout(()=>f.remove(),800);
-  const burst=n=>{for(let i=0;i<n;i++){const im=document.createElement("img");im.className="sl-pt";im.alt="";im.src=src(Math.random()<.55?"singe":"banane");
-    const a=Math.random()*Math.PI*2,d=220+Math.random()*Math.max(innerWidth,innerHeight)*.6,x=Math.cos(a)*d,y=Math.sin(a)*d*.8,sc=.5+Math.random()*.9,rot=(Math.random()-.5)*900;
-    box.appendChild(im);im.animate([{transform:"translate(0,0) scale(.2)",opacity:1},{transform:`translate(${x*.85}px,${y*.85-140}px) scale(${sc}) rotate(${rot*.6}deg)`,opacity:1,offset:.45},{transform:`translate(${x}px,${y+420}px) scale(${sc}) rotate(${rot}deg)`,opacity:0}],
-      {duration:1600+Math.random()*1400,easing:"cubic-bezier(.15,.7,.4,1)"}).onfinish=()=>im.remove();}};
-  burst(40);jpT=[setTimeout(()=>burst(30),700),setTimeout(()=>burst(30),1500),setTimeout(()=>burst(24),2400)];
+  if(C.shake){const m=$("#slM");m.classList.remove("shake");void m.offsetWidth;m.classList.add("shake");}
+  const f=document.createElement("div");f.className="sl-flash";if(kind!=="singe")f.style.opacity=".6";root.appendChild(f);setTimeout(()=>f.remove(),800);
+  const sprite=()=>src(C.parts[Math.floor(Math.random()*C.parts.length)]);
+  const add=(kf,dur,size)=>{const im=document.createElement("img");im.className="sl-pt";im.alt="";im.src=sprite();if(size)im.style.width=im.style.height=size+"px";box.appendChild(im);im.animate(kf,{duration:dur,easing:"cubic-bezier(.15,.7,.4,1)"}).onfinish=()=>im.remove();};
+  const burst=n=>{for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=220+Math.random()*Math.max(innerWidth,innerHeight)*.6,x=Math.cos(a)*d,y=Math.sin(a)*d*.8,sc=.5+Math.random()*.9,rot=(Math.random()-.5)*900;
+    add([{transform:"translate(0,0) scale(.2)",opacity:1},{transform:`translate(${x*.85}px,${y*.85-140}px) scale(${sc}) rotate(${rot*.6}deg)`,opacity:1,offset:.45},{transform:`translate(${x}px,${y+420}px) scale(${sc}) rotate(${rot}deg)`,opacity:0}],1600+Math.random()*1400);}};
+  const rain=n=>{for(let i=0;i<n;i++){const x=(Math.random()-.5)*innerWidth,y0=-innerHeight*.45-80-Math.random()*200,rot=(Math.random()-.5)*720,sc=.5+Math.random()*.7;
+    setTimeout(()=>{if(!box.hidden)add([{transform:`translate(${x}px,${y0}px) scale(${sc}) rotate(0deg)`,opacity:1},{transform:`translate(${x+(Math.random()-.5)*80}px,${innerHeight*.65}px) scale(${sc}) rotate(${rot}deg)`,opacity:1}],1500+Math.random()*900,48);},Math.random()*2600);}};
+  const spiral=n=>{for(let i=0;i<n;i++){const a0=i/n*Math.PI*2,r1=140+Math.random()*60,r2=Math.max(innerWidth,innerHeight)*.7,dir=1;
+    const kf=[0,.25,.5,.75,1].map(u=>{const a=a0+u*Math.PI*1.5*dir,r=r1*(1-u)+r2*u;return {transform:`translate(${Math.cos(a)*r*(u?1:.1)}px,${Math.sin(a)*r*(u?1:.1)}px) scale(${.4+u*.4}) rotate(${u*540}deg)`,opacity:u<.85?1:0};});
+    setTimeout(()=>{if(!box.hidden)add(kf,2200,44);},i*45);}};
+  if(C.mode==="burst"){burst(C.waves[0]);jpT=C.waves.slice(1).map((n,i)=>setTimeout(()=>burst(n),700+i*800));}
+  if(C.mode==="rain"){rain(70);jpT=[setTimeout(()=>rain(40),1800)];}
+  if(C.mode==="spiral"){spiral(24);jpT=[setTimeout(()=>spiral(24),1300)];}
 }
 function closeJp(){jpT.forEach(clearTimeout);$("#slJpBox").hidden=true;$("#slJpBox").querySelectorAll(".sl-pt").forEach(x=>x.remove());$("#slGo").focus({preventScroll:true});}
 
