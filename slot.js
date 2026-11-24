@@ -52,7 +52,11 @@ const CSS=`
 #mfSlot[hidden]{display:none}
 #mfSlot *{box-sizing:border-box;min-width:0}
 .sl-top{flex:none;display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) max(4vw,14px) 6px;position:relative;z-index:6}
-.sl-top h2{margin:0;flex:1;font:400 clamp(22px,4vw,30px)/1.1 "Titan One",sans-serif;color:#ffd23f;text-shadow:0 3px 0 #4a2a10}
+.sl-top{justify-content:flex-end}
+.sl-top h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sl-col{display:flex;flex-direction:column;align-items:center}
+.sl-col>.sl-m{align-self:stretch}
+.sl-logo{display:block;width:80%;height:auto;margin:-40px auto 50px;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));pointer-events:none}
 .sl-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#3a200b;border-radius:99px;padding:3px 10px}
 .sl-x{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer}
 .sl-body{flex:1;position:relative;overflow:hidden}
@@ -115,7 +119,7 @@ const CSS=`
 .sl-side>*{flex-shrink:0}
 /* grand écran (PC) : la table des gains passe à gauche de la machine, et tout peut grossir */
 #mfSlot.wide .sl-stage{display:flex;align-items:center;gap:34px;width:auto}
-#mfSlot.wide .sl-m{width:560px;flex:none}
+#mfSlot.wide .sl-col{width:560px;flex:none}
 #mfSlot.wide .sl-board{display:block;width:330px;flex:none;position:relative;padding:18px 14px 14px;border-radius:18px;
  background:repeating-linear-gradient(0deg,rgba(0,0,0,.07) 0 2px,transparent 2px 10px),linear-gradient(180deg,#a36b35,#6e411d);box-shadow:inset 0 0 0 5px #4a2a10,0 12px 0 #3a200b,0 22px 40px rgba(0,0,0,.45)}
 #mfSlot.wide .sl-board::before,#mfSlot.wide .sl-board::after{content:"";position:absolute;top:-30px;width:3px;height:32px;background:#c9a46a}
@@ -132,7 +136,7 @@ const CSS=`
 .sl-board{display:none}
 #mfSlot:not(.admin) .sl-adm,body.preview #mfSlot .sl-adm{display:none!important}
 .sl-side label.sl-chk{flex-wrap:wrap;height:auto}
-@media(max-width:560px){.sl-top h2{font-size:21px}.sl-tag{display:none}}
+@media(max-width:560px){.sl-tag{display:none}}
 .sl-tog{min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:700 14px Quicksand,sans-serif;padding:0 12px;cursor:pointer}
 .sl-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
 .sl-side h3{margin:0;font:400 20px "Titan One",sans-serif;color:#ffd23f}
@@ -185,7 +189,7 @@ function build(){
   root=document.createElement("div");root.id="mfSlot";if(ADMIN)root.classList.add("admin");root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Banana Machine");
   root.innerHTML=LEAF+`<div class="sl-top"><h2>Banana Machine</h2><span class="sl-tag sl-adm">Admin</span><button type="button" class="sl-tog sl-adm" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
   <div class="sl-body">
-   <div class="sl-stage"><div class="sl-board" id="slBoard"></div><div class="sl-m" id="slM">
+   <div class="sl-stage"><div class="sl-board" id="slBoard"></div><div class="sl-col"><img class="sl-logo" src="packs/banana-machine-titre.webp" alt="Banana Machine" width="1400" height="474"><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
     <div class="sl-sign">MONKEY FAMILY<small>Trois singes = 7 boosters</small></div>
     <div class="sl-tb" id="slTb"><div class="sl-tbt">Table des gains</div><div class="sl-tbg">${ORDER.map(k=>{const [n,e]=k.split(":");const r=n==="3"?TRI[e]:n==="2"?PAIR.find(p=>p[0]===e)[1]:{t:"ban",v:1};
@@ -196,7 +200,7 @@ function build(){
     <div class="sl-ctl"><button type="button" class="sl-go" id="slGo">Lancer · 1 <img src="${src("banane")}" alt="banane"></button>
      <div class="sl-pills"><div class="sl-pill">Bananes<b id="slBal"></b></div><div class="sl-pill">Tours<b id="slLeft"></b></div></div></div>
     <div class="sl-res" id="slRes" role="status">Mise 1 banane et tente ta chance.</div>
-   </div></div>
+   </div></div></div>
    <aside class="sl-side sl-adm" id="slSide" aria-label="Réglages admin">
     <h3>Réglages admin</h3>
     <p class="sl-note">Ici tout est réel : tes vraies bananes sont misées, et les boosters et heures d'attente gagnés vont sur ton compte.</p>
@@ -381,7 +385,7 @@ async function boot(){
     b.addEventListener("click",open);
     const rank=document.getElementById("rankBtn");if(rank)rank.after(b);else document.body.appendChild(b);
   }
-  SYM.forEach(s=>{const i=new Image();i.src=src(s.e);});
+  SYM.forEach(s=>{const i=new Image();i.src=src(s.e);});{const i=new Image();i.src="packs/banana-machine-titre.webp";}
 }
 window.MF_SLOT={open};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
