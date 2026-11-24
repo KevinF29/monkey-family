@@ -135,8 +135,9 @@ const CSS=`
 #mfSlot.wide .sl-reel{height:210px}
 .sl-board{display:none}
 /* téléphone : la machine remplit tout l'écran (largeur et hauteur), les rouleaux prennent la place libre, la table des gains se déplie à la demande */
-#mfSlot.fill .sl-top{position:absolute;top:0;right:0;padding:max(8px,env(safe-area-inset-top)) 10px 0}
-#mfSlot.fill .sl-tog{min-height:40px;font-size:13px;padding:0 10px}#mfSlot.fill .sl-x{min-width:40px;min-height:40px}
+#mfSlot.fill .sl-top{position:absolute;top:0;right:0;left:0;padding:max(8px,env(safe-area-inset-top)) 10px 0;pointer-events:none}#mfSlot.fill .sl-top>*{pointer-events:auto}#mfSlot.fill .sl-x{margin-left:auto}
+#mfSlot.fill .sl-tog{min-height:40px;width:40px;padding:0;font-size:0}#mfSlot.fill .sl-tog::before{content:"⚙";font-size:20px;line-height:1}
+#mfSlot.fill .sl-pills{flex:1 1 100%;justify-content:space-between}#mfSlot.fill .sl-x{min-width:40px;min-height:40px}
 #mfSlot.fill .sl-stage{position:absolute;inset:0;width:auto;transform:none!important;padding:max(8px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column}
 #mfSlot.fill .sl-col{flex:1;min-height:0;display:flex;flex-direction:column}
 #mfSlot.fill .sl-logo{width:auto;height:clamp(54px,10vh,96px);max-width:62%;margin:0 auto 12px;flex:none}
