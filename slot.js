@@ -140,14 +140,15 @@ const CSS=`
 #mfSlot.fill .sl-tog{min-height:40px;font-size:13px;padding:0 10px}#mfSlot.fill .sl-x{min-width:40px;min-height:40px}
 #mfSlot.fill .sl-stage{position:absolute;inset:0;width:auto;transform:none!important;padding:max(8px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column}
 #mfSlot.fill .sl-col{flex:1;min-height:0;display:flex;flex-direction:column}
-#mfSlot.fill .sl-logo{width:auto;height:clamp(54px,10vh,96px);max-width:62%;margin:0 auto 42px;flex:none}
-#mfSlot.fill .sl-m{flex:1;min-height:0;display:flex;flex-direction:column;padding:18px 16px 14px}
+#mfSlot.fill .sl-logo{width:auto;height:clamp(54px,10vh,96px);max-width:62%;margin:0 auto 12px;flex:none}
+#mfSlot.fill .sl-sign{display:none}
+#mfSlot.fill .sl-m{flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 16px 14px}
 #mfSlot.fill .sl-m>*{flex:none}
 #mfSlot.fill .sl-win{flex:1 1 auto;min-height:0;grid-template-rows:minmax(0,1fr)}
-#mfSlot.fill .sl-reel{height:auto;min-height:120px}
+#mfSlot.fill .sl-reel{height:auto;min-height:0}
 #mfSlot.fill .sl-lights{margin:12px 2px 4px}
 #mfSlot.fill .sl-ctl{margin-top:16px}#mfSlot.fill .sl-res{margin-top:10px;min-height:48px}
-#mfSlot.fill .sl-tb{margin-top:12px}
+#mfSlot.fill .sl-tb{margin-top:6px}
 #mfSlot.fill .sl-chev{display:inline-block;margin-left:6px;transition:transform .2s}
 #mfSlot.fill .sl-tb.open .sl-chev{transform:rotate(180deg)}
 #mfSlot.fill .sl-tb:not(.open) .sl-row:not(.jk),#mfSlot.fill .sl-tb:not(.open) .sl-rules{display:none}
@@ -242,7 +243,7 @@ function build(){
     return {el,box,strip,imgs,p:Math.floor(Math.random()*strip.length),ch:80,h:160};}));
   new ResizeObserver(()=>REELS.forEach(R=>{layout(R);paint(R);})).observe($("#slM"));
   new ResizeObserver(fit).observe($(".sl-body"));new ResizeObserver(fit).observe($(".sl-stage"));
-  $("#slTbBtn").addEventListener("click",e=>{const t=$("#slTb");const o=t.classList.toggle("open");e.currentTarget.setAttribute("aria-expanded",String(o));fit();});
+  $("#slTbBtn").addEventListener("click",e=>{const t=$("#slTb");const o=t.classList.toggle("open");tbUser=o;e.currentTarget.setAttribute("aria-expanded",String(o));fit();});
   $("#slTog").addEventListener("click",()=>side(!$("#slSide").classList.contains("open")));
   $("#slClose").addEventListener("click",close);
   $("#slGo").addEventListener("click",spin);
@@ -253,7 +254,7 @@ function build(){
   $("#slJpBox").addEventListener("click",closeJp);
   document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if(!$("#slJpBox").hidden)closeJp();else if($("#slSide").classList.contains("open"))side(false);else close();});
 }
-let fitting=false;
+let fitting=false,tbUser=null;
 function fit(){if(!root||root.hidden||fitting)return;fitting=true;
   const b=$(".sl-body"),st=$(".sl-stage");
   // PC / écran large : table des gains à gauche, sinon au-dessus des rouleaux
@@ -261,10 +262,14 @@ function fit(){if(!root||root.hidden||fitting)return;fitting=true;
   if(wide!==root.classList.contains("wide")){root.classList.toggle("wide",wide);
     const tb=$("#slTb");if(wide)$("#slBoard").appendChild(tb);else $("#slM").insertBefore(tb,$(".sl-lights"));}
   // téléphone : remplir tout l'écran ; si même ainsi ça ne tient pas (très petit écran), on réduit l'ensemble
+  // la table des gains est dépliée par défaut quand elle tient, repliée sinon (sauf choix du joueur)
   root.classList.toggle("fill",!wide&&b.clientWidth<700);
   if(root.classList.contains("fill")){st.style.transform="";
-    const bb=b.getBoundingClientRect(),m=$("#slRes").getBoundingClientRect();
-    if(m.bottom>bb.bottom-6||$(".sl-reel").clientHeight<110)root.classList.remove("fill");}
+    const tb=$("#slTb"),fits=()=>{const bb=b.getBoundingClientRect(),m=$("#slRes").getBoundingClientRect();return m.bottom<=bb.bottom-6&&$(".sl-reel").clientHeight>=110;};
+    if(tbUser===null)tb.classList.add("open");
+    if(!fits()&&tbUser===null)tb.classList.remove("open");
+    if(!fits())root.classList.remove("fill");
+    $("#slTbBtn").setAttribute("aria-expanded",String(tb.classList.contains("open")));}
   if(!root.classList.contains("fill")){
     const k=Math.min(wide?1.7:1,(b.clientWidth-16)/st.offsetWidth,(b.clientHeight-10)/st.offsetHeight);
     st.style.transform=`translate(-50%,-50%) scale(${k>0?k:1})`;}
