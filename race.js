@@ -58,7 +58,7 @@ const CSS=`
 .rc-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#3a200b;border-radius:99px;padding:3px 10px}
 .rc-x,.rc-tog{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer}
 .rc-tog{font:700 20px Quicksand,sans-serif;padding:0;width:44px;flex:none}.rc-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
-.rc-body{flex:1;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;padding:0 max(3vw,10px) max(20px,env(safe-area-inset-bottom));position:relative}
+.rc-body{flex:1;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;padding:10px max(3vw,12px) max(20px,env(safe-area-inset-bottom));position:relative}
 .rc-wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .rc-view{position:relative;overflow:hidden;border-radius:16px;background:#2b5a1d;box-shadow:0 0 0 4px #5a3416,0 0 0 7px #a8c04a,0 12px 30px rgba(0,0,0,.5)}
 .rc-world{position:absolute;left:0;top:0;width:${TW}px;height:${TH}px;transform-origin:0 0;background:url(${TRACK}) 0 0/100% 100% no-repeat;will-change:transform}
