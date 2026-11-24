@@ -25,7 +25,7 @@ const LINES=[253,312,379,450,524,600,680,759,843];            // bambous qui sé
 const X0=300;                                                 // le museau des singes au départ
 const finishX=i=>{const y=(LINES[i]+LINES[i+1])/2;return 1455+(y-253)*95/590;};  // la ligne d'arrivée est un peu penchée
 const SH=165,SW=248;                                          // taille des singes sur la piste (ils débordent de leur couloir, comme aux courses de chevaux)
-const img=i=>"packs/race-"+(i+1)+".webp",TRACK="packs/race-piste.webp",LOGO="packs/race-logo.webp";
+const img=i=>"packs/race-"+(i+1)+".webp",TRACK="packs/race-piste.webp",LOGO="packs/race-logo.webp",MUSIC="packs/race-musique.mp3";
 const MIN=1,MAX=20;
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -36,7 +36,7 @@ const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
 
 /* ---------- état ---------- */
-let S=null,ADMIN=false,USER=null,names={},pick=null,amount=5,busy=false,sound=true,playing=null,poll=null,clock=null,skew=0;
+let S=null,ADMIN=false,USER=null,names={},pick=null,amount=5,busy=false,sound=(()=>{try{return localStorage.getItem("mf-race-sound")!=="0";}catch(e){return true;}})(),playing=null,poll=null,clock=null,skew=0;
 function applyState(st){if(!st)return;try{if(window.MF_APPLY)window.MF_APPLY(st);}catch(e){}}
 const bal=()=>S&&S.state?+S.state.bananas||0:0;
 const now=()=>Date.now()+skew;
@@ -58,7 +58,8 @@ const CSS=`
 @media(max-width:700px){.rc-tag{display:none}.rc-logo{height:auto;width:min(62vw,300px)}#mfRace.admin .rc-logo{width:min(56vw,300px)}}
 .rc-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#3a200b;border-radius:99px;padding:3px 10px}
 .rc-x,.rc-tog{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer}
-.rc-tog{font:700 20px Quicksand,sans-serif;padding:0;width:44px;flex:none}.rc-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
+.rc-tog{font:700 20px Quicksand,sans-serif;padding:0;width:44px;flex:none}
+.rc-snd{font:400 19px/1 system-ui,sans-serif;width:44px;flex:none;padding:0}.rc-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
 .rc-body{flex:1;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;padding:10px max(3vw,12px) max(20px,env(safe-area-inset-bottom));position:relative}
 .rc-wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .rc-view{position:relative;overflow:hidden;border-radius:16px;background:#2b5a1d;box-shadow:0 0 0 4px #5a3416,0 0 0 7px #a8c04a,0 12px 30px rgba(0,0,0,.5)}
@@ -159,7 +160,7 @@ function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   root=document.createElement("div");root.id="mfRace";if(ADMIN)root.classList.add("admin");root.hidden=true;
   root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Monkey Run");
-  root.innerHTML=`<div class="rc-top"><div class="rc-lft"><button type="button" class="rc-tog rc-adm" id="rcTog" aria-controls="rcSide" aria-expanded="false" aria-label="Réglages admin">⚙</button><span class="rc-tag rc-adm" id="rcTag">Admin</span></div>
+  root.innerHTML=`<div class="rc-top"><div class="rc-lft"><button type="button" class="rc-tog rc-adm" id="rcTog" aria-controls="rcSide" aria-expanded="false" aria-label="Réglages admin">⚙</button><button type="button" class="rc-x rc-snd" id="rcSound" aria-pressed="true" aria-label="Couper le son">🔊</button><span class="rc-tag rc-adm" id="rcTag">Admin</span></div>
     <h2><img class="rc-logo" src="${LOGO}" alt="Monkey Run"></h2>
     <div class="rc-ctl"><button type="button" class="rc-x" id="rcClose" aria-label="Fermer">✕</button></div></div>
   <div class="rc-body"><div class="rc-wrap">
@@ -187,7 +188,6 @@ function build(){
     <button type="button" class="rc-btn" id="rcTest">🎬 Course d'essai (sans mise, rien n'est enregistré)</button>
     <button type="button" class="rc-btn" id="rcNow">🏁 Lancer la vraie course maintenant (paie les paris)</button>
     <button type="button" class="rc-btn" id="rcAdd">+50 🍌 sur mon compte</button>
-    <label class="rc-chk"><input type="checkbox" id="rcSnd" checked> Sons</label>
     <p class="rc-note" id="rcAdmMsg" role="status"></p>
   </aside></div>
   <div class="rc-win" id="rcWin" hidden role="dialog" aria-modal="true" aria-label="Vainqueur de la course"><div class="rc-wrays"></div>
@@ -212,7 +212,8 @@ function build(){
   $("#rcTest").addEventListener("click",test);
   $("#rcNow").addEventListener("click",()=>admin("now",null,"Course lancée.").then(ok=>{if(ok&&S.last)play(S.last,true);}));
   $("#rcAdd").addEventListener("click",async()=>{try{const st=await rpc("mf_admin_bananas",{p_n:50});S.state=st;applyState(st);render();adminMsg("+50 bananes.");}catch(x){adminMsg(errText(x));}});
-  $("#rcSnd").addEventListener("change",e=>{sound=e.target.checked;});
+  $("#rcSound").addEventListener("click",()=>setSound(!sound));
+  setSound(sound);
   $("#rcWin").addEventListener("click",()=>closeWin());
   document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!root||root.hidden)return;if(!$("#rcWin").hidden){closeWin();return;}if($("#rcSide").classList.contains("open"))side(false);else close();});
   pose(null);
@@ -319,7 +320,7 @@ function play(L,live){if(!L||!L.result||playing)return;if(!root.hidden)side(fals
   $("#rcView").scrollIntoView({block:"nearest",behavior:reduce?"auto":"smooth"});
   cam=0;place();pose(pl,0);
   const big=$("#rcBig"),lead=$("#rcLead");let leader=-1;
-  const finish=()=>{playing.over=true;
+  const finish=()=>{playing.over=true;stopMusic(1800);
     order.forEach((k,r)=>{const el=SP[k-1];el.classList.toggle("win",r===0);el.classList.toggle("dim",r>2);const b=el.querySelector("b");b.textContent=r+1;b.className=r?"r"+(r+1):"";b.style.opacity=r<3?1:0;});
     big.innerHTML=`<span style="font-size:.5em">ARRIVÉE !</span>`;tone("sawtooth",880,440,.12,.4);
     lead.classList.remove("on");
@@ -328,7 +329,7 @@ function play(L,live){if(!L||!L.result||playing)return;if(!root.hidden)side(fals
     setTimeout(()=>{big.innerHTML="";celebrate(order[0]-1,L.odds?L.odds[order[0]-1]:null,mine,()=>{playing=null;render();});},reduce?300:1300);};
   if(reduce){pose(pl,total,true);finish();return;}
   // 3, 2, 1, partez !
-  const steps=["3","2","1","PARTEZ !"];
+  const steps=["3","2","1","PARTEZ !"];playing.t0=performance.now();startMusic();
   steps.forEach((s,i)=>setTimeout(()=>{big.innerHTML=`<span>${s}</span>`;tone(i<3?"square":"sawtooth",i<3?440:880,0,.12,i<3?.15:.45);},i*800));
   setTimeout(()=>{big.innerHTML="";const t0=performance.now();
     const frame=t=>{const el=(t-t0)/1000;pose(pl,el);
@@ -368,6 +369,18 @@ function closeWin(){const box=$("#rcWin");if(box.hidden)return;winT.forEach(clea
   const d=winDone;winDone=null;if(d)d();}
 function hexA(h,a){const n=parseInt(h.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
 
+/* ---------- musique de course (lancée au compte à rebours : le drop tombe en milieu de course, la fin s'éteint avec l'arrivée) ---------- */
+let music=null,fadeT=0;
+function musicEl(){if(!music){music=new Audio(MUSIC);music.preload="auto";}return music;}
+function unlockMusic(){  // appelé au toucher qui ouvre la course : sur iPhone, le son doit être « débloqué » par un geste
+  const m=musicEl();if(!m.paused)return;m.muted=true;const p=m.play();if(p&&p.then)p.then(()=>{if(m.muted){m.pause();m.currentTime=0;m.muted=false;}}).catch(()=>{m.muted=false;});else m.muted=false;}
+function startMusic(at){if(!sound)return;const m=musicEl();clearInterval(fadeT);m.muted=false;m.volume=.85;try{m.currentTime=at||0;}catch(e){}const p=m.play();if(p&&p.then)p.then(()=>{if(at&&Math.abs(m.currentTime-at)>.5)try{m.currentTime=at;}catch(e){}}).catch(()=>{});}
+function stopMusic(ms){if(!music||music.paused)return;clearInterval(fadeT);if(!ms){music.pause();return;}
+  const m=music,v0=m.volume,t0=performance.now();fadeT=setInterval(()=>{const k=(performance.now()-t0)/ms;if(k>=1){clearInterval(fadeT);m.pause();m.volume=v0;}else m.volume=Math.max(0,v0*(1-k));},50);}
+function setSound(on){sound=on;try{localStorage.setItem("mf-race-sound",on?"1":"0");}catch(e){}
+  if(root){const b=$("#rcSound");b.textContent=on?"🔊":"🔇";b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Couper le son":"Remettre le son");}
+  if(!on)stopMusic(0);else if(playing&&!playing.over&&playing.t0&&music&&music.paused)startMusic((performance.now()-playing.t0)/1000);}
+
 /* ---------- sons ---------- */
 let ac=null;
 function tone(type,f0,f1,vol,len){if(!sound||!ac)return;try{const t=ac.currentTime,o=ac.createOscillator(),gn=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+len*.8);gn.gain.setValueAtTime(vol,t);gn.gain.exponentialRampToValueAtTime(.001,t+len);o.connect(gn).connect(ac.destination);o.start(t);o.stop(t+len+.01);}catch(e){}}
@@ -377,6 +390,7 @@ const tick=()=>tone("square",1200,0,.03,.04);
 let opener=null,prevOverflow="";
 async function open(){
   if(!root)build();
+  if(sound)unlockMusic();
   root.hidden=false;opener=document.activeElement;prevOverflow=document.body.style.overflow;document.body.style.overflow="hidden";
   fit();render();$("#rcClose").focus({preventScroll:true});
   clearInterval(clock);clock=setInterval(when,1000);
@@ -385,7 +399,7 @@ async function open(){
     if(r.last&&r.last.day&&seen()!==String(r.last.day)&&now()-r.last.settled<86400000)play(r.last,true);}
   catch(e){msg(errText(e),"bad");}
 }
-function close(){closeWin();root.hidden=true;document.body.style.overflow=prevOverflow;clearInterval(clock);clock=null;clearInterval(poll);poll=null;if(opener&&opener.focus)opener.focus();}
+function close(){closeWin();stopMusic(0);root.hidden=true;document.body.style.overflow=prevOverflow;clearInterval(clock);clock=null;clearInterval(poll);poll=null;if(opener&&opener.focus)opener.focus();}
 
 /* ---------- démarrage : bouton visible par l'admin, et par tous une fois la course ouverte ---------- */
 async function boot(){
