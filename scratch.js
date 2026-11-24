@@ -481,7 +481,7 @@ async function boot(){
     status:async()=>{if(!(root&&!root.hidden))take(await rpc("mf_scratch_status"));const I=INFO;if(!I)return null;
       if(I.pending)return {line:"Un ticket t'attend, gratte-le !",hot:true};
       if(I.free)return {line:"Ticket gratuit dispo !",hot:true};
-      return {line:"Prochain ticket gratuit dans "+hm(+I.nextFree-(Date.now()+skew)),hot:false};}});
+      return {line:"Ticket gratuit déjà pris",pre:"Prochain dans ",in:+I.nextFree-(Date.now()+skew),hot:false};}});
   ORDER.forEach(e=>{const i=new Image();i.src=src(e);});{const i=new Image();i.src="packs/monkey-cash-titre.webp";}
 }
 window.MF_SCRATCH={open};

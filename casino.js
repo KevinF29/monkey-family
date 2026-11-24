@@ -11,6 +11,9 @@ const GAMES=[];                   // {id,name,icon,order,open,status,root,line,h
 let ADMIN=null,adminP=null,btn=null,hub=null,watch=null,want=null,wantT=0;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const useHub=()=>OPEN_TO_ALL||ADMIN;
+const CLOCK=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
+// durée lisible qui ne se coupe jamais (espaces insécables) : « 22 h 18 », « 45 min »
+const dur=ms=>{ms=Math.max(0,ms);const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return h?`${h}\u00a0h\u00a0${String(m).padStart(2,"0")}`:`${Math.max(1,m)}\u00a0min`;};
 
 function isAdmin(){
   if(!adminP)adminP=(async()=>{try{const u=await window.claude.use("user");ADMIN=!!(await u.isOwner());}catch(e){ADMIN=false;}return ADMIN;})();
@@ -38,6 +41,10 @@ const CSS=`
 .cs-tx b{display:block;font:400 21px/1.15 "Titan One",sans-serif;color:#fff}
 .cs-tx span{display:block;margin-top:3px;font-weight:700;font-size:14.5px;color:#d9cdb0}
 .cs-card.hot .cs-tx span{color:#ffd23f}
+.cs-tx .cs-when{display:inline-flex;align-items:center;gap:6px;margin-top:7px;padding:3px 10px 3px 8px;border-radius:999px;font-size:13.5px;font-weight:700;white-space:nowrap;
+ color:#ffe7a8;background:rgba(255,210,63,.12);border:1px solid rgba(255,210,63,.3)}
+.cs-when i{font-style:normal}
+.cs-when svg{width:14px;height:14px;flex:none}
 .cs-card .cs-dot{position:absolute;top:10px;right:12px;width:11px;height:11px;border-radius:50%;background:#ff4b45;box-shadow:0 0 0 3px rgba(255,75,69,.25)}
 .cs-card:not(.hot) .cs-dot{display:none}
 .cs-go{flex:none;font-size:22px;color:#ffd23f}
@@ -80,9 +87,13 @@ function build(){
 function paint(){
   if(!hub)return;const list=hub.querySelector("#csList");
   list.innerHTML=GAMES.map(g=>`<button type="button" class="cs-card${g.hot?" hot":""}" data-id="${g.id}"><span class="cs-ic">${g.icon}</span>
-    <span class="cs-tx"><b>${esc(g.name)}</b><span>${esc(g.line||"…")}</span></span><span class="cs-go" aria-hidden="true">›</span><i class="cs-dot"></i></button>`).join("");
+    <span class="cs-tx"><b>${esc(g.name)}</b><span>${esc(g.line||"…")}</span>${g.until?`<span class="cs-when">${CLOCK}<i>${esc(when(g))}</i></span>`:""}</span><span class="cs-go" aria-hidden="true">›</span><i class="cs-dot"></i></button>`).join("");
   list.querySelectorAll(".cs-card").forEach(c=>c.addEventListener("click",()=>launch(c.dataset.id)));
 }
+const when=g=>g.pre+dur(g.until-Date.now());
+// le compte à rebours avance tout seul tant que la salle est ouverte
+function tick(){if(!hub||hub.hidden)return;GAMES.forEach(g=>{const el=g.until&&hub.querySelector(`.cs-card[data-id="${g.id}"] .cs-when i`);if(el)el.textContent=when(g);});}
+setInterval(tick,15000);
 const gameOpen=()=>GAMES.some(g=>{const r=document.getElementById(g.root);return r&&!r.hidden;});
 let opener=null,prevOverflow="";
 function openHub(){
@@ -105,7 +116,7 @@ function launch(id){
 
 /* ---------- états ---------- */
 async function one(g){
-  try{const s=await g.status();if(s){g.line=s.line;g.hot=!!s.hot;}}catch(e){}
+  try{const s=await g.status();if(s){g.line=s.line;g.hot=!!s.hot;g.until=s.in!=null?Date.now()+s.in:0;g.pre=s.pre||"";}}catch(e){}
   if(g.btn){const b=g.btn.querySelector(".sbadge");b.hidden=!g.hot;}
 }
 let busy=null;

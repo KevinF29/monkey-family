@@ -416,8 +416,7 @@ async function boot(){
       if(L&&L.day&&L.result&&seen()!==String(L.day)&&t-L.settled<86400000)return {line:"Résultat de la course dispo !",hot:true};
       if(!N)return {line:"Pas de course prévue pour l'instant",hot:false};
       const ms=N.start-t;if(ms<=0)return {line:"Course en cours !",hot:true};
-      const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),dans=h?`${h} h ${String(m).padStart(2,"0")}`:`${Math.max(1,m)} min`;
-      return {line:N.mine?`Pari sur ${M[N.mine.m-1].n} · départ dans ${dans}`:`Paris ouverts · départ dans ${dans}`,hot:false};}});
+      return {line:N.mine?`Ton pari : ${M[N.mine.m-1].n}`:"Paris ouverts",pre:"Départ dans ",in:ms,hot:false};}});
   [TRACK,LOGO,...M.map((m,i)=>img(i))].forEach(s=>{const i=new Image();i.src=s;});
 }
 window.MF_RACE={open};
