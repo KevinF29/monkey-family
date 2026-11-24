@@ -58,8 +58,8 @@ function ensureBtn(){
   if(btn)return;
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   btn=document.createElement("button");btn.className="socialbtn";btn.id="casinoBtn";btn.type="button";btn.title="Casino";btn.setAttribute("aria-label","Casino");
-  // jeton de casino
-  btn.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="M5.6 5.6l2.9 2.9"/><path d="M15.5 15.5l2.9 2.9"/><path d="M18.4 5.6l-2.9 2.9"/><path d="M8.5 15.5l-2.9 2.9"/></svg><span class="sbadge" hidden></span>`;
+  // jeton de casino avec une banane au centre (redessiné d'après l'icône de Kévin)
+  btn.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.3"/><circle cx="12" cy="12" r="6.6" stroke-dasharray="1.6 3.58" transform="rotate(-6 12 12)"/><path d="M8.4 12.2c.7 2.5 2.9 3.6 5 3 1.8-.5 2.7-2.3 2.3-4.5-.8 1.8-2.5 2.8-4.5 2.7-1 0-1.9-.4-2.8-1.2z"/><path d="M15.7 10.7l.3-1.5"/></svg><span class="sbadge" hidden></span>`;
   btn.addEventListener("click",openHub);
   {const i=new Image();i.src=LOGO;}
   const rank=document.getElementById("rankBtn");if(rank)rank.after(btn);else document.body.appendChild(btn);
