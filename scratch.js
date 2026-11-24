@@ -58,14 +58,14 @@ const CSS=`
 #mfScratch:not(.admin) .sc-adm,body.preview #mfScratch .sc-adm{display:none!important}
 
 .sc-main{flex:1;min-height:0;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:4px 12px max(14px,env(safe-area-inset-bottom))}
-.sc-logo{flex:none;display:block;height:min(15svh,calc(94vw * .338),150px);width:auto;max-width:94vw;margin:0 0 -6px;pointer-events:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45))}
+.sc-logo{flex:0 1 auto;min-height:0;object-fit:contain;display:block;height:min(15svh,calc(94vw * .338),150px);width:auto;max-width:94vw;margin:0 0 -6px;pointer-events:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45))}
 .sc-ticket{--w:min(430px,94vw,calc((100svh - 262px - min(15svh,150px)) / 1.36));width:var(--w);flex:none;position:relative;border-radius:18px;padding:calc(var(--w)*.035);
  background:linear-gradient(160deg,#ffe28a,#ffb347 45%,#ff7b54);
  box-shadow:0 0 0 3px #8a3b12,0 14px 0 #5b2208,0 24px 44px rgba(0,0,0,.55)}
 .sc-ticket::before,.sc-ticket::after{content:"";position:absolute;top:calc(var(--w)*.108);width:18px;height:18px;border-radius:50%;background:#1f0b38;box-shadow:inset 0 0 0 3px #8a3b12}
 .sc-ticket::before{left:-9px}.sc-ticket::after{right:-9px}
 .sc-ticket.new{animation:scIn .55s cubic-bezier(.2,1.3,.4,1) both}
-@keyframes scIn{from{transform:translateY(60vh) rotate(8deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes scIn{from{transform:translateY(24px) scale(.88) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
 .sc-head{text-align:center;padding:0 0 calc(var(--w)*.03);border-bottom:3px dashed rgba(138,59,18,.45);margin-bottom:calc(var(--w)*.035)}
 .sc-sub{font:400 calc(var(--w)*.045)/1.2 "Titan One",sans-serif;color:#7a2e0a}
 .sc-zone{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#fff6dc;box-shadow:inset 0 0 0 3px #8a3b12}
@@ -190,6 +190,7 @@ function build(){
   </aside>
   <div class="sc-jp" id="scJp" hidden><div class="sc-rays"></div><div class="sc-jpin"><img class="sc-coin" id="scJpImg" alt=""><div class="sc-jpt" id="scJpT"></div><div class="sc-jps" id="scJpS"></div><button type="button" class="sc-btn" id="scJpOk">Récupérer</button></div></div>`;
   document.body.appendChild(root);
+  new ResizeObserver(()=>fit()).observe($(".sc-main"));
   $("#scClose").addEventListener("click",close);
   $("#scTog").addEventListener("click",()=>side(!$("#scSide").classList.contains("open")));
   $("#scSideX").addEventListener("click",()=>{side(false);$("#scTog").focus({preventScroll:true});});
@@ -207,6 +208,18 @@ function build(){
   foil.init($("#scZone"),$("#scFoil"),$("#scDust"));
   paintGrid();
 }
+/* taille du ticket calculée sur la place vraiment libre (encoche, barre du bas, petit écran) : rien ne se chevauche */
+function fit(){
+  if(!root||root.hidden)return;
+  const m=$(".sc-main"),t=$("#scTicket"),cs=getComputedStyle(m);
+  const avail=m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+  const vis=[...m.children].filter(e=>e!==t&&!e.hidden&&getComputedStyle(e).display!=="none");
+  const gap=parseFloat(cs.rowGap)||12;
+  const others=vis.reduce((a,e)=>a+e.offsetHeight,0)+gap*vis.length+16;  // +16 : ombre sous le ticket
+  t.style.setProperty("--w","200px");const ratio=t.offsetHeight/200;
+  const w=Math.floor(Math.max(200,Math.min(430,m.clientWidth*.94,(avail-others)/ratio)));
+  t.style.setProperty("--w",w+"px");
+}
 function side(o){$("#scSide").classList.toggle("open",o);$("#scTog").setAttribute("aria-expanded",String(o));if(o)render();}
 function say(t,cls){const r=$("#scRes");r.className="sc-res"+(cls?" "+cls:"");r.textContent=t;}
 function paintGrid(){
@@ -216,6 +229,7 @@ function paintGrid(){
 }
 function hm(ms){ms=Math.max(0,ms);const h=Math.floor(ms/3600000),m=Math.ceil((ms%3600000)/60000);return h?`${h} h ${String(m===60?59:m).padStart(2,"0")}`:`${Math.max(1,m)} min`;}
 function render(){
+  requestAnimationFrame(fit);
   if(!root)return;
   const b=balance();$("#scBal").textContent=b==null?"…":b;
   $("#scBuy").hidden=phase==="scratch";$("#scPlay").hidden=phase!=="scratch";
