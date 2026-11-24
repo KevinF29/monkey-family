@@ -54,7 +54,8 @@ const CSS=`
 .rc-top h2{margin:0;grid-column:2;display:flex;justify-content:center;line-height:0}
 .rc-logo{display:block;height:clamp(52px,12vw,92px);width:auto;max-width:100%;filter:drop-shadow(0 5px 6px rgba(0,0,0,.45))}
 .rc-ctl{grid-column:3;justify-self:end;display:flex;align-items:center;gap:8px}
-@media(max-width:700px){.rc-tag{display:none}.rc-logo{height:auto;width:min(62vw,300px)}#mfRace.admin .rc-logo{width:min(48vw,300px)}}
+.rc-lft{grid-column:1;justify-self:start;display:flex;align-items:center;gap:8px}
+@media(max-width:700px){.rc-tag{display:none}.rc-logo{height:auto;width:min(62vw,300px)}#mfRace.admin .rc-logo{width:min(56vw,300px)}}
 .rc-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#3a200b;border-radius:99px;padding:3px 10px}
 .rc-x,.rc-tog{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer}
 .rc-tog{font:700 20px Quicksand,sans-serif;padding:0;width:44px;flex:none}.rc-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
@@ -111,9 +112,10 @@ const CSS=`
 .rc-pill{display:inline-block;background:#3a200b;color:#ffd23f;border-radius:12px;padding:4px 12px;font-weight:700;box-shadow:inset 0 0 0 2px #5a3416}
 .rc-pill b{font:400 20px "Titan One",sans-serif;color:#fff;margin-left:4px}
 .rc-rules{font-size:13px;color:#cfe0b0;margin:0}
-.rc-side{position:absolute;top:0;right:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;background:#0c2213;border-left:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;box-shadow:-20px 0 40px rgba(0,0,0,.5);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
+.rc-side{position:absolute;top:0;left:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;background:#0c2213;border-right:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;box-shadow:20px 0 40px rgba(0,0,0,.5);transform:translateX(-105%);transition:transform .25s ease;visibility:hidden}
 .rc-side.open{transform:none;visibility:visible}
 .rc-side:not(.open){display:none}
+.rc-sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .rc-side h3{margin:0;font:400 20px "Titan One",sans-serif;color:#ffd23f}
 .rc-note{margin:0;font-size:13px;color:#cfe0b0}
 .rc-btn{min-height:44px;border-radius:10px;border:2px solid #5a3416;background:#3a200b;color:#fff3cf;font:700 14px Quicksand,sans-serif;padding:8px 12px;cursor:pointer;text-align:left}
@@ -157,9 +159,9 @@ function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
   root=document.createElement("div");root.id="mfRace";if(ADMIN)root.classList.add("admin");root.hidden=true;
   root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Monkey Run");
-  root.innerHTML=`<div class="rc-top"><h2><img class="rc-logo" src="${LOGO}" alt="Monkey Run"></h2><div class="rc-ctl"><span class="rc-tag rc-adm" id="rcTag">Admin</span>
-    <button type="button" class="rc-tog rc-adm" id="rcTog" aria-controls="rcSide" aria-expanded="false" aria-label="Réglages admin">⚙</button>
-    <button type="button" class="rc-x" id="rcClose" aria-label="Fermer">✕</button></div></div>
+  root.innerHTML=`<div class="rc-top"><div class="rc-lft"><button type="button" class="rc-tog rc-adm" id="rcTog" aria-controls="rcSide" aria-expanded="false" aria-label="Réglages admin">⚙</button><span class="rc-tag rc-adm" id="rcTag">Admin</span></div>
+    <h2><img class="rc-logo" src="${LOGO}" alt="Monkey Run"></h2>
+    <div class="rc-ctl"><button type="button" class="rc-x" id="rcClose" aria-label="Fermer">✕</button></div></div>
   <div class="rc-body"><div class="rc-wrap">
     <div class="rc-view" id="rcView"><div class="rc-world" id="rcWorld">${M.map((m,i)=>`<div class="rc-sp" data-i="${i}"><img src="${img(i)}" alt="${esc(m.n)}"><b></b></div>`).join("")}</div>
       <div class="rc-hud"><div class="rc-lead" id="rcLead" aria-live="polite"></div></div>
@@ -177,7 +179,7 @@ function build(){
     <div class="rc-card rc-res" id="rcRes" hidden></div>
   </div>
   <aside class="rc-side rc-adm" id="rcSide" aria-label="Réglages admin">
-    <h3>Réglages admin</h3>
+    <div class="rc-sidehead"><h3>Réglages admin</h3><button type="button" class="rc-x" id="rcSideX" aria-label="Fermer les réglages">✕</button></div>
     <label class="rc-chk"><input type="checkbox" id="rcOpen"> Ouverte à tous les joueurs</label>
     <p class="rc-note">Tant que c'est décoché, seul toi vois la course et rien n'est annoncé dans le fil d'actu.</p>
     <label class="rc-note" for="rcForce">Gagnant de la prochaine course</label>
@@ -196,6 +198,7 @@ function build(){
   new ResizeObserver(fit).observe($("#rcView").parentElement);
   $("#rcClose").addEventListener("click",close);
   $("#rcTog").addEventListener("click",()=>side(!$("#rcSide").classList.contains("open")));
+  $("#rcSideX").addEventListener("click",()=>{side(false);$("#rcTog").focus();});
   $("#rcList").addEventListener("click",e=>{const b=e.target.closest(".rc-m");if(!b||playing)return;pick=+b.dataset.m;renderBet();});
   $("#rcMinus").addEventListener("click",()=>{amount=Math.max(MIN,amount-1);renderBet();});
   $("#rcPlus").addEventListener("click",()=>{amount=Math.min(MAX,amount+1);renderBet();});
