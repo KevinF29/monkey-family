@@ -82,7 +82,7 @@ function legacy(g){
 function build(){
   hub=document.createElement("div");hub.id="mfCasino";hub.hidden=true;hub.setAttribute("role","dialog");hub.setAttribute("aria-modal","true");hub.setAttribute("aria-label","Casino");
   hub.innerHTML=`<div class="cs-top"><h2><img src="${LOGO}" alt="Monkey Family Casino"></h2><button type="button" class="cs-x" id="csClose" aria-label="Fermer">✕</button></div>
-    <div class="cs-list" id="csList"></div><p class="cs-note">Joue avec modération, singe 🐒</p>`;
+    <div class="cs-list" id="csList"></div><p class="cs-note">N'oubliez jamais qu'à la fin, c'est toujours le Casino qui gagne 🎰</p>`;
   document.body.appendChild(hub);
   hub.querySelector("#csClose").addEventListener("click",closeHub);
   hub.addEventListener("keydown",e=>{if(e.key==="Escape"&&!gameOpen())closeHub();});
