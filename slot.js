@@ -1,4 +1,4 @@
-/* Monkey Family — Machine à bananes (mode caché : visible seulement par l'admin)
+/* Monkey Family — Machine à bananes (ouverte à tous ; réglages et résultats forcés réservés à l'admin)
    1 banane le tour, 10 tours par jour, table de gains ci-dessous.
    Le tirage, les gains, les limites et l'aide du singe sont décidés par le serveur (mf_slot_spin) :
    cette page ne fait qu'animer les rouleaux jusqu'au résultat reçu, puis affiche le nouvel état du jeu. */
@@ -39,7 +39,7 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------- état (le serveur fait foi) ---------- */
 let S={bal:0,left:TURNS,feed:[],spins:0,spent:0,won:0,boosters:0,mins:0};
-let ME="Admin",force="",busy=false,sound=true,loaded=false;
+let ME="Admin",ADMIN=false,force="",busy=false,sound=true,loaded=false;
 const ERR={no_bananas:"Pas assez de bananes.",slot_limit:"Plus de tours aujourd'hui : reviens demain !",slot_closed:"La machine n'est pas encore ouverte.",not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
@@ -113,6 +113,7 @@ const CSS=`
 .sl-side{position:absolute;top:0;right:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;overscroll-behavior:contain;background:#0c2213;border-left:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;box-shadow:-20px 0 40px rgba(0,0,0,.5);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
 .sl-side.open{transform:none;visibility:visible}
 .sl-side>*{flex-shrink:0}
+#mfSlot:not(.admin) .sl-adm,body.preview #mfSlot .sl-adm{display:none!important}
 .sl-side label.sl-chk{flex-wrap:wrap;height:auto}
 @media(max-width:560px){.sl-top h2{font-size:21px}.sl-tag{display:none}}
 .sl-tog{min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:700 14px Quicksand,sans-serif;padding:0 12px;cursor:pointer}
@@ -164,8 +165,8 @@ function icons(k){const [n,e]=k.split(":");const im=`<img src="${src(e)}" alt="$
 function prize(r){return r.t==="ban"?r.v+` <img src="${src("banane")}" alt="bananes">`:esc(short(r));}
 function build(){
   const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
-  root=document.createElement("div");root.id="mfSlot";root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Machine à bananes");
-  root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag">Admin seulement</span><button type="button" class="sl-tog" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
+  root=document.createElement("div");root.id="mfSlot";if(ADMIN)root.classList.add("admin");root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Machine à bananes");
+  root.innerHTML=LEAF+`<div class="sl-top"><h2>Machine à bananes</h2><span class="sl-tag sl-adm">Admin</span><button type="button" class="sl-tog sl-adm" id="slTog" aria-controls="slSide" aria-expanded="false">Réglages</button><button type="button" class="sl-x" id="slClose" aria-label="Fermer">✕</button></div>
   <div class="sl-body">
    <div class="sl-stage"><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
@@ -179,7 +180,7 @@ function build(){
      <div class="sl-pills"><div class="sl-pill">Bananes<b id="slBal"></b></div><div class="sl-pill">Tours<b id="slLeft"></b></div></div></div>
     <div class="sl-res" id="slRes" role="status">Mise 1 banane et tente ta chance.</div>
    </div></div>
-   <aside class="sl-side" id="slSide" aria-label="Réglages admin">
+   <aside class="sl-side sl-adm" id="slSide" aria-label="Réglages admin">
     <h3>Réglages admin</h3>
     <p class="sl-note">Ici tout est réel : tes vraies bananes sont misées, et les boosters et heures d'attente gagnés vont sur ton compte.</p>
     <label class="sl-chk" for="slForce" style="flex-wrap:wrap">Prochain tour
@@ -223,7 +224,7 @@ function render(){
     .map(([v,l])=>`<div class="sl-stat"><b>${esc(v)}</b><span>${l}</span></div>`).join("");
 }
 function hit(k){root.querySelectorAll(".sl-row").forEach(x=>x.classList.toggle("hit",!!k&&x.dataset.k===k));}
-function post(t,c){S.feed.unshift({t,c});S.feed=S.feed.slice(0,20);}
+function post(t,c){if(!ADMIN)return;S.feed.unshift({t,c});S.feed=S.feed.slice(0,20);}
 
 /* ---------- rouleaux : vrai défilement ---------- */
 const REELS=[];
@@ -341,10 +342,10 @@ function close(){if(busy)return;root.hidden=true;document.body.style.overflow=pr
 async function boot(){
   if(!window.claude||!window.claude.use)return;
   let user=null;try{user=await window.claude.use("user");}catch(e){}
-  let admin=false;try{admin=user?await user.isOwner():false;}catch(e){}
-  if(!admin)return;
+  if(!user||typeof window.MF_RPC!=="function")return;
+  try{ADMIN=!!(await user.isOwner());}catch(e){}
   try{const me=await user.me();if(me&&me.name)ME=me.name;}catch(e){}
-  // bouton rond « 777 », sous le bouton Classement
+  // bouton rond de la machine, sous le bouton Classement (pour tous les joueurs)
   if(!document.getElementById("slotBtn")){
     const st=document.createElement("style");
     st.textContent=`#slotBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 112px)}`;
