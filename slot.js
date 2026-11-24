@@ -77,7 +77,7 @@ const CSS=`
 .sl-sign::before,.sl-sign::after{content:"";position:absolute;top:-40px;width:3px;height:42px;background:#c9a46a}
 .sl-sign::before{left:22px}.sl-sign::after{right:22px}
 .sl-tb{position:relative;z-index:1;margin:16px 4px 4px;padding:12px 12px 10px;border-radius:12px;background:radial-gradient(ellipse at 50% 0,#1f4a28,#0c2213 75%);box-shadow:0 0 0 4px #c9a046,0 0 0 7px #5a3416,inset 0 0 18px rgba(0,0,0,.6)}
-.sl-tbt{display:block;width:100%;background:none;border:0;padding:0;cursor:pointer;text-align:center;font:400 18px/1 "Titan One",sans-serif;color:#ffd23f;margin-bottom:8px}
+.sl-tbt{display:block;width:100%;text-align:center;font:400 18px/1 "Titan One",sans-serif;color:#ffd23f;margin-bottom:8px}
 .sl-tbg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
 .sl-row{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:8px;font-weight:700;font-size:13.5px;line-height:1.2}
 .sl-row .ic{display:flex;flex:none;align-items:center}.sl-row .ic img{width:24px;height:24px}.sl-row .ic i{width:24px;text-align:center;color:#8fae6a;font-style:normal;font-size:13px}
@@ -134,7 +134,6 @@ const CSS=`
 #mfSlot.wide .sl-board .sl-rules{font-size:13px}
 #mfSlot.wide .sl-reel{height:210px}
 .sl-board{display:none}
-.sl-chev{display:none}
 /* téléphone : la machine remplit tout l'écran (largeur et hauteur), les rouleaux prennent la place libre, la table des gains se déplie à la demande */
 #mfSlot.fill .sl-top{position:absolute;top:0;right:0;padding:max(8px,env(safe-area-inset-top)) 10px 0}
 #mfSlot.fill .sl-tog{min-height:40px;font-size:13px;padding:0 10px}#mfSlot.fill .sl-x{min-width:40px;min-height:40px}
@@ -153,10 +152,7 @@ const CSS=`
 /* table dépliée sur un petit écran : elle défile dans son cadre au lieu de rapetisser la machine */
 #mfSlot.fill .sl-tb.open{flex:0 1 auto;min-height:110px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 #mfSlot.fill .sl-tb.open .sl-tbt{position:sticky;top:-10px;z-index:1;background:#0f2a17;padding:4px 0;margin:-4px 0 4px;border-radius:8px}
-#mfSlot.fill .sl-chev{display:inline-block;margin-left:6px;transition:transform .2s}
-#mfSlot.fill .sl-tb.open .sl-chev{transform:rotate(180deg)}
-#mfSlot.fill .sl-tb:not(.open) .sl-row:not(.jk),#mfSlot.fill .sl-tb:not(.open) .sl-rules{display:none}
-#mfSlot.fill .sl-tb:not(.open) .sl-row.jk{margin-bottom:0}
+
 #mfSlot:not(.admin) .sl-adm,body.preview #mfSlot .sl-adm{display:none!important}
 .sl-side label.sl-chk{flex-wrap:wrap;height:auto}
 @media(max-width:560px){.sl-tag{display:none}}
@@ -215,9 +211,9 @@ function build(){
    <div class="sl-stage"><div class="sl-board" id="slBoard"></div><div class="sl-col"><img class="sl-logo" src="packs/banana-machine-titre.webp" alt="Banana Machine" width="1400" height="474"><div class="sl-m" id="slM">
     <svg class="sl-vine l" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg><svg class="sl-vine r" viewBox="0 0 230 190" aria-hidden="true"><use href="#slVine"/></svg>
     <div class="sl-sign">MONKEY FAMILY<small>Trois singes = 7 boosters</small></div>
-    <div class="sl-tb" id="slTb"><button type="button" class="sl-tbt" id="slTbBtn" aria-expanded="false">Table des gains<span class="sl-chev" aria-hidden="true">▾</span></button><div class="sl-tbg">${ORDER.map(k=>{const [n,e]=k.split(":");const r=n==="3"?TRI[e]:n==="2"?PAIR.find(p=>p[0]===e)[1]:{t:"ban",v:1};
+    <div class="sl-tb" id="slTb"><div class="sl-tbt">Table des gains</div><div class="sl-tbg">${ORDER.map(k=>{const [n,e]=k.split(":");const r=n==="3"?TRI[e]:n==="2"?PAIR.find(p=>p[0]===e)[1]:{t:"ban",v:1};
       return `<div class="sl-row${k==="3:singe"?" jk":""}" data-k="${k}"><span class="ic">${icons(k)}</span>${k==="3:singe"?"":'<span class="dt"></span>'}<span class="pz">${prize(r)}</span></div>`;}).join("")}</div>
-     <p class="sl-rules">1 banane le tour · 10 tours par jour · les paires comptent n'importe où · la banane seule ne compte que sur le 1er rouleau · un seul gain par tour, le plus haut</p></div>
+     </div>
     <div class="sl-lights" aria-hidden="true">${"<i></i>".repeat(11)}</div>
     <div class="sl-win" aria-label="Rouleaux">${[0,1,2].map(i=>`<div class="sl-reel" id="slR${i}"><div class="sl-cells"></div></div>`).join("")}</div>
     <div class="sl-ctl"><button type="button" class="sl-go" id="slGo">Lancer · 1 <img src="${src("banane")}" alt="banane"></button>
@@ -247,7 +243,6 @@ function build(){
     return {el,box,strip,imgs,p:Math.floor(Math.random()*strip.length),ch:80,h:160};}));
   new ResizeObserver(()=>REELS.forEach(R=>{layout(R);paint(R);})).observe($("#slM"));
   new ResizeObserver(fit).observe($(".sl-body"));new ResizeObserver(fit).observe($(".sl-stage"));
-  $("#slTbBtn").addEventListener("click",e=>{const t=$("#slTb");const o=t.classList.toggle("open");tbUser=o;e.currentTarget.setAttribute("aria-expanded",String(o));fit();});
   $("#slTog").addEventListener("click",()=>side(!$("#slSide").classList.contains("open")));
   $("#slClose").addEventListener("click",close);
   $("#slGo").addEventListener("click",spin);
@@ -258,7 +253,7 @@ function build(){
   $("#slJpBox").addEventListener("click",closeJp);
   document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if(!$("#slJpBox").hidden)closeJp();else if($("#slSide").classList.contains("open"))side(false);else close();});
 }
-let fitting=false,tbUser=null;
+let fitting=false;
 function fit(){if(!root||root.hidden||fitting)return;fitting=true;
   const b=$(".sl-body"),st=$(".sl-stage");
   // PC / écran large : table des gains à gauche, sinon au-dessus des rouleaux
@@ -266,14 +261,12 @@ function fit(){if(!root||root.hidden||fitting)return;fitting=true;
   if(wide!==root.classList.contains("wide")){root.classList.toggle("wide",wide);
     const tb=$("#slTb");if(wide)$("#slBoard").appendChild(tb);else $("#slM").insertBefore(tb,$(".sl-lights"));}
   // téléphone : remplir tout l'écran ; si même ainsi ça ne tient pas (très petit écran), on réduit l'ensemble
-  // la table des gains est dépliée par défaut quand elle tient, repliée sinon (sauf choix du joueur)
   root.classList.toggle("fill",!wide&&b.clientWidth<700);
   if(root.classList.contains("fill")){st.style.transform="";
     const tb=$("#slTb"),fits=()=>{const bb=b.getBoundingClientRect(),m=$("#slRes").getBoundingClientRect();return m.bottom<=bb.bottom-6&&$(".sl-reel").clientHeight>=110;};
-    const whole=()=>fits()&&tb.scrollHeight<=tb.clientHeight+1;  // la table entière tient sans défiler
-    if(tbUser===null){tb.classList.add("open");if(!whole())tb.classList.remove("open");}
+    tb.classList.add("open");  // la table des gains est toujours dépliée (elle défile dans son cadre si l'écran est petit)
     if(!fits())root.classList.remove("fill");
-    $("#slTbBtn").setAttribute("aria-expanded",String(tb.classList.contains("open")));}
+}
   if(!root.classList.contains("fill")){
     const k=Math.min(wide?1.7:1,(b.clientWidth-16)/st.offsetWidth,(b.clientHeight-10)/st.offsetHeight);
     st.style.transform=`translate(-50%,-50%) scale(${k>0?k:1})`;}
