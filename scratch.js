@@ -357,11 +357,11 @@ const foil=(()=>{
     for(let s=0;s<=steps;s++){const x=a.x+(b.x-a.x)*s/steps,y=a.y+(b.y-a.y)*s/steps;
       const i0=Math.max(0,Math.floor((x-r)*MG)),i1=Math.min(MG-1,Math.floor((x+r)*MG)),j0=Math.max(0,Math.floor((y-r)*MG)),j1=Math.min(MG-1,Math.floor((y+r)*MG));
       for(let i=i0;i<=i1;i++)for(let j=j0;j<=j1;j++){const cx=(i+.5)/MG,cy=(j+.5)/MG;if((cx-x)**2+(cy-y)**2<=r*r)mask[j*MG+i]=1;}}}
-  /* on gratte jusqu'au bout : le résultat ne tombe que quand les 9 cases sont grattées (92 % de chacune) ;
+  /* on gratte jusqu'au bout : le résultat ne tombe que quand les 9 cases sont bien grattées (80 % de chacune) ;
      les dernières miettes d'argent partent alors toutes seules */
   function check(){if(phase!=="scratch"||gone)return;const cell=Array(9).fill(0);
     for(let j=0;j<MG;j++)for(let i=0;i<MG;i++)if(mask[j*MG+i])cell[Math.min(2,Math.floor(j*3/MG))*3+Math.min(2,Math.floor(i*3/MG))]++;
-    const per=MG*MG/9;if(cell.every(c=>c/per>=.92))reveal(false);}
+    const per=MG*MG/9;if(cell.every(c=>c/per>=.8))reveal(false);}
   function finish(){gone=true;cv.classList.add("sc-gone");down=false;scrape(0);if(!reduce)for(let i=0;i<40;i++)flake({x:Math.random(),y:Math.random()});}
   function reset(){segs=[];mask=new Uint8Array(MG*MG);started=false;gone=false;down=false;cv.classList.remove("sc-gone");size();cv.classList.toggle("sc-off",phase!=="scratch");}
   /* paillettes argentées qui tombent sous le doigt */
