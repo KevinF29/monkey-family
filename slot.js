@@ -112,6 +112,9 @@ const CSS=`
 .sl-m.shake{animation:slShake .5s 3}@keyframes slShake{25%{transform:translate(-6px,2px) rotate(-.6deg)}50%{transform:translate(5px,-2px) rotate(.5deg)}75%{transform:translate(-3px,1px)}}
 .sl-side{position:absolute;top:0;right:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;overscroll-behavior:contain;background:#0c2213;border-left:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;box-shadow:-20px 0 40px rgba(0,0,0,.5);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
 .sl-side.open{transform:none;visibility:visible}
+.sl-side>*{flex-shrink:0}
+.sl-side label.sl-chk{flex-wrap:wrap;height:auto}
+@media(max-width:560px){.sl-top h2{font-size:21px}.sl-tag{display:none}}
 .sl-tog{min-height:44px;border-radius:12px;border:2px solid #5a3416;background:#3a200b;color:#ffd23f;font:700 14px Quicksand,sans-serif;padding:0 12px;cursor:pointer}
 .sl-tog[aria-expanded=true]{background:#ffd23f;color:#3a200b}
 .sl-side h3{margin:0;font:400 20px "Titan One",sans-serif;color:#ffd23f}
