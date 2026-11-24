@@ -117,6 +117,8 @@ const CSS=`
 .sl-side{position:absolute;top:0;right:0;bottom:0;z-index:7;width:min(380px,100%);overflow-y:auto;overscroll-behavior:contain;background:#0c2213;border-left:2px solid #2a5a33;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;box-shadow:-20px 0 40px rgba(0,0,0,.5);transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
 .sl-side.open{transform:none;visibility:visible}
 .sl-side>*{flex-shrink:0}
+.sl-sidehead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#mfSlot.fill .sl-side{padding-top:max(12px,env(safe-area-inset-top))}
 /* grand écran (PC) : la table des gains passe à gauche de la machine, et tout peut grossir */
 #mfSlot.wide .sl-stage{display:flex;align-items:center;gap:34px;width:auto}
 #mfSlot.wide .sl-col{width:560px;flex:none}
@@ -222,7 +224,7 @@ function build(){
     <div class="sl-res" id="slRes" role="status">Mise 1 banane et tente ta chance.</div>
    </div></div></div>
    <aside class="sl-side sl-adm" id="slSide" aria-label="Réglages admin">
-    <h3>Réglages admin</h3>
+    <div class="sl-sidehead"><h3>Réglages admin</h3><button type="button" class="sl-x" id="slSideX" aria-label="Fermer les réglages">✕</button></div>
     <p class="sl-note">Ici tout est réel : tes vraies bananes sont misées, et les boosters et heures d'attente gagnés vont sur ton compte.</p>
     <label class="sl-chk" for="slForce" style="flex-wrap:wrap">Prochain tour
      <select id="slForce" style="min-height:44px;border-radius:10px;border:2px solid #5a3416;background:#3a200b;color:#fff3cf;font:700 14px Quicksand,sans-serif;padding:0 8px">
@@ -244,6 +246,7 @@ function build(){
     return {el,box,strip,imgs,p:Math.floor(Math.random()*strip.length),ch:80,h:160};}));
   new ResizeObserver(()=>REELS.forEach(R=>{layout(R);paint(R);})).observe($("#slM"));
   new ResizeObserver(fit).observe($(".sl-body"));new ResizeObserver(fit).observe($(".sl-stage"));
+  $("#slSideX").addEventListener("click",()=>{side(false);$("#slTog").focus({preventScroll:true});});
   $("#slTog").addEventListener("click",()=>side(!$("#slSide").classList.contains("open")));
   $("#slClose").addEventListener("click",close);
   $("#slGo").addEventListener("click",spin);
