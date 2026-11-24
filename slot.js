@@ -149,6 +149,10 @@ const CSS=`
 #mfSlot.fill .sl-lights{margin:12px 2px 4px}
 #mfSlot.fill .sl-ctl{margin-top:16px}#mfSlot.fill .sl-res{margin-top:10px;min-height:48px}
 #mfSlot.fill .sl-tb{margin-top:6px}
+#mfSlot.fill .sl-win{min-height:150px}
+/* table dépliée sur un petit écran : elle défile dans son cadre au lieu de rapetisser la machine */
+#mfSlot.fill .sl-tb.open{flex:0 1 auto;min-height:110px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#mfSlot.fill .sl-tb.open .sl-tbt{position:sticky;top:-10px;z-index:1;background:#0f2a17;padding:4px 0;margin:-4px 0 4px;border-radius:8px}
 #mfSlot.fill .sl-chev{display:inline-block;margin-left:6px;transition:transform .2s}
 #mfSlot.fill .sl-tb.open .sl-chev{transform:rotate(180deg)}
 #mfSlot.fill .sl-tb:not(.open) .sl-row:not(.jk),#mfSlot.fill .sl-tb:not(.open) .sl-rules{display:none}
@@ -266,8 +270,8 @@ function fit(){if(!root||root.hidden||fitting)return;fitting=true;
   root.classList.toggle("fill",!wide&&b.clientWidth<700);
   if(root.classList.contains("fill")){st.style.transform="";
     const tb=$("#slTb"),fits=()=>{const bb=b.getBoundingClientRect(),m=$("#slRes").getBoundingClientRect();return m.bottom<=bb.bottom-6&&$(".sl-reel").clientHeight>=110;};
-    if(tbUser===null)tb.classList.add("open");
-    if(!fits()&&tbUser===null)tb.classList.remove("open");
+    const whole=()=>fits()&&tb.scrollHeight<=tb.clientHeight+1;  // la table entière tient sans défiler
+    if(tbUser===null){tb.classList.add("open");if(!whole())tb.classList.remove("open");}
     if(!fits())root.classList.remove("fill");
     $("#slTbBtn").setAttribute("aria-expanded",String(tb.classList.contains("open")));}
   if(!root.classList.contains("fill")){
