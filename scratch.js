@@ -466,29 +466,23 @@ function close(){closeJp();side(false);root.hidden=true;document.body.style.over
   if(phase==="done"){phase="none";T=null;paintGrid();foil.reset();say(idleText());}
   if(opener&&opener.focus)opener.focus();}
 
-/* ---------- bouton rond (sous la Banana Machine et la Monkey Run), avec une pastille quand un ticket attend ---------- */
-let btn=null;
-function badge(){if(!btn||!INFO)return;const n=(INFO.free?1:0)||(INFO.pending?1:0),b=btn.querySelector(".sbadge");b.hidden=!n;b.textContent="1";
-  btn.setAttribute("aria-label",n?"Monkey Cash : un ticket t'attend":"Monkey Cash, ticket à gratter");}
+/* ---------- démarrage : le ticket s'inscrit au Casino ---------- */
+function badge(){}   // la pastille est tenue par le Casino (casino.js), rafraîchie à la fermeture du ticket
 async function boot(){
   if(!window.claude||!window.claude.use)return;
   try{USER=await window.claude.use("user");}catch(e){}
   if(!USER||typeof window.MF_RPC!=="function")return;
   try{ADMIN=!!(await USER.isOwner());}catch(e){}
   let ok=ADMIN;if(!ok){try{ok=!!(await rpc("mf_scratch_open"));}catch(e){}}
-  if(!ok||document.getElementById("scratchBtn"))return;
-  btn=document.createElement("button");btn.className="socialbtn";btn.id="scratchBtn";btn.type="button";btn.title="Monkey Cash";btn.setAttribute("aria-label","Monkey Cash, ticket à gratter");
-  btn.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l0 2"/><path d="M15 11l0 2"/><path d="M15 17l0 2"/><path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2"/></svg><span class="sbadge" hidden></span>`;
-  btn.addEventListener("click",open);
-  // place sous les boutons ronds déjà là (la Monkey Run crée le sien après un appel au serveur, d'où les nouveaux essais)
-  const place=()=>{const above=["slotBtn","raceBtn"].filter(id=>document.getElementById(id)).length;btn.style.top=`calc(max(12px,env(safe-area-inset-top,0px)) + ${112+56*above}px)`;};
-  place();[500,1500,4000].forEach(t=>setTimeout(place,t));
-  const prev=document.getElementById("raceBtn")||document.getElementById("slotBtn")||document.getElementById("rankBtn");if(prev)prev.after(btn);else document.body.appendChild(btn);
+  if(!ok||!window.MF_CASINO)return;
+  // le ticket s'inscrit au Casino (bouton rond commun sous le Classement) ; la pastille s'allume quand un ticket attend
+  window.MF_CASINO.add({id:"scratch",name:"Monkey Cash",order:3,root:"mfScratch",open,
+    icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l0 2"/><path d="M15 11l0 2"/><path d="M15 17l0 2"/><path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2"/></svg>`,
+    status:async()=>{if(!(root&&!root.hidden))take(await rpc("mf_scratch_status"));const I=INFO;if(!I)return null;
+      if(I.pending)return {line:"Un ticket t'attend, gratte-le !",hot:true};
+      if(I.free)return {line:"Ticket gratuit dispo !",hot:true};
+      return {line:"Prochain ticket gratuit dans "+hm(+I.nextFree-(Date.now()+skew)),hot:false};}});
   ORDER.forEach(e=>{const i=new Image();i.src=src(e);});{const i=new Image();i.src="packs/monkey-cash-titre.webp";}
-  const refresh=()=>{if(root&&!root.hidden)return;rpc("mf_scratch_status").then(take,()=>{});};
-  refresh();
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refresh();});
-  setInterval(refresh,10*60*1000);   // à minuit, la pastille du ticket gratuit revient sans relancer l'appli
 }
 window.MF_SCRATCH={open};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

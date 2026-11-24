@@ -408,14 +408,16 @@ async function boot(){
   if(!USER||typeof window.MF_RPC!=="function")return;
   try{ADMIN=!!(await USER.isOwner());}catch(e){}
   let ok=ADMIN;if(!ok){try{ok=!!(await rpc("mf_race_open"));}catch(e){}}
-  if(!ok||document.getElementById("raceBtn"))return;
-  const st=document.createElement("style");
-  st.textContent=`#raceBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 168px)}`;
-  document.head.appendChild(st);
-  const b=document.createElement("button");b.className="socialbtn";b.id="raceBtn";b.type="button";b.setAttribute("aria-label","Monkey Run");b.title="Monkey Run";
-  b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h13l-2 4 2 4H5"/><path d="M9 4v8"/><path d="M13 4v8"/><path d="M5 8h13"/></svg>`;
-  b.addEventListener("click",open);
-  const prev=document.getElementById("slotBtn")||document.getElementById("rankBtn");if(prev)prev.after(b);else document.body.appendChild(b);
+  if(!ok||!window.MF_CASINO)return;
+  // la course s'inscrit au Casino (bouton rond commun sous le Classement)
+  window.MF_CASINO.add({id:"race",name:"Monkey Run",order:2,root:"mfRace",open,
+    icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h13l-2 4 2 4H5"/><path d="M9 4v8"/><path d="M13 4v8"/><path d="M5 8h13"/></svg>`,
+    status:async()=>{const r=await rpc("mf_race_status"),t=r.now?+r.now:Date.now(),L=r.last,N=r.next;
+      if(L&&L.day&&L.result&&seen()!==String(L.day)&&t-L.settled<86400000)return {line:"Résultat de la course dispo !",hot:true};
+      if(!N)return {line:"Pas de course prévue pour l'instant",hot:false};
+      const ms=N.start-t;if(ms<=0)return {line:"Course en cours !",hot:true};
+      const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),dans=h?`${h} h ${String(m).padStart(2,"0")}`:`${Math.max(1,m)} min`;
+      return {line:N.mine?`Pari sur ${M[N.mine.m-1].n} · départ dans ${dans}`:`Paris ouverts · départ dans ${dans}`,hot:false};}});
   [TRACK,LOGO,...M.map((m,i)=>img(i))].forEach(s=>{const i=new Image();i.src=s;});
 }
 window.MF_RACE={open};

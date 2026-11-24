@@ -407,16 +407,11 @@ async function boot(){
   if(!user||typeof window.MF_RPC!=="function")return;
   try{ADMIN=!!(await user.isOwner());}catch(e){}
   try{const me=await user.me();if(me&&me.name)ME=me.name;}catch(e){}
-  // bouton rond de la machine, sous le bouton Classement (pour tous les joueurs)
-  if(!document.getElementById("slotBtn")){
-    const st=document.createElement("style");
-    st.textContent=`#slotBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + 112px)}`;
-    document.head.appendChild(st);
-    const b=document.createElement("button");b.className="socialbtn";b.id="slotBtn";b.type="button";b.setAttribute("aria-label","Banana Machine");b.title="Banana Machine";
-    b.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5v-1.5a.5 .5 0 0 1 .5 -.5h7a.5 .5 0 0 1 .5 .5v1.5"/><rect x="3" y="5" width="14" height="15.5" rx="2"/><rect x="5.5" y="8" width="9" height="5" rx="1"/><path d="M8.5 8v5"/><path d="M11.5 8v5"/><path d="M7.5 17h5"/><path d="M17 14h2a1 1 0 0 0 1 -1v-5.5"/><circle cx="20" cy="5.5" r="1.5"/></svg>`;
-    b.addEventListener("click",open);
-    const rank=document.getElementById("rankBtn");if(rank)rank.after(b);else document.body.appendChild(b);
-  }
+  // la machine s'inscrit au Casino (bouton rond commun sous le Classement)
+  if(window.MF_CASINO)window.MF_CASINO.add({id:"slot",name:"Banana Machine",order:1,root:"mfSlot",open,
+    icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5v-1.5a.5 .5 0 0 1 .5 -.5h7a.5 .5 0 0 1 .5 .5v1.5"/><rect x="3" y="5" width="14" height="15.5" rx="2"/><rect x="5.5" y="8" width="9" height="5" rx="1"/><path d="M8.5 8v5"/><path d="M11.5 8v5"/><path d="M7.5 17h5"/><path d="M17 14h2a1 1 0 0 0 1 -1v-5.5"/><circle cx="20" cy="5.5" r="1.5"/></svg>`,
+    status:async()=>{const r=await rpc("mf_slot_status"),n=+r.left;if(!busy)S.left=n;
+      return {line:n>0?`${n} tour${n>1?"s":""} restant${n>1?"s":""} aujourd'hui`:"Plus de tours aujourd'hui · reviens demain",hot:false};}});
   SYM.forEach(s=>{const i=new Image();i.src=src(s.e);});{const i=new Image();i.src="packs/banana-machine-titre.webp";}
 }
 window.MF_SLOT={open};
