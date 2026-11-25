@@ -21,8 +21,8 @@ const PZ={
  OR:{ic:"×2",lab:"Doublé",k:"or",c:"#ffd23f",f:"#3a2300"},
  NO:{ic:"✕",lab:"Perdu",k:"noir",c:"#15111f",f:"#ffd23f"}};
 const WH={
- main:{name:"Roue normale",seg:"J P b1 P b5 P T P P P b1 R P b10 P b1 P BB P b2 P P P b1".split(" ")},
- gold:{name:"Roue dorée",seg:"J P b2 b5 b2 T b10 b2 P b5 BB b2 b25 b5 P b2 b10 b5 b2 P".split(" "),
+ main:{name:"Roue normale",seg:"J P b1 P b5 P T P P b1 P R P b10 P b1 P BB P P b2 P b1 P".split(" ")},
+ gold:{name:"Roue dorée",seg:"J b2 P b5 b2 T b10 P b2 b5 BB b2 P b25 b5 b2 b10 P b5 b2".split(" "),
   col:{P:["#5a4214","#f5deb3"],b2:["#f7d774","#3a2300"],b5:["#e9b949","#3a2300"],b10:["#c9971a","#fff"],b25:["#fff2b3","#5a3a00"]}},
  qod:{name:"Quitte ou double",seg:"OR NO OR NO OR NO OR NO OR NO".split(" ")}};
 const IMG={fond:"packs/roue-fond.webp",cadre:"packs/roue-cadre.webp",ptr:"packs/roue-pointeur.webp",logo:"packs/roue-logo.webp",scam:"packs/monkey-scam.webp",scam2:"packs/monkey-scam-ferme.webp"};

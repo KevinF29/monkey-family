@@ -41,9 +41,9 @@ insert into public.mf_wheel_cfg(id) values (1) on conflict do nothing;
 create or replace function public._wheel_seg(w text)
 returns text[] language sql immutable set search_path = public as $$
   select case w
-    when 'gold' then string_to_array('J P b2 b5 b2 T b10 b2 P b5 BB b2 b25 b5 P b2 b10 b5 b2 P', ' ')
+    when 'gold' then string_to_array('J b2 P b5 b2 T b10 P b2 b5 BB b2 P b25 b5 b2 b10 P b5 b2', ' ')
     when 'qod'  then string_to_array('OR NO OR NO OR NO OR NO OR NO', ' ')
-    else             string_to_array('J P b1 P b5 P T P P P b1 R P b10 P b1 P BB P b2 P P P b1', ' ')
+    else             string_to_array('J P b1 P b5 P T P P b1 P R P b10 P b1 P BB P P b2 P b1 P', ' ')
   end $$;
 
 -- une case : {t: lose|ban|relance|time|boost|jackpot, v, lab}
