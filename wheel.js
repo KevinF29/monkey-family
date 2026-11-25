@@ -119,7 +119,11 @@ const CSS=`
 /* ---------- état ---------- */
 let root=null,USER=null,ADMIN=false,S=null,cur="main",theta=0,busy=false,hold=false,drag=null,lastIdx=-1,dpr=1,size=300,cv=null,ctx=null;
 const $=s=>root.querySelector(s);
-function take(info){if(!info)return;S=info;try{if(window.MF_APPLY&&info.state)window.MF_APPLY(info.state);}catch(e){}}
+// les cases viennent du serveur : si elles ont changé (nouvelle version des roues), on redessine avec les bonnes
+function segs(info){const g=info&&info.segs;if(!g)return;let ch=false;
+ for(const w of ["main","gold"]){const a=g[w];if(Array.isArray(a)&&a.length&&a.every(k=>PZ[k])&&a.join(" ")!==WH[w].seg.join(" ")){WH[w].seg=a.slice();ch=true;}}
+ if(ch&&ctx){lastIdx=-1;draw();}}
+function take(info){if(!info)return;segs(info);S=info;try{if(window.MF_APPLY&&info.state)window.MF_APPLY(info.state);}catch(e){}}
 
 /* ---------- sons et vibrations ---------- */
 let AC=null;
@@ -210,7 +214,7 @@ async function go(v){if(busy)return;const a=action();if(!a){render();return;}
  ac();busy=true;$("#whRes").hidden=true;render();roll(v);
  let r;try{r=await rpc("mf_wheel_spin",{p_kind:a.kind,p_force:takeForce("#whFMain"),p_scam:takeScam()});}catch(e){return err(e);}
  if(r.wheel!==cur){cur=r.wheel;lastIdx=-1;}
- await land(r.idx);if(r.scam)await scam(PZ[r.key].k==="jackpot"?"le jackpot":PZ[r.key].lab);busy=false;take(r.info);outcome(r);render();}
+ segs(r.info);await land(r.idx);if(r.scam)await scam(PZ[r.key].k==="jackpot"?"le jackpot":PZ[r.key].lab);busy=false;take(r.info);outcome(r);render();}
 function outcome(r){const p=PZ[r.key];
  if(r.scam){show("Monkey Scam !",`Le singe a volé ton lot (${p.k==="jackpot"?"le jackpot reste dans la cagnotte":p.lab}). Retente ta chance !`,true);return;}
  if(p.k==="lose"){show("Perdu…","Retente ta chance !",true);return;}

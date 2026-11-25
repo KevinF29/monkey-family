@@ -87,6 +87,7 @@ begin
     'hist', coalesce(t.hist, '[]'::jsonb),
     'nextFree', (extract(epoch from ((d + 1)::timestamp at time zone 'Europe/Paris')) * 1000)::bigint,
     'now', (extract(epoch from now()) * 1000)::bigint,
+    'segs', jsonb_build_object('main', to_jsonb(public._wheel_seg('main')), 'gold', to_jsonb(public._wheel_seg('gold'))),
     'state', public._state(p_uid));
 end $$;
 
