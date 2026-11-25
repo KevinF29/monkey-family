@@ -7,7 +7,7 @@
 "use strict";
 
 // images de Kévin (facultatives) : sans elles, le jeu reprend le fond et le singe de MonkeyJack 21, et dessine les noix de coco
-const IMG={logo:"packs/bon-titre.webp",fond:"packs/bon-fond.webp",singe:"packs/bon-singe.webp",triche:"packs/bon-singe-triche.webp",noix:"packs/bon-noix.webp",table:"packs/bon-table.webp",
+const IMG={logo:"packs/bon-titre.webp",fond:"packs/bon-fond.webp",singe:"packs/bon-singe.webp",triche:"packs/bon-singe-triche.webp",noix:"packs/bon-noix.webp",banane:"packs/bon-banane.webp",table:"packs/bon-table.webp",
  fondB:"packs/bj-fond.webp",singeB:"packs/bj-croupier.webp"};
 const NAME="Bananateau";
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -56,12 +56,15 @@ const CSS=`
 .bn-hand{position:absolute;left:calc(50% - var(--mh)*.62);bottom:18%;font-size:calc(var(--mh)*.34);line-height:1;opacity:0;transform:scale(.2) rotate(-40deg);pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
 .bn-hand.on{animation:bnSteal 1.1s cubic-bezier(.2,1.4,.4,1) forwards}
 @keyframes bnSteal{0%{opacity:0;transform:translate(60px,140px) scale(.2) rotate(-40deg)}60%{opacity:1;transform:scale(1.25) rotate(12deg)}100%{opacity:1;transform:rotate(-8deg)}}
-.bn-say{position:absolute;left:calc(50% + var(--mh)*.5);top:-4px;max-width:min(200px,calc(50% - var(--mh)*.5 - 4px));background:#fff;color:#2a1145;border-radius:14px 14px 14px 4px;padding:6px 10px;font-weight:700;font-size:13.5px;line-height:1.25;box-shadow:0 4px 10px rgba(0,0,0,.35);opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;pointer-events:none}
+.bn-say{position:absolute;left:calc(50% + var(--mh)*.58);top:-4px;max-width:min(200px,calc(50% - var(--mh)*.58 - 4px));background:#fff;color:#2a1145;border-radius:14px 14px 14px 4px;padding:6px 10px;font-weight:700;font-size:13.5px;line-height:1.25;box-shadow:0 4px 10px rgba(0,0,0,.35);opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;pointer-events:none}
 .bn-say.on{opacity:1;transform:none}
 .bn-mat{flex:1;min-height:0;width:100%;position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:2%;align-items:center;margin-top:6px;border-radius:26px;
  background:radial-gradient(ellipse at 50% 40%,#1f7a45,#0f5a30 60%,#0a4424);border:8px solid #6b3f1d;box-shadow:inset 0 0 0 2px #a0682f,inset 0 10px 30px rgba(0,0,0,.45),0 10px 24px rgba(0,0,0,.45)}
 .bn-mat.img{background:transparent;border:0;box-shadow:none}
 .bn-mat>.bn-tbl{position:absolute;inset:0;background:center/100% 100% no-repeat;pointer-events:none}
+.bn-mat.img{container-type:size}
+.bn-mat.img>.bn-tbl{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100cqw,150cqh);aspect-ratio:3/2;container-type:inline-size;pointer-events:auto}
+.bn-mat.img .bn-box{position:absolute;left:9%;right:9%;bottom:40%;width:auto;height:auto;top:6%;--cw:20cqw}
 .bn-box{position:relative;width:100%;--cw:clamp(78px,min(27vw,17svh),150px);height:calc(var(--cw)*1.38)}
 .bn-cup{position:absolute;left:50%;bottom:8%;width:var(--cw);height:calc(var(--cw)*.84);margin-left:calc(var(--cw)*-.5);padding:0;border:0;background:none;cursor:default;z-index:2;transition:transform .32s cubic-bezier(.3,.9,.4,1.1)}
 .bn-cup svg,.bn-cup img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45));pointer-events:none}
@@ -71,6 +74,8 @@ const CSS=`
 .bn-cup.sel svg,.bn-cup.sel img{filter:drop-shadow(0 0 12px #ffd23f) drop-shadow(0 6px 6px rgba(0,0,0,.45))}
 .bn-ban{position:absolute;left:50%;bottom:10%;width:calc(var(--cw)*.62);margin-left:calc(var(--cw)*-.31);text-align:center;font-size:calc(var(--cw)*.46);line-height:1;z-index:1;filter:drop-shadow(0 3px 3px rgba(0,0,0,.5));transition:opacity .2s}
 .bn-ban.no{opacity:0}
+.bn-ban img,.bn-hand img{display:block;width:100%;height:auto}
+.bn-hand img{width:calc(var(--mh)*.5)}
 .bn-ban.gl{animation:bnGlow .5s 4 alternate}
 @keyframes bnGlow{to{scale:1.25;filter:drop-shadow(0 0 14px #ffd23f)}}
 .bn-ask{position:absolute;left:0;right:0;top:6px;z-index:4;text-align:center;font-weight:700;font-size:14.5px;color:#fff;text-shadow:0 1px 3px #000;pointer-events:none;min-height:1.4em}
@@ -293,7 +298,8 @@ function build(){
  mk.onerror=()=>{if(mk.dataset.base){mk.src=mk.dataset.base;return;}tries++;if(tries===1){mk.src=IMG.singeB;return;}mk.hidden=true;$(".bn-monkE").hidden=false;};
  mk.src=IMG.singe;
  const tri=new Image();tri.onload=()=>{triche=true;};tri.src=IMG.triche;
- const tb=new Image();tb.onload=()=>{$(".bn-mat").classList.add("img");$(".bn-tbl").style.backgroundImage=`url(${IMG.table})`;};tb.src=IMG.table;
+ const tb=new Image();tb.onload=()=>{$(".bn-mat").classList.add("img");const t=$(".bn-tbl");t.style.backgroundImage=`url(${IMG.table})`;t.appendChild($(".bn-box"));if(!root.hidden&&!busy&&!picking)reset();};tb.src=IMG.table;
+ const bn=new Image();bn.onload=()=>{$(".bn-ban").innerHTML=`<img src="${IMG.banane}" alt="">`;$(".bn-hand").innerHTML=`<img src="${IMG.banane}" alt="">`;};bn.src=IMG.banane;
  const nx=new Image();nx.onload=()=>{cups().forEach(c=>{c.innerHTML=`<img src="${IMG.noix}" alt="">`;});};nx.src=IMG.noix;
  $("#bnClose").addEventListener("click",close);
  $("#bnMinus").addEventListener("click",()=>{bet=Math.max(+S.min||1,bet-1);render();});
