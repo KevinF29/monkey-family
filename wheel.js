@@ -64,9 +64,13 @@ const CSS=`
 .wh-big{min-height:52px;padding:10px 26px;border-radius:16px;border:0;background:#ffd23f;color:#2a1145;font:400 20px "Titan One",sans-serif;cursor:pointer;box-shadow:0 4px 0 #b8901a}
 .wh-big:active{transform:translateY(2px);box-shadow:0 2px 0 #b8901a}
 .wh-big:disabled{background:#4a4060;color:#9d93b8;box-shadow:none;cursor:default}
-.wh-ghost{min-height:52px;padding:10px 18px;border-radius:16px;border:2px solid #ffd23f;background:transparent;color:#ffd23f;font:700 16px Quicksand,sans-serif;cursor:pointer}
+.wh-ghost{min-height:52px;padding:10px 18px;border-radius:16px;border:2px solid #ffd23f;background:transparent;color:#ffd23f;font:700 16px Quicksand,sans-serif;cursor:pointer;transition:transform .08s,background .12s,color .12s}
+.wh-ghost:active{transform:translateY(2px);background:rgba(255,210,63,.16)}
+#mfWheel,#mfWheel *{-webkit-tap-highlight-color:transparent}
+.wh-big{transition:transform .08s,box-shadow .08s}
 #mfWheel button:focus-visible,#mfWheel select:focus-visible,#mfWheel input:focus-visible{outline:3px solid #8fd3ff;outline-offset:2px}
-.wh-res{position:absolute;left:6%;right:6%;top:42%;z-index:5;background:rgba(33,26,51,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);border:1px solid #3a2f57;border-radius:18px;padding:14px 16px;text-align:center;cursor:pointer}
+.wh-res{position:absolute;left:6%;right:6%;top:42%;z-index:5;background:rgba(33,26,51,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);border:1px solid #3a2f57;border-radius:18px;padding:14px 16px;text-align:center;cursor:pointer;-webkit-user-select:none;user-select:none;outline:none}
+.wh-res.choice{cursor:default}
 .wh-res[hidden]{display:none}
 .wh-res .wh-rt{font:400 24px/1.15 "Titan One",sans-serif;color:#ffd23f}
 .wh-res .wh-rt.lose{color:#b3a8cc}
@@ -183,7 +187,7 @@ function render(){if(!root||!S)return;
   $("#whState").textContent=S.open?"La roue est ouverte à tous les joueurs.":"La roue est visible par toi seulement.";}}
 
 /* ---------- résultats ---------- */
-function show(t,s,lose,btns){$("#whResT").textContent=t;$("#whResT").className="wh-rt"+(lose?" lose":"");$("#whResS").textContent=s||"";const r=$("#whResB");r.innerHTML="";(btns||[]).forEach(x=>r.appendChild(x));$("#whRes").hidden=false;}
+function show(t,s,lose,btns){$("#whResT").textContent=t;$("#whResT").className="wh-rt"+(lose?" lose":"");$("#whResS").textContent=s||"";const r=$("#whResB");r.innerHTML="";(btns||[]).forEach(x=>r.appendChild(x));$("#whRes").classList.toggle("choice",!!(btns&&btns.length));$("#whRes").hidden=false;}
 const mk=(txt,cls,fn)=>{const e=document.createElement("button");e.type="button";e.className=cls;e.textContent=txt;e.onclick=fn;return e;};
 /* un lot en attente : {t,v} (ancien format {gain} = bananes) */
 const lot=p=>({t:p&&p.t||"ban",v:+(p&&(p.v!=null?p.v:p.gain))||0});
