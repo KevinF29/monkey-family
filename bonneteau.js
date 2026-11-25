@@ -1,5 +1,5 @@
 /* Monkey Family — Bananateau (bonneteau du Casino : 3 noix de coco, une banane cachée dessous)
-   10 parties par jour, mise de 1 à 20 🍌. Vrai mélange, qu'on peut suivre des yeux, à la vitesse choisie :
+   5 parties par jour, mise fixe de 3 🍌 (réglables dans mf_bon_cfg). Vrai mélange, qu'on peut suivre des yeux, à la vitesse choisie :
    lent ×1,5, rapide ×2, turbo ×3. Le singe triche parfois : il escamote la banane quand tu avais trouvé.
    Les échanges sont tirés par le serveur (mf_bon_*, supabase-bonneteau.sql) ; la page les rejoue à l'identique.
    Visible par l'admin seulement tant que le jeu n'est pas ouvert à tous (réglages admin → « Ouvrir à tous »). */
@@ -178,6 +178,8 @@ function render(){if(!root)return;
  const ban=st?+st.bananas:0,inGame=!!S.game;
  $("#bnBetBox").style.visibility=inGame||picking?"hidden":"";
  $("#bnAmt").textContent=`${bet} 🍌`;
+ const fixed=+S.min===+S.maxBet;root.querySelector(".bn-mise").hidden=fixed;root.querySelector(".bn-quick").hidden=fixed;
+ $("#bnLim").textContent=`${S.max} parties par jour, `+(fixed?`mise de ${S.min} 🍌.`:`mise de ${S.min} à ${S.maxBet} 🍌.`);
  $("#bnMinus").disabled=busy||bet<=+S.min;$("#bnPlus").disabled=busy||bet>=+S.maxBet;
  root.querySelectorAll(".bn-q").forEach(q=>{const v=+q.dataset.v;q.disabled=busy||v>+S.maxBet;q.classList.toggle("on",v===bet);});
  const d=$("#bnGo");d.disabled=busy||+S.left<=0||ban<bet;
@@ -268,7 +270,7 @@ function build(){
    <li>Le singe montre la banane sous la noix du milieu, puis il mélange : suis-la des yeux !</li>
    <li>Choisis la vitesse avant de jouer : 🐢 <b>Lent</b> ×1,5, 🐒 <b>Rapide</b> ×2, ⚡ <b>Turbo</b> ×3. Plus c'est rapide, plus ça rapporte.</li>
    <li>À la fin, touche la noix sous laquelle tu crois qu'est la banane. Trouvée : ta mise multipliée (arrondi au-dessus).</li>
-   <li>10 parties par jour, mise de 1 à 20 🍌.</li>
+   <li id="bnLim">5 parties par jour, mise de 3 🍌.</li>
    <li>Méfie-toi du singe : même quand tu as bien suivi, il lui arrive de faire disparaître la banane…</li>
   </ul>
   <h3>Dernières parties</h3><ul class="bn-hist" id="bnHist"></ul>

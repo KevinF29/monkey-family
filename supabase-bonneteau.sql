@@ -5,7 +5,7 @@
 -- (bouton « Ouvrir à tous » dans les réglages admin du jeu).
 --
 -- Règles :
---  - 10 parties par jour (heure de Paris), mise de 1 à 20 🍌 (réglables dans mf_bon_cfg)
+--  - 5 parties par jour (heure de Paris), mise fixe de 3 🍌 (réglables dans mf_bon_cfg ; 10 parties de 1 à 20 🍌 jusqu'au 26/11)
 --  - la banane part sous la noix du milieu ; le serveur tire la suite des échanges (vrai mélange, qu'on peut suivre des yeux)
 --  - le joueur choisit la vitesse (mf_bon_cfg.speeds) : lent ×1,5 (6 échanges), rapide ×2 (10), turbo ×3 (16) ;
 --    bonne noix : la mise × x revient au joueur (arrondi au-dessus)
@@ -28,9 +28,9 @@ alter table public.mf_bon enable row level security;   -- aucune politique : on 
 create table if not exists public.mf_bon_cfg (
   id int primary key default 1 check (id = 1),
   open boolean not null default false,
-  min_bet int not null default 1,
-  max_bet int not null default 20,
-  games int not null default 10,
+  min_bet int not null default 3,
+  max_bet int not null default 3,
+  games int not null default 5,
   mult int not null default 3,            -- (ancienne version à vitesse unique, plus utilisé)
   cheat numeric not null default 0.20,    -- chance que le singe escamote la banane quand le joueur a trouvé
   speeds jsonb not null default '{"slow":{"x":1.5,"n":6,"ms":520},"fast":{"x":2,"n":10,"ms":300},"turbo":{"x":3,"n":16,"ms":170}}'::jsonb
@@ -44,6 +44,9 @@ alter table public.mf_bon_cfg alter column cheat set default 0.20;
 update public.mf_bon_cfg set cheat = 0.20 where id = 1 and cheat = 0.08;
 update public.mf_bon set game = null where game is not null and game->>'speed' is null;   -- parties de l'ancienne version
 drop function if exists public.mf_bon_start(int, text);
+-- 26/11 : 5 parties par jour, mise fixe de 3 🍌
+alter table public.mf_bon_cfg alter column games set default 5, alter column min_bet set default 3, alter column max_bet set default 3;
+update public.mf_bon_cfg set games = 5, min_bet = 3, max_bet = 3 where id = 1;
 
 create or replace function public._bon_info(p_uid uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
