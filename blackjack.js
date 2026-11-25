@@ -42,12 +42,12 @@ const CSS=`
 .bj-scene>*{position:relative;z-index:1}
 .bj-scene>.bj-tbl{position:absolute;inset:0;z-index:0;pointer-events:none;background:#0f5a30;border-style:solid;border-color:transparent;border-width:70px 50px 86px;border-image:url(${IMG.table}) 290 210 360 210 fill stretch}
 @media(min-width:500px){.bj-scene>.bj-tbl{border-width:93px 67px 115px}}
-.bj-dealer{flex:none;position:relative;display:flex;align-items:flex-end;justify-content:center;height:clamp(64px,14svh,170px);width:100%}
+.bj-dealer{flex:none;position:relative;display:flex;align-items:flex-end;justify-content:center;--mh:clamp(64px,14svh,170px);height:var(--mh);width:100%}
 .bj-monk{height:100%;width:auto;max-width:60%;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));transform-origin:50% 100%}
 .bj-monkE{font-size:clamp(52px,11svh,130px);line-height:1;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));transform-origin:50% 100%}
 .bj-monk.wob,.bj-monkE.wob{animation:bjWob .4s 3 alternate ease-in-out}
 @keyframes bjWob{from{transform:rotate(-6deg)}to{transform:rotate(6deg) scale(1.04)}}
-.bj-say{position:absolute;right:max(4%,calc(50% - 230px));top:6px;max-width:44%;background:#fff;color:#2a1145;border-radius:14px 14px 14px 4px;padding:6px 10px;font-weight:700;font-size:13.5px;line-height:1.25;box-shadow:0 4px 10px rgba(0,0,0,.35);opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;pointer-events:none}
+.bj-say{position:absolute;left:calc(50% + var(--mh)*.5);right:auto;top:-4px;max-width:min(190px,calc(50% - var(--mh)*.5 - 4px));background:#fff;color:#2a1145;border-radius:14px 14px 14px 4px;padding:6px 10px;font-weight:700;font-size:13.5px;line-height:1.25;box-shadow:0 4px 10px rgba(0,0,0,.35);opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;pointer-events:none}
 .bj-say.on{opacity:1;transform:none}
 .bj-rows{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;gap:4px}
 .bj-side{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}
