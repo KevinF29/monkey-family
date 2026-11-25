@@ -1,8 +1,7 @@
-/* Monkey Family — Monkey Bonneteau (jeu du Casino : 3 noix de coco, une banane cachée dessous)
-   10 parties par jour, mise de 1 à 20 🍌. Bonne noix : la mise ×3. Pur hasard : 1 chance sur 3.
-   Le singe triche parfois : il escamote la banane quand tu avais trouvé.
-   La place de la banane est tirée par le serveur (mf_bon_*, supabase-bonneteau.sql) et n'arrive qu'après le choix :
-   le mélange affiché est un spectacle, il ne décide de rien.
+/* Monkey Family — Bananateau (bonneteau du Casino : 3 noix de coco, une banane cachée dessous)
+   10 parties par jour, mise de 1 à 20 🍌. Vrai mélange, qu'on peut suivre des yeux, à la vitesse choisie :
+   lent ×1,5, rapide ×2, turbo ×3. Le singe triche parfois : il escamote la banane quand tu avais trouvé.
+   Les échanges sont tirés par le serveur (mf_bon_*, supabase-bonneteau.sql) ; la page les rejoue à l'identique.
    Visible par l'admin seulement tant que le jeu n'est pas ouvert à tous (réglages admin → « Ouvrir à tous »). */
 (function(){
 "use strict";
@@ -10,10 +9,10 @@
 // images de Kévin (facultatives) : sans elles, le jeu reprend le fond et le singe de MonkeyJack 21, et dessine les noix de coco
 const IMG={logo:"packs/bon-titre.webp",fond:"packs/bon-fond.webp",singe:"packs/bon-singe.webp",triche:"packs/bon-singe-triche.webp",noix:"packs/bon-noix.webp",table:"packs/bon-table.webp",
  fondB:"packs/bj-fond.webp",singeB:"packs/bj-croupier.webp"};
-const NAME="Monkey Bonneteau";
+const NAME="Bananateau";
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",bon_limit:"Plus de parties aujourd'hui : reviens demain !",bon_closed:"Le bonneteau n'est pas encore ouvert.",
- bon_in_game:"Une partie est déjà en cours.",bon_no_game:"Pas de partie en cours.",bon_bet:"Mise impossible.",bon_cup:"Noix de coco inconnue.",
+ bon_in_game:"Une partie est déjà en cours.",bon_no_game:"Pas de partie en cours.",bon_bet:"Mise impossible.",bon_cup:"Noix de coco inconnue.",bon_speed:"Vitesse inconnue.",
  not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
@@ -21,6 +20,9 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wait=ms=>new Promise(r=>setTimeout(r,reduce?Math.min(ms,120):ms));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const SIDE=["de gauche","du milieu","de droite"];
+const SPEEDS=[["slow","🐢","Lent"],["fast","🐒","Rapide"],["turbo","⚡","Turbo"]];
+const SPN={slow:"lent",fast:"rapide",turbo:"turbo"};
+const fx=x=>"×"+String(+x).replace(".",",");
 
 const NUT=`<svg viewBox="0 0 120 100" aria-hidden="true"><defs><radialGradient id="bnG" cx="38%" cy="28%" r="80%"><stop offset="0" stop-color="#a8703f"/><stop offset=".55" stop-color="#6e4120"/><stop offset="1" stop-color="#3e2210"/></radialGradient></defs>
 <path d="M6 90C6 34 36 6 60 6s54 28 54 84z" fill="url(#bnG)"/>
@@ -66,20 +68,20 @@ const CSS=`
 .bn-box.pick .bn-cup{cursor:pointer;animation:bnHint 1.2s infinite ease-in-out}
 .bn-box.pick .bn-cup:nth-child(2){animation-delay:.2s}.bn-box.pick .bn-cup:nth-child(3){animation-delay:.4s}
 @keyframes bnHint{50%{filter:drop-shadow(0 0 10px rgba(255,210,63,.9))}}
-.bn-box.spin .bn-cup{filter:blur(2.5px)}
 .bn-cup.sel svg,.bn-cup.sel img{filter:drop-shadow(0 0 12px #ffd23f) drop-shadow(0 6px 6px rgba(0,0,0,.45))}
 .bn-ban{position:absolute;left:50%;bottom:10%;width:calc(var(--cw)*.62);margin-left:calc(var(--cw)*-.31);text-align:center;font-size:calc(var(--cw)*.46);line-height:1;z-index:1;filter:drop-shadow(0 3px 3px rgba(0,0,0,.5));transition:opacity .2s}
 .bn-ban.no{opacity:0}
 .bn-ban.gl{animation:bnGlow .5s 4 alternate}
-@keyframes bnGlow{to{transform:scale(1.25);filter:drop-shadow(0 0 14px #ffd23f)}}
-.bn-dust{position:absolute;left:4%;right:4%;bottom:0;height:80%;z-index:3;pointer-events:none;opacity:0;border-radius:50%;
- background:radial-gradient(circle at 25% 60%,rgba(230,210,170,.85),transparent 40%),radial-gradient(circle at 55% 45%,rgba(240,225,190,.9),transparent 42%),radial-gradient(circle at 80% 65%,rgba(220,200,160,.85),transparent 40%);filter:blur(6px)}
-.bn-dust.on{animation:bnDust 1.5s ease-in-out forwards}
-@keyframes bnDust{0%{opacity:0;transform:scale(.6)}20%{opacity:.95;transform:scale(1.05) rotate(3deg)}50%{transform:scale(.95) rotate(-4deg)}80%{opacity:.9;transform:scale(1.05) rotate(2deg)}100%{opacity:0;transform:scale(1.2)}}
+@keyframes bnGlow{to{scale:1.25;filter:drop-shadow(0 0 14px #ffd23f)}}
 .bn-ask{position:absolute;left:0;right:0;top:6px;z-index:4;text-align:center;font-weight:700;font-size:14.5px;color:#fff;text-shadow:0 1px 3px #000;pointer-events:none;min-height:1.4em}
 .bn-stamp{position:absolute;left:50%;top:66%;transform:translate(-50%,-50%) rotate(-14deg);z-index:6;background:#e3183d;color:#fff;font:400 clamp(16px,5vw,24px) "Titan One",sans-serif;padding:3px 10px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.5);animation:bnBoom .5s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes bnBoom{from{transform:translate(-50%,-50%) scale(.3) rotate(-30deg);opacity:0}}
 .bn-act{flex:none;width:100%;text-align:center;margin-top:10px}
+.bn-spd{display:flex;gap:6px;justify-content:center;margin-bottom:8px}
+.bn-s{flex:1;max-width:120px;min-height:48px;border-radius:14px;border:2px solid rgba(255,255,255,.25);background:rgba(20,18,32,.8);color:#f1edf9;font:700 14px/1.1 Quicksand,sans-serif;cursor:pointer;padding:4px 6px}
+.bn-s b{display:block;font:400 17px "Titan One",sans-serif;color:#ffd23f}
+.bn-s.on{border-color:#ffd23f;background:#3a2a10;box-shadow:0 0 0 2px #ffd23f inset}
+.bn-s:disabled{opacity:.4;cursor:default}
 .bn-mise{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .bn-pm{width:46px;height:46px;border-radius:50%;border:2px solid #ffd23f;background:rgba(0,0,0,.35);color:#ffd23f;font:700 24px Quicksand,sans-serif;cursor:pointer}
 .bn-pm:disabled{opacity:.35;cursor:default}
@@ -118,16 +120,17 @@ const CSS=`
 .bn-btns button.on{background:#ffd23f;color:#2a1145;border-color:#ffd23f}
 .bn-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#2c2148;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .bn-toast.on{transform:translate(-50%,0);opacity:1}
-@media(max-height:700px){.bn-quick{display:none}.bn-logo{height:54px}.bn-logoT{font-size:26px}.bn-top{gap:3px}}
-@media(prefers-reduced-motion:reduce){.bn-monk.wob,.bn-monkE.wob,.bn-res,.bn-flash,.bn-box.pick .bn-cup,.bn-ban.gl,.bn-stamp,.bn-dust.on{animation:none}.bn-hand.on{animation:none;opacity:1;transform:none}.bn-cup,.bn-say,.bn-toast,.bn-panel{transition:none}}
-`;
+@media(max-height:700px){.bn-quick{display:none}.bn-s{min-height:42px}.bn-mise{margin-bottom:6px}.bn-logo{height:54px}.bn-logoT{font-size:26px}.bn-top{gap:3px}}
+@media(prefers-reduced-motion:reduce){.bn-monk.wob,.bn-monkE.wob,.bn-res,.bn-flash,.bn-box.pick .bn-cup,.bn-ban.gl,.bn-stamp,`;
 
 /* ---------- état ---------- */
-let root=null,USER=null,ADMIN=false,S=null,busy=false,picking=false,bet=5,skew=0;
+let root=null,USER=null,ADMIN=false,S=null,busy=false,picking=false,bet=5,speed="fast",skew=0;
 const slot=[0,1,2];   // slot[noix] = place (0 gauche, 1 milieu, 2 droite)
 const $=s=>root.querySelector(s);
 function take(info){if(!info)return;S=info;try{if(window.MF_APPLY&&info.state)window.MF_APPLY(info.state);}catch(e){}}
-try{const b=+localStorage.getItem("mf_bon_bet");if(b>0)bet=b;}catch(e){}
+try{const b=+localStorage.getItem("mf_bon_bet");if(b>0)bet=b;const v=localStorage.getItem("mf_bon_speed");if(v&&SPN[v])speed=v;}catch(e){}
+const X_=k=>{const v=S&&S.speeds&&S.speeds[k];return v?+v.x:{slow:1.5,fast:2,turbo:3}[k];};
+const payOf=(b,k)=>Math.ceil(X_(k)*b);
 
 /* ---------- sons ---------- */
 let AC=null;
@@ -152,7 +155,7 @@ function banAt(s,show){const b=$(".bn-ban");b.style.transform=`translateX(${X(s)
 function swap(a,b,dur){
  const ia=slot.indexOf(a),ib=slot.indexOf(b),ea=cups()[ia],eb=cups()[ib],xa=X(a),xb=X(b),h=cups()[0].offsetHeight;
  slot[ia]=b;slot[ib]=a;
- if(reduce||!ea.animate){place(ia,false);place(ib,false);return Promise.resolve();}
+ if(!ea.animate){place(ia,false);place(ib,false);return Promise.resolve();}
  const go=(e,x0,x1,dy,z)=>{e.style.transition="none";e.style.zIndex=z;
   const an=e.animate([{transform:`translate(${x0}px,0)`},{transform:`translate(${(x0+x1)/2}px,${dy}px) scale(${dy<0?1.06:.94})`},{transform:`translate(${x1}px,0)`}],{duration:dur,easing:"ease-in-out",fill:"forwards"});
   return an.finished.then(()=>{e.style.transform=`translate(${x1}px,0)`;an.cancel();e.style.zIndex="";e.style.transition="";});};
@@ -179,7 +182,9 @@ function render(){if(!root)return;
  root.querySelectorAll(".bn-q").forEach(q=>{const v=+q.dataset.v;q.disabled=busy||v>+S.maxBet;q.classList.toggle("on",v===bet);});
  const d=$("#bnGo");d.disabled=busy||+S.left<=0||ban<bet;
  d.textContent=+S.left<=0?"Plus de parties aujourd'hui":ban<bet?"Pas assez de bananes":`Jouer · ${bet} 🍌`;
- $("#bnSub").textContent=inGame?`Mise : ${S.game.bet} 🍌 · trouvée = ${S.game.bet*(+S.mult||3)} 🍌`:`Parties : ${S.left}/${S.max}`+(+S.left<=0?` · Nouvelles parties dans ${hhmm(+S.nextDay-(Date.now()+skew))}`:` · trouvée = ta mise ×${S.mult||3}`);
+ root.querySelectorAll(".bn-s").forEach(e=>{const k=e.dataset.k;e.disabled=busy;e.classList.toggle("on",k===speed);e.setAttribute("aria-pressed",String(k===speed));e.querySelector("b").textContent=fx(X_(k));});
+ const gs=inGame&&S.game.speed||speed;
+ $("#bnSub").textContent=inGame?`Mise : ${S.game.bet} 🍌 · ${SPN[gs]||""} · trouvée = ${payOf(+S.game.bet,gs)} 🍌`:`Parties : ${S.left}/${S.max}`+(+S.left<=0?` · Nouvelles parties dans ${hhmm(+S.nextDay-(Date.now()+skew))}`:` · trouvée = ${payOf(bet,speed)} 🍌`);
  $("#bnHist").innerHTML=(S.hist||[]).map(h=>`<li>${esc(h)}</li>`).join("");
  if(ADMIN){const o=$("#bnOpen");o.textContent=S.open?"Cacher aux joueurs":"Ouvrir à tous les joueurs";o.classList.toggle("on",!S.open);
   $("#bnState").textContent=S.open?"Le bonneteau est ouvert à tous les joueurs.":"Le bonneteau est visible par toi seulement.";}}
@@ -194,18 +199,16 @@ const takeForce=()=>{if(!ADMIN)return null;const el=$("#bnF"),v=el.value;el.valu
 
 /* ---------- une partie ---------- */
 async function go(){if(busy||picking||!S||S.game)return;ac();busy=true;$("#bnRes").hidden=true;reset();render();
- try{localStorage.setItem("mf_bon_bet",String(bet));}catch(e){}
- let r;try{r=await rpc("mf_bon_start",{p_bet:bet,p_force:takeForce()});}catch(e){return err(e);}
- take(r.info);render();
+ try{localStorage.setItem("mf_bon_bet",String(bet));localStorage.setItem("mf_bon_speed",speed);}catch(e){}
+ let r;try{r=await rpc("mf_bon_start",{p_bet:bet,p_speed:speed,p_force:takeForce()});}catch(e){return err(e);}
+ take(r.info);render();const seq=Array.isArray(r.seq)?r.seq:[],ms=Math.max(90,+r.ms||300);
  // la banane sous la noix du milieu…
  banAt(1,true);say(pick(["Regarde bien la banane… 🍌","Facile, hein ? Hé hé.","Ne la quitte pas des yeux !"]),2400);
- lift(1,true);await wait(1000);lift(1,false);await wait(380);banAt(1,false);
- // … quelques passes qu'on peut suivre…
- for(let k=0;k<4;k++){const a=Math.floor(Math.random()*3),b=(a+1+Math.floor(Math.random()*2))%3;await swap(Math.min(a,b),Math.max(a,b),reduce?0:420-k*50);}
- // … puis le tourbillon : plus personne ne peut suivre
- say("Hop hop hop hop ! 🌪️",1800);wob();const box=$(".bn-box"),dust=$(".bn-dust");box.classList.add("spin");dust.classList.remove("on");void dust.offsetWidth;dust.classList.add("on");
- for(let k=0;k<(reduce?3:12);k++){const a=Math.floor(Math.random()*3),b=(a+1+Math.floor(Math.random()*2))%3;await swap(a,b,reduce?0:95);}
- await wait(250);box.classList.remove("spin");knock();
+ lift(1,true);await new Promise(z=>setTimeout(z,1100));lift(1,false);await new Promise(z=>setTimeout(z,450));banAt(1,false);
+ // … puis le vrai mélange, échange par échange, tel que le serveur l'a tiré
+ if(speed==="turbo"){say("Turbo ! Hop hop hop ! ⚡",1600);wob();}
+ for(const p of seq){await swap(+p[0],+p[1],ms);}
+ await new Promise(z=>setTimeout(z,200));knock();
  busy=false;setPick(true);
  say(pick(["Alors… laquelle ? 🥥","Prends ton temps, hé hé.","Je parie que tu te trompes."]));}
 
@@ -220,7 +223,7 @@ async function choose(i){if(busy||!picking)return;ac();const s=slot[i];busy=true
  setTimeout(()=>{if(!busy&&!picking&&!S.game){[0,1,2].forEach(x=>lift(x,false));setTimeout(()=>{if(!busy&&!picking)banAt(1,false);},350);}},3200);}
 
 function outcome(r,s){const n=+r.net,b=+r.bet;
- if(r.out==="win"){win(n>=20);show(`Trouvée ! +${n} 🍌`,`La banane était sous la noix ${SIDE[s]} : ta mise de ${b} 🍌 ×${S&&S.mult||3}.`);wob();
+ if(r.out==="win"){win(n>=20);show(`Trouvée ! +${n} 🍌`,`La banane était sous la noix ${SIDE[s]} : ta mise de ${b} 🍌 ${fx(X_(r.speed))} (${SPN[r.speed]||""}).`);wob();
   say(pick(["Quoi ?! Tu avais vu ?","Pfff… chance du débutant.","Rends-moi ma banane ! 🍌"]));return;}
  sad();wob();
  if(r.out==="cheat"){
@@ -241,16 +244,17 @@ function build(){
  root=document.createElement("div");root.id="mfBON";root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label",NAME);
  const cup=i=>`<button type="button" class="bn-cup" data-i="${i}" disabled aria-label="Noix de coco ${SIDE[i]}">${NUT}</button>`;
  root.innerHTML=`<div class="bn-top"><button type="button" class="bn-btn l" id="bnTog" aria-controls="bnPanel" aria-expanded="false" aria-label="Règles">?</button>
-  <h2 style="margin:0"><img class="bn-logo" src="${IMG.logo}" alt="${NAME}"><span class="bn-logoT" hidden>${NAME}</span></h2>
+  <h2 style="margin:0"><img class="bn-logo" src="${IMG.logo}" alt="${NAME}" width="1400" height="467"><span class="bn-logoT" hidden>${NAME}</span></h2>
   <div class="bn-chips"><span class="bn-chip">🍌 <b id="bnBan">…</b></span><span class="bn-chip">Boosters <b id="bnBoo">…</b></span></div>
   <button type="button" class="bn-btn r" id="bnClose" aria-label="Fermer">✕</button></div>
  <div class="bn-scene">
   <div class="bn-dealer"><img class="bn-monk" alt="Le singe du bonneteau"><span class="bn-monkE" hidden role="img" aria-label="Le singe du bonneteau">🐒</span><span class="bn-hand" aria-hidden="true">🍌</span><div class="bn-say" aria-live="polite"></div></div>
   <div class="bn-mat"><div class="bn-tbl" aria-hidden="true"></div><div class="bn-ask" aria-live="polite"></div>
-   <div class="bn-box"><span class="bn-ban no" aria-hidden="true">🍌</span>${cup(0)}${cup(1)}${cup(2)}<div class="bn-dust" aria-hidden="true"></div></div>
+   <div class="bn-box"><span class="bn-ban no" aria-hidden="true">🍌</span>${cup(0)}${cup(1)}${cup(2)}</div>
    <div class="bn-res" id="bnRes" hidden role="status"><div class="t"></div><div class="s"></div></div></div>
   <div class="bn-act">
    <div id="bnBetBox">
+    <div class="bn-spd" role="group" aria-label="Vitesse du mélange">${SPEEDS.map(([k,e,n])=>`<button type="button" class="bn-s" data-k="${k}">${e} ${n}<b></b></button>`).join("")}</div>
     <div class="bn-mise"><button type="button" class="bn-pm" id="bnMinus" aria-label="Miser moins">−</button><span class="bn-amt" id="bnAmt" aria-live="polite"></span><button type="button" class="bn-pm" id="bnPlus" aria-label="Miser plus">+</button></div>
     <div class="bn-quick"><button type="button" class="bn-q" data-v="1">1</button><button type="button" class="bn-q" data-v="5">5</button><button type="button" class="bn-q" data-v="10">10</button><button type="button" class="bn-q" data-v="20">20</button></div>
     <button type="button" class="bn-big" id="bnGo"></button>
@@ -261,12 +265,11 @@ function build(){
  <aside class="bn-panel" id="bnPanel" aria-label="Règles et réglages">
   <div class="bn-ph"><h3>Règles</h3><button type="button" class="bn-btn" style="position:static" id="bnPanelX" aria-label="Fermer les règles">✕</button></div>
   <ul class="r">
-   <li>Le singe cache une banane sous une des trois noix de coco, puis il les mélange.</li>
-   <li>Touche la noix sous laquelle tu crois qu'est la banane.</li>
-   <li>Trouvée : ta mise ×3 !</li>
-   <li>Le tourbillon final est trop rapide pour être suivi : c'est 1 chance sur 3.</li>
+   <li>Le singe montre la banane sous la noix du milieu, puis il mélange : suis-la des yeux !</li>
+   <li>Choisis la vitesse avant de jouer : 🐢 <b>Lent</b> ×1,5, 🐒 <b>Rapide</b> ×2, ⚡ <b>Turbo</b> ×3. Plus c'est rapide, plus ça rapporte.</li>
+   <li>À la fin, touche la noix sous laquelle tu crois qu'est la banane. Trouvée : ta mise multipliée (arrondi au-dessus).</li>
    <li>10 parties par jour, mise de 1 à 20 🍌.</li>
-   <li>Méfie-toi du singe : il paraît qu'il a la main plus rapide que l'œil…</li>
+   <li>Méfie-toi du singe : même quand tu as bien suivi, il lui arrive de faire disparaître la banane…</li>
   </ul>
   <h3>Dernières parties</h3><ul class="bn-hist" id="bnHist"></ul>
   <div class="bn-adm" id="bnAdm" hidden>
@@ -295,6 +298,7 @@ function build(){
  $("#bnPlus").addEventListener("click",()=>{bet=Math.min(+S.maxBet||20,bet+1);render();});
  root.querySelectorAll(".bn-q").forEach(q=>q.addEventListener("click",()=>{bet=+q.dataset.v;clampBet();render();}));
  $("#bnGo").addEventListener("click",go);
+ root.querySelectorAll(".bn-s").forEach(e=>e.addEventListener("click",()=>{if(busy)return;speed=e.dataset.k;render();}));
  cups().forEach((c,i)=>c.addEventListener("click",()=>choose(i)));
  $("#bnRes").addEventListener("click",()=>{$("#bnRes").hidden=true;});
  $("#bnTog").addEventListener("click",()=>panel(!$("#bnPanel").classList.contains("open")));
@@ -316,7 +320,7 @@ async function open(){
  $("#bnClose").focus({preventScroll:true});
  if(!busy&&!picking)reset();render();
  try{const r=await rpc("mf_bon_status");if(r.now)skew=+r.now-Date.now();take(r);
-  if(r.game&&!picking&&!busy){reset();setPick(true);say("Ta partie t'attend : choisis une noix ! 🥥");}
+  if(r.game&&!picking&&!busy){reset();setPick(true);say("Ta partie t'attend… tu te souviens où elle est ? 😏");}
   else if(!busy&&!picking)say(pick(["Approche, approche… 🥥","Où est la banane ? Où est la banane ?","Trois noix, une banane. Facile !"]));
   render();}catch(e){show("Oups",errText(e),"lose");}
 }
@@ -337,7 +341,7 @@ async function boot(){
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 17a3.5 3.5 0 0 1 7 0z"/><path d="M8.5 17a3.5 3.5 0 0 1 7 0z"/><path d="M15.5 17a3.5 3.5 0 0 1 7 0z"/><path d="M1 20h22"/><path d="M10 9c1.5 1.6 3.5 1.6 5 0" /></svg>`,
   status:async()=>{if(!(root&&!root.hidden)){const r=await rpc("mf_bon_status");if(r.now)skew=+r.now-Date.now();take(r);}const I=S;if(!I)return null;
    if(I.game)return {line:"Une partie est en cours : choisis ta noix de coco !",hot:true};
-   if(+I.left>0)return {line:`Encore ${I.left} partie${+I.left>1?"s":""} aujourd'hui · trouvée = mise ×${I.mult||3}`,hot:false};
+   if(+I.left>0)return {line:`Encore ${I.left} partie${+I.left>1?"s":""} aujourd'hui · jusqu'à ×3 en turbo`,hot:false};
    return {line:"Plus de parties aujourd'hui",pre:"Nouvelles parties dans ",in:+I.nextDay-(Date.now()+skew),hot:false};}});
 }
 window.MF_BON={open};
