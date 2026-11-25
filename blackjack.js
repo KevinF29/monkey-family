@@ -6,7 +6,7 @@
 (function(){
 "use strict";
 
-const IMG={logo:"packs/bj-titre.webp",croupier:"packs/bj-croupier.webp",triche:"packs/bj-croupier-triche.webp"};
+const IMG={logo:"packs/bj-titre.webp",croupier:"packs/bj-croupier.webp",triche:"packs/bj-croupier-triche.webp",table:"packs/bj-table.webp",fond:"packs/bj-fond.webp"};
 const RK=["A","2","3","4","5","6","7","8","9","10","V","D","R"],SU=["♠","♥","♦","♣"];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",bj_limit:"Plus de mains aujourd'hui : reviens demain !",bj_closed:"Le blackjack n'est pas encore ouvert.",
@@ -23,7 +23,7 @@ const cname=c=>{const r=c%13;return (r===12?"Roi singe":r===11?"Dame":r===10?"Va
 /* ---------- style ---------- */
 const CSS=`
 #mfBJ{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;overflow:hidden;overscroll-behavior:none;color:#f1edf9;font:16px/1.45 Quicksand,system-ui,sans-serif;
- background:radial-gradient(120% 60% at 50% 0,#2c2148,#15111f 60%)}
+ background:#15111f linear-gradient(rgba(16,10,28,.5),rgba(16,10,28,.78)) center/cover;background-image:linear-gradient(rgba(16,10,28,.5),rgba(16,10,28,.78)),url(${IMG.fond})}
 #mfBJ[hidden]{display:none}
 #mfBJ *{box-sizing:border-box;min-width:0}
 #mfBJ [hidden]{display:none!important}
@@ -37,8 +37,10 @@ const CSS=`
 .bj-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
 .bj-chip{background:#211a33;border:1px solid #3a2f57;border-radius:999px;padding:3px 10px;font-weight:700;font-size:13.5px;white-space:nowrap}
 .bj-chip b{color:#ffd23f}
-.bj-scene{flex:1;min-height:0;width:min(100%,640px);position:relative;display:flex;flex-direction:column;align-items:center;
- background:radial-gradient(120% 80% at 50% 30%,#1f8a4c,#0f5a30 60%,#0a3f22);border-top:6px solid #6b3f1d;box-shadow:inset 0 0 60px rgba(0,0,0,.45);padding:4px 10px max(10px,env(safe-area-inset-bottom))}
+.bj-scene{flex:1;min-height:0;width:min(100%,640px);position:relative;display:flex;flex-direction:column;align-items:center;padding:6px 26px max(30px,env(safe-area-inset-bottom))}
+.bj-scene>*{position:relative;z-index:1}
+.bj-scene>.bj-tbl{position:absolute;inset:0;z-index:0;pointer-events:none;background:#0f5a30;border-style:solid;border-color:transparent;border-width:70px 50px 86px;border-image:url(${IMG.table}) 290 210 360 210 fill stretch}
+@media(min-width:500px){.bj-scene>.bj-tbl{border-width:93px 67px 115px}}
 .bj-dealer{flex:none;position:relative;display:flex;align-items:flex-end;justify-content:center;height:clamp(64px,14svh,170px);width:100%}
 .bj-monk{height:100%;width:auto;max-width:60%;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));transform-origin:50% 100%}
 .bj-monkE{font-size:clamp(52px,11svh,130px);line-height:1;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));transform-origin:50% 100%}
@@ -92,7 +94,7 @@ const CSS=`
 .bj-row3 .bj-big{flex:1;max-width:160px;padding:10px 8px;font-size:17px;line-height:1.1}
 .bj-row3 .bj-big small{display:block;font:700 12px Quicksand,sans-serif}
 .bj-sub{color:#fff;text-shadow:0 1px 3px #000;font-size:13px;margin-top:6px;font-weight:700}
-.bj-res{position:absolute;left:6%;right:6%;top:40%;transform:translateY(-50%);z-index:5;background:rgba(33,26,51,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);border:1px solid #3a2f57;border-radius:18px;padding:12px 16px;text-align:center;cursor:pointer;-webkit-user-select:none;user-select:none;animation:bjPop .35s cubic-bezier(.2,1.5,.4,1) both}
+.bj-scene>.bj-res{position:absolute;z-index:5;left:6%;right:6%;top:40%;transform:translateY(-50%);z-index:5;background:rgba(33,26,51,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);border:1px solid #3a2f57;border-radius:18px;padding:12px 16px;text-align:center;cursor:pointer;-webkit-user-select:none;user-select:none;animation:bjPop .35s cubic-bezier(.2,1.5,.4,1) both}
 .bj-res[hidden]{display:none}
 .bj-res .t{font:400 24px/1.15 "Titan One",sans-serif;color:#ffd23f}
 .bj-res .t.lose{color:#b3a8cc}.bj-res .t.cheat{color:#ff7aa8}
@@ -129,7 +131,7 @@ const CSS=`
 .bj-btns button.on{background:#ffd23f;color:#2a1145;border-color:#ffd23f}
 .bj-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#2c2148;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .bj-toast.on{transform:translate(-50%,0);opacity:1}
-@media(min-width:660px){.bj-scene{border-radius:22px 22px 0 0}}
+@media(min-width:660px){.bj-scene{margin-top:4px}}
 @media(max-height:700px){.bj-quick{display:none}.bj-logo{height:54px}.bj-logoT{font-size:26px}.bj-top{gap:3px}}
 @media(prefers-reduced-motion:reduce){.bj-card,.bj-card.cheat,.bj-mkT,.bj-mkE,.bj-res,.bj-monk.wob,.bj-monkE.wob,.bj-flash{animation:none}.bj-in,.bj-say,.bj-toast,.bj-panel{transition:none}}
 `;
@@ -262,7 +264,7 @@ function build(){
   <h2 style="margin:0"><img class="bj-logo" src="${IMG.logo}" alt="MonkeyJack 21" width="1400" height="467"><span class="bj-logoT" hidden>MonkeyJack 21</span></h2>
   <div class="bj-chips"><span class="bj-chip">🍌 <b id="bjBan">…</b></span><span class="bj-chip">Boosters <b id="bjBoo">…</b></span></div>
   <button type="button" class="bj-btn r" id="bjClose" aria-label="Fermer">✕</button></div>
- <div class="bj-scene">
+ <div class="bj-scene"><div class="bj-tbl" aria-hidden="true"></div>
   <div class="bj-dealer"><img class="bj-monk" src="${IMG.croupier}" alt="Le singe croupier"><span class="bj-monkE" hidden role="img" aria-label="Le singe croupier">🐒</span><div class="bj-say" aria-live="polite"></div></div>
   <div class="bj-rows">
    <div class="bj-side"><div class="bj-lab">Le singe <span class="bj-tot" id="bjDT" hidden></span></div><div class="bj-hand" id="bjD"></div></div>
