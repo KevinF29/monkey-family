@@ -24,33 +24,35 @@ function isAdmin(){
 /* ---------- style ---------- */
 const CSS=`
 #casinoBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + ${TOP}px)}
-#mfCasino{position:fixed;inset:0;z-index:8900;display:flex;flex-direction:column;align-items:center;overflow-y:auto;overscroll-behavior:contain;
- padding:max(16px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));box-sizing:border-box;color:#f6f0d8;font:16px/1.45 Quicksand,system-ui,sans-serif;
+#mfCasino{position:fixed;inset:0;z-index:8900;display:flex;flex-direction:column;align-items:center;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;height:100dvh;
+ padding:max(12px,env(safe-area-inset-top)) 16px max(12px,env(safe-area-inset-bottom));box-sizing:border-box;color:#f6f0d8;font:16px/1.45 Quicksand,system-ui,sans-serif;
  background:radial-gradient(ellipse 90% 45% at 50% 0,rgba(255,200,60,.18),transparent 70%),linear-gradient(180deg,#2a1450,#140a26)}
 #mfCasino[hidden]{display:none}
-.cs-top{position:relative;width:min(520px,100%);margin:0 0 14px;padding-top:44px}
-.cs-top h2{margin:0}
-.cs-top img{display:block;width:100%;height:auto;aspect-ratio:1100/367;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
+.cs-top{flex:none;position:relative;width:min(520px,100%);margin:0 0 clamp(8px,1.6dvh,14px);padding-top:clamp(30px,5dvh,44px)}
+.cs-top h2{margin:0;display:flex;justify-content:center}
+.cs-top img{display:block;width:100%;max-width:calc(min(20dvh,170px)*1100/367);height:auto;aspect-ratio:1100/367;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
 .cs-x{position:absolute;top:0;right:0;z-index:1;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:22px;cursor:pointer}
-.cs-list{width:min(520px,100%);display:flex;flex-direction:column;gap:12px}
-.cs-card{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:14px 16px;border-radius:18px;cursor:pointer;color:inherit;font:inherit;
+.cs-list{flex:1 1 auto;min-height:0;width:min(520px,100%);display:flex;flex-direction:column;gap:clamp(6px,1.4dvh,12px)}
+.cs-card{position:relative;display:flex;align-items:center;gap:14px;width:100%;flex:0 1 auto;min-height:0;text-align:left;padding:clamp(7px,1.5dvh,14px) 16px;border-radius:18px;cursor:pointer;color:inherit;font:inherit;
  background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.03));border:1px solid rgba(255,217,138,.28);box-shadow:0 8px 22px rgba(0,0,0,.35);transition:transform .12s ease,border-color .12s}
 .cs-card:hover,.cs-card:focus-visible{border-color:#ffd23f;outline:none}
 .cs-card:active{transform:scale(.98)}
-.cs-ic{flex:none;width:58px;height:58px;border-radius:16px;display:grid;place-items:center;color:#ffd98a;background:rgba(20,18,32,.7);border:1px solid rgba(255,255,255,.18)}
+.cs-ic{flex:none;width:clamp(44px,7dvh,58px);height:clamp(44px,7dvh,58px);border-radius:16px;display:grid;place-items:center;color:#ffd98a;background:rgba(20,18,32,.7);border:1px solid rgba(255,255,255,.18)}
 .cs-ic svg{width:32px;height:32px}
 .cs-tx{flex:1;min-width:0}
-.cs-tx b{display:block;font:400 21px/1.15 "Titan One",sans-serif;color:#fff}
+.cs-tx b{display:block;font:400 clamp(18px,2.7dvh,21px)/1.15 "Titan One",sans-serif;color:#fff}
 .cs-tx span{display:block;margin-top:3px;font-weight:700;font-size:14.5px;color:#d9cdb0}
 .cs-card.hot .cs-tx span{color:#ffd23f}
-.cs-tx .cs-when{display:inline-flex;align-items:center;gap:6px;margin-top:7px;padding:3px 10px 3px 8px;border-radius:999px;font-size:13.5px;font-weight:700;white-space:nowrap;
+.cs-tx .cs-when{display:inline-flex;align-items:center;gap:6px;margin-top:clamp(3px,.8dvh,7px);padding:3px 10px 3px 8px;border-radius:999px;font-size:13.5px;font-weight:700;white-space:nowrap;
  color:#ffe7a8;background:rgba(255,210,63,.12);border:1px solid rgba(255,210,63,.3)}
 .cs-when i{font-style:normal}
 .cs-when svg{width:14px;height:14px;flex:none}
 .cs-card .cs-dot{position:absolute;top:10px;right:12px;width:11px;height:11px;border-radius:50%;background:#ff4b45;box-shadow:0 0 0 3px rgba(255,75,69,.25)}
 .cs-card:not(.hot) .cs-dot{display:none}
 .cs-go{flex:none;font-size:22px;color:#ffd23f}
-.cs-note{width:min(520px,100%);margin-top:16px;text-align:center;font-size:13px;color:#a99cc4}
+/* très petit écran (téléphone couché…) : on laisse défiler plutôt que de couper un jeu */
+@media (max-height:540px){#mfCasino{overflow-y:auto;overscroll-behavior:contain}.cs-list{flex:none}}
+.cs-note{flex:none;width:min(520px,100%);margin:clamp(8px,1.6dvh,16px) 0 0;text-align:center;font-size:13px;color:#a99cc4}
 `;
 
 /* ---------- bouton rond ---------- */
