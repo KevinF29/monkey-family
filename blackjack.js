@@ -1,4 +1,4 @@
-/* Monkey Family — Banana Jack (blackjack du Casino, avec un singe croupier)
+/* Monkey Family — MonkeyJack 21 (blackjack du Casino, avec un singe croupier)
    10 mains par jour, mise de 1 à 20 🍌, actions Tirer / Rester / Doubler.
    Monkey Blackjack (As + Roi singe d'entrée) : la mise ×5. Le singe triche parfois quand il devrait sauter.
    Les cartes sont tirées par le serveur (mf_bj_*, supabase-blackjack.sql) : la carte cachée du croupier n'arrive qu'à la fin de la main.
@@ -30,7 +30,7 @@ const CSS=`
 #mfBJ,#mfBJ *{-webkit-tap-highlight-color:transparent}
 #mfBJ button:focus-visible,#mfBJ select:focus-visible,#mfBJ input:focus-visible{outline:3px solid #8fd3ff;outline-offset:2px}
 .bj-top{flex:none;position:relative;width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;padding:max(8px,env(safe-area-inset-top)) 58px 6px}
-.bj-logo{display:block;height:clamp(50px,9svh,104px);width:auto;max-width:100%;filter:drop-shadow(0 8px 12px rgba(0,0,0,.5))}
+.bj-logo{display:block;height:clamp(56px,10svh,120px);width:auto;max-width:100%;filter:drop-shadow(0 8px 12px rgba(0,0,0,.5))}
 .bj-logoT{margin:0;font:400 clamp(26px,7vw,38px)/1.1 "Titan One",sans-serif;color:#ffd23f;text-shadow:0 3px 0 #8a5a00,0 0 16px rgba(0,0,0,.5)}
 .bj-btn{position:absolute;top:max(8px,env(safe-area-inset-top));width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(20,18,32,.75);color:#ffd23f;font:700 19px Quicksand,sans-serif;cursor:pointer;display:grid;place-items:center}
 .bj-btn.l{left:10px}.bj-btn.r{right:10px}
@@ -130,7 +130,7 @@ const CSS=`
 .bj-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#2c2148;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .bj-toast.on{transform:translate(-50%,0);opacity:1}
 @media(min-width:660px){.bj-scene{border-radius:22px 22px 0 0}}
-@media(max-height:700px){.bj-quick{display:none}.bj-logo{height:44px}.bj-logoT{font-size:26px}.bj-top{gap:3px}}
+@media(max-height:700px){.bj-quick{display:none}.bj-logo{height:54px}.bj-logoT{font-size:26px}.bj-top{gap:3px}}
 @media(prefers-reduced-motion:reduce){.bj-card,.bj-card.cheat,.bj-mkT,.bj-mkE,.bj-res,.bj-monk.wob,.bj-monkE.wob,.bj-flash{animation:none}.bj-in,.bj-say,.bj-toast,.bj-panel{transition:none}}
 `;
 
@@ -257,9 +257,9 @@ async function adm(x,msg){try{const r=await rpc("mf_bj_admin",{p_action:x});take
 /* ---------- construction ---------- */
 function build(){
  const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
- root=document.createElement("div");root.id="mfBJ";root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Banana Jack");
+ root=document.createElement("div");root.id="mfBJ";root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","MonkeyJack 21");
  root.innerHTML=`<div class="bj-top"><button type="button" class="bj-btn l" id="bjTog" aria-controls="bjPanel" aria-expanded="false" aria-label="Règles">?</button>
-  <h2 style="margin:0"><img class="bj-logo" src="${IMG.logo}" alt="Banana Jack"><span class="bj-logoT" hidden>Banana Jack</span></h2>
+  <h2 style="margin:0"><img class="bj-logo" src="${IMG.logo}" alt="MonkeyJack 21" width="1400" height="467"><span class="bj-logoT" hidden>MonkeyJack 21</span></h2>
   <div class="bj-chips"><span class="bj-chip">🍌 <b id="bjBan">…</b></span><span class="bj-chip">Boosters <b id="bjBoo">…</b></span></div>
   <button type="button" class="bj-btn r" id="bjClose" aria-label="Fermer">✕</button></div>
  <div class="bj-scene">
@@ -320,7 +320,7 @@ function build(){
  $("#bjRes").addEventListener("click",()=>{$("#bjRes").hidden=true;});
  $("#bjTog").addEventListener("click",()=>panel(!$("#bjPanel").classList.contains("open")));
  $("#bjPanelX").addEventListener("click",()=>{panel(false);$("#bjTog").focus({preventScroll:true});});
- $("#bjOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le blackjack est de nouveau caché.":"Banana Jack est ouvert à tous les joueurs !"));
+ $("#bjOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le blackjack est de nouveau caché.":"MonkeyJack 21 est ouvert à tous les joueurs !"));
  $("#bjReset").addEventListener("click",()=>adm("reset","Tes mains du jour sont rendues."));
  $("#bjAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$(".bj-mk").hidden){$(".bj-mk").click();return;}if($("#bjPanel").classList.contains("open"))panel(false);else close();});
@@ -351,7 +351,7 @@ async function boot(){
  let ok=ADMIN;if(!ok){try{ok=!!(await rpc("mf_bj_open"));}catch(e){}}
  if(!ok||!window.MF_CASINO)return;
  Object.values(IMG).forEach(u=>{const i=new Image();i.src=u;});
- window.MF_CASINO.add({id:"bj",name:"Banana Jack",order:6,root:"mfBJ",open,
+ window.MF_CASINO.add({id:"bj",name:"MonkeyJack 21",order:6,root:"mfBJ",open,
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="11" height="15" rx="2" transform="rotate(-10 8.5 12.5)"/><rect x="10" y="4" width="11" height="15" rx="2" transform="rotate(8 15.5 11.5)"/><path d="M14.5 9.5l1.6 3.8 1.6-3.8M15 12h2.4"/></svg>`,
   status:async()=>{if(!(root&&!root.hidden)){const r=await rpc("mf_bj_status");if(r.now)skew=+r.now-Date.now();take(r);}const I=S;if(!I)return null;
    if(I.hand)return {line:"Une main est en cours : le singe t'attend !",hot:true};

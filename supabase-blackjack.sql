@@ -1,4 +1,4 @@
--- Monkey Family — Banana Jack (blackjack du Casino, avec un singe croupier)
+-- Monkey Family — MonkeyJack 21 (blackjack du Casino, avec un singe croupier)
 -- À lancer une seule fois dans Supabase. Ne touche à aucune table existante :
 -- crée deux tables (mf_bj, mf_bj_cfg) et les fonctions mf_bj_*.
 -- Le jeu reste visible par l'admin seulement tant que mf_bj_cfg.open = false
