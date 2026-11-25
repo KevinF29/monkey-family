@@ -68,11 +68,11 @@ const CSS=`
 #mfWheel button:focus-visible,#mfWheel select:focus-visible,#mfWheel input:focus-visible{outline:3px solid #8fd3ff;outline-offset:2px}
 .wh-res{position:absolute;left:6%;right:6%;top:42%;z-index:5;background:rgba(33,26,51,.96);box-shadow:0 10px 30px rgba(0,0,0,.5);border:1px solid #3a2f57;border-radius:18px;padding:14px 16px;text-align:center;cursor:pointer}
 .wh-res[hidden]{display:none}
-.wh-res .t{font:400 24px/1.15 "Titan One",sans-serif;color:#ffd23f}
-.wh-res .t.lose{color:#b3a8cc}
-.wh-res .s{color:#d9d1ec;font-size:14.5px;margin-top:4px}
-.wh-res .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
-.wh-res .row:empty{display:none}
+.wh-res .wh-rt{font:400 24px/1.15 "Titan One",sans-serif;color:#ffd23f}
+.wh-res .wh-rt.lose{color:#b3a8cc}
+.wh-res .wh-rs{color:#d9d1ec;font-size:14.5px;margin-top:4px}
+.wh-res .wh-rrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+.wh-res .wh-rrow:empty{display:none}
 .wh-side{position:absolute;top:0;left:0;bottom:0;z-index:30;width:min(400px,100%);overflow-y:auto;overscroll-behavior:contain;background:#1a1429;border-right:1px solid #3a2f57;
  padding:max(14px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));box-shadow:20px 0 40px rgba(0,0,0,.5);transform:translateX(-105%);transition:transform .25s;visibility:hidden}
 .wh-side.open{transform:none;visibility:visible}
@@ -94,7 +94,7 @@ const CSS=`
 .wh-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .wh-btns button{min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid #4a3a78;background:#2c2148;color:#f1edf9;font:700 14px Quicksand,sans-serif;cursor:pointer}
 .wh-btns button.on{background:#ffd23f;color:#2a1145;border-color:#ffd23f}
-.wh-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,160%);background:#2c2148;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
+.wh-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#2c2148;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .wh-toast.on{transform:translate(-50%,0);opacity:1}
 .wh-scam{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:radial-gradient(circle at 50% 45%,rgba(255,61,154,.55),rgba(21,17,31,.92) 70%);animation:whIn .25s ease-out;overflow:hidden;cursor:pointer}
 .wh-scam[hidden]{display:none}
@@ -177,16 +177,25 @@ function render(){if(!root||!S)return;
  const a=action();b.disabled=busy||!a;
  b.textContent=cur==="gold"?"Tour doré gratuit":+S.relance>0?`Relance gratuite (${S.relance})`:a?`Tourner · ${S.price} 🍌`:+S.paidLeft===0?"Plus de tours aujourd'hui":"Pas assez de bananes";
  $("#whSub").textContent=`Tours payants : ${S.paidLeft}/${S.max}`+(S.free?"":` · Tour doré dans ${hhmm(+S.nextFree-(Date.now()+skew))}`);
- if(choice&&!busy)showChoice(+S.pending.gain);
+ if(choice&&!busy)showChoice(lot(S.pending));
  $("#whHist").innerHTML=(S.hist||[]).map(h=>`<li>${esc(h)}</li>`).join("");
  if(ADMIN){const o=$("#whOpen");o.textContent=S.open?"Cacher aux joueurs":"Ouvrir à tous les joueurs";o.classList.toggle("on",!S.open);
   $("#whState").textContent=S.open?"La roue est ouverte à tous les joueurs.":"La roue est visible par toi seulement.";}}
 
 /* ---------- résultats ---------- */
-function show(t,s,lose,btns){$("#whResT").textContent=t;$("#whResT").className="t"+(lose?" lose":"");$("#whResS").textContent=s||"";const r=$("#whResB");r.innerHTML="";(btns||[]).forEach(x=>r.appendChild(x));$("#whRes").hidden=false;}
+function show(t,s,lose,btns){$("#whResT").textContent=t;$("#whResT").className="wh-rt"+(lose?" lose":"");$("#whResS").textContent=s||"";const r=$("#whResB");r.innerHTML="";(btns||[]).forEach(x=>r.appendChild(x));$("#whRes").hidden=false;}
 const mk=(txt,cls,fn)=>{const e=document.createElement("button");e.type="button";e.className=cls;e.textContent=txt;e.onclick=fn;return e;};
-function showChoice(g){show(`Gagné : ${g} 🍌`,"Tu les gardes, ou tu tentes de les doubler sur la roue or/noir (une chance sur deux) ?",false,
- [mk(`Garder ${g} 🍌`,"wh-ghost",()=>keep()),mk(`Quitte ou double → ${2*g} 🍌`,"wh-big",()=>dbl())]);}
+/* un lot en attente : {t,v} (ancien format {gain} = bananes) */
+const lot=p=>({t:p&&p.t||"ban",v:+(p&&(p.v!=null?p.v:p.gain))||0});
+function lab(t,v){return t==="ban"?`${v} 🍌`:t==="jackpot"?`${v} 🍌`:t==="boost"?`${v} booster${v>1?"s":""}`:
+ t==="relance"?`${v} relance${v>1?"s":""}`:t==="time"?`−${v/60} h d'attente`:"";}
+function showChoice(L){const{t,v}=L,a=lab(t,v),b=lab(t,2*v);
+ const title=t==="jackpot"?`JACKPOT : ${a}`:`Gagné : ${a}`;
+ show(title,"Tu le gardes, ou tu tentes de le doubler sur la roue or/noir (une chance sur deux) ?",false,
+ [mk(`Garder ${a}`,"wh-ghost",()=>keep()),mk(`Quitte ou double → ${b}`,"wh-big",()=>dbl())]);}
+function gotMsg(t,v,kept){return t==="ban"?["Ajoutées à ton compte."]:t==="jackpot"?[`La cagnotte repart à ${S.pot0} 🍌.`]:
+ t==="boost"?["Ajoutés à ton stock."]:t==="relance"?[v>1?"Tes prochains tours sont offerts.":"Ton prochain tour est offert."]:
+ t==="time"?[kept?"Gardées pour ta prochaine attente de booster.":`Ton prochain booster arrive ${v/60} heures plus tôt.`]:[""];}
 let tt=0;function toast(t){const e=$(".wh-toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),3500);}
 const err=e=>{busy=false;anim=null;show("Oups",errText(e),true);render();
  rpc("mf_wheel_status").then(r=>{take(r);render();},()=>{});};
@@ -200,21 +209,18 @@ async function go(v){if(busy)return;const a=action();if(!a){render();return;}
  await land(r.idx);if(r.scam)await scam(PZ[r.key].k==="jackpot"?"le jackpot":PZ[r.key].lab);busy=false;take(r.info);outcome(r);render();}
 function outcome(r){const p=PZ[r.key];
  if(r.scam){show("Monkey Scam !",`Le singe a volé ton lot (${p.k==="jackpot"?"le jackpot reste dans la cagnotte":p.lab}). Retente ta chance !`,true);return;}
- if(p.k==="lose")show("Perdu…","Retente ta chance !",true);
- else if(p.k==="ban"&&!S.pending){jingle(p.v>=25);show(`+${p.v} 🍌`,"Ajoutées à ton compte.");}
- else if(p.k==="ban")jingle(false);
- else if(p.k==="relance"){jingle(false);show("Relance !","Ton prochain tour est offert.");}
- else if(p.k==="time"){jingle(true);show("−2 h d'attente !",r.kept?"Gardées pour ta prochaine attente de booster.":"Ton prochain booster arrive 2 heures plus tôt.");}
- else if(p.k==="boost"){jingle(true);show("+2 boosters !","Ajoutés à ton stock.");}
- else if(p.k==="jackpot"){jingle(true);show(`JACKPOT ! +${r.gain} 🍌`,`La cagnotte repart à ${S.pot0} 🍌.`);}}
+ if(p.k==="lose"){show("Perdu…","Retente ta chance !",true);return;}
+ jingle(p.k!=="ban"&&p.k!=="relance"||p.v>=25);}
 function scam(what){$("#whScamS").textContent=`Il repart avec ton lot : ${what}`;return new Promise(done=>{const el=$(".wh-scam");el.hidden=false;ac();setTimeout(pfrt,300);vib([80,60,80,60,200]);
  const end=()=>{el.hidden=true;el.onclick=null;clearTimeout(tm);done();};const tm=setTimeout(end,3800);setTimeout(()=>{el.onclick=end;},1200);});}
-async function keep(){if(busy)return;busy=true;try{const r=await rpc("mf_wheel_double",{p_double:false});take(r.info);busy=false;show(`+${r.gain} 🍌`,"Bien joué, c'est dans la poche.");render();}catch(e){err(e);}}
+async function keep(){if(busy)return;busy=true;try{const r=await rpc("mf_wheel_double",{p_double:false});take(r.info);busy=false;
+ const t=r.t||"ban";const v=r.v||r.gain;show(`${t==="time"?"":"+"}${lab(t,v)}`,gotMsg(t,v,r.timeKept)[0]);render();}catch(e){err(e);}}
 async function dbl(){if(busy)return;ac();busy=true;$("#whRes").hidden=true;cur="qod";lastIdx=-1;render();roll(.014+Math.random()*.004);
  let r;try{r=await rpc("mf_wheel_double",{p_double:true,p_force:takeForce("#whFQod"),p_scam:takeScam()});}catch(e){return err(e);}
- await land(r.idx);if(r.scam)await scam(`${2*r.stake} 🍌`);busy=false;take(r.info);
- if(r.scam)show("Monkey Scam !",`Le singe est parti avec tes ${2*r.stake} 🍌.`,true);
- else if(r.gain){jingle(true);show(`Doublé ! +${r.gain} 🍌`,"Quel cran.");}else show("Perdu…",`Les ${r.stake} 🍌 sont partis.`,true);
+ const t=r.t||"ban",won=lab(t,2*r.stake),lost=lab(t,r.stake);
+ await land(r.idx);if(r.scam)await scam(won);busy=false;take(r.info);
+ if(r.scam)show("Monkey Scam !",`Le singe est parti avec ton lot : ${won}.`,true);
+ else if(r.gain){jingle(true);show(`Doublé ! ${t==="time"?"":"+"}${won}`,`Quel cran. ${gotMsg(t,2*r.stake,r.timeKept)[0]}`);}else show("Perdu…",`Ton lot (${lost}) est parti.`,true);
  hold=true;render();setTimeout(()=>{hold=false;render();},1600);}
 
 /* ---------- admin ---------- */
@@ -236,7 +242,7 @@ function build(){
   <div class="wh-mode"></div>
   <div class="wh-area"><div class="wh-box"><canvas aria-label="Roue, glisse-la du doigt pour la lancer"></canvas><img class="wh-frame" src="${IMG.cadre}" alt=""><img class="wh-ptr" src="${IMG.ptr}" alt=""></div></div>
   <div class="wh-act"><button type="button" class="wh-big" id="whGo"></button><div class="wh-sub" id="whSub"></div></div>
-  <div class="wh-res" id="whRes" hidden role="status"><div class="t" id="whResT"></div><div class="s" id="whResS"></div><div class="row" id="whResB"></div></div>
+  <div class="wh-res" id="whRes" hidden role="status"><div class="wh-rt" id="whResT"></div><div class="wh-rs" id="whResS"></div><div class="wh-rrow" id="whResB"></div></div>
  </div>
  <aside class="wh-side" id="whSide" aria-label="Règles et réglages">
   <div class="wh-sh"><h3>Règles et chances</h3><button type="button" class="wh-btn" style="position:static" id="whSideX" aria-label="Fermer les règles">✕</button></div>
@@ -310,7 +316,7 @@ async function boot(){
  window.MF_CASINO.add({id:"wheel",name:"The Monkey Wheel",order:5,root:"mfWheel",open,
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><circle cx="12" cy="13" r="1.6"/><path d="M12 5v6.4M12 14.6V21M4 13h6.4M13.6 13H20M6.3 7.3l4.5 4.5M13.2 14.2l4.5 4.5M17.7 7.3l-4.5 4.5M10.8 14.2l-4.5 4.5"/><path d="M10.5 2.5h3L12 5z"/></svg>`,
   status:async()=>{if(!(root&&!root.hidden)){const r=await rpc("mf_wheel_status");if(r.now)skew=+r.now-Date.now();take(r);}const I=S;if(!I)return null;
-   if(I.pending)return {line:`Un gain de ${I.pending.gain} 🍌 t'attend : garde-le ou double-le !`,hot:true};
+   if(I.pending){const L=lot(I.pending);return {line:`Un lot t'attend (${lab(L.t,L.v)}) : garde-le ou double-le !`,hot:true};}
    if(I.free)return {line:"Ton tour doré gratuit t'attend !",hot:true};
    if(+I.relance>0)return {line:"Une relance gratuite t'attend !",hot:true};
    if(+I.paidLeft>0)return {line:`Encore ${I.paidLeft} tour${+I.paidLeft>1?"s":""} aujourd'hui · cagnotte ${I.pot} 🍌`,pre:"Tour doré dans ",in:+I.nextFree-(Date.now()+skew),hot:false};

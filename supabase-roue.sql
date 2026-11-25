@@ -112,13 +112,51 @@ begin
   return public._wheel_info(u);
 end $$;
 
--- un tour : p_kind = 'gold' (tour doré du jour), 'paid' (tour payant) ou 'relance'
--- p_force (admin) : une case de la roue (P, b1, b2, b5, b10, b25, R, T, BB, J) ; p_scam (admin) : forcer le Monkey Scam
+-- donner un lot (bananes, relance, minutes d'attente en moins, boosters, jackpot) ; renvoie {kept} pour le temps gardé en réserve
+create or replace function public._wheel_give(p_uid uuid, t text, v int)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare s public.pstate; kept boolean := false;
+begin
+  select * into s from public.pstate where uid = p_uid for update;
+  if t in ('ban', 'jackpot') then
+    update public.pstate set bananas = bananas + v where uid = p_uid;
+  elsif t = 'boost' then
+    update public.pstate set stock = least(99, stock + v) where uid = p_uid;
+  elsif t = 'relance' then
+    update public.mf_wheel set relance = relance + v where uid = p_uid;
+  elsif t = 'time' then
+    kept := s.next_at is null or s.stock >= 3;
+    if not kept then
+      update public.pstate set next_at = next_at - make_interval(mins => v) where uid = p_uid;
+    else
+      update public.pstate set slot_bank = least(1440, slot_bank + v) where uid = p_uid;
+    end if;
+    perform public._tick(p_uid);
+  end if;
+  return jsonb_build_object('kept', kept);
+end $$;
+
+-- texte d'un lot pour l'historique
+create or replace function public._wheel_lab(t text, v int)
+returns text language sql immutable set search_path = public as $$
+  select case t when 'ban' then v || ' 🍌' when 'jackpot' then 'jackpot ' || v || ' 🍌' when 'boost' then v || ' boosters'
+    when 'relance' then v || case when v > 1 then ' relances' else ' relance' end when 'time' then '−' || (v / 60) || ' h d''attente' else '' end $$;
+
+-- les beaux lots partent dans le fil d'actu (d = gagné au quitte ou double)
+create or replace function public._wheel_feed(p_uid uuid, t text, v int, d boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if t in ('boost', 'time', 'jackpot') or (t = 'ban' and (v >= 25 or (d and v >= 20))) or (t = 'relance' and d) then
+    perform public._feed(jsonb_build_object('kind', 'wheel', 'uid', p_uid, 'r', t, 'v', v, 'd', d));
+  end if;
+end $$;
+
+-- un tour : p_kind = 'gold' (tour doré du jour), 'paid' (tour payant) ou 'relance' ; tout lot gagné attend le choix garder / quitte ou double
 create or replace function public.mf_wheel_spin(p_kind text default 'paid', p_force text default null, p_scam boolean default false)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare u uuid := public._check(); c public.mf_wheel_cfg; t public.mf_wheel; s public.pstate;
   d date := (now() at time zone 'Europe/Paris')::date; n int; w text; src text; idx int; k text; p jsonb; tt text; v int;
-  sc boolean; gain int := 0; kept boolean := false; adm boolean := public.is_admin();
+  sc boolean; adm boolean := public.is_admin();
 begin
   if not public.mf_wheel_open() and not adm then raise exception 'wheel_closed'; end if;
   insert into public.mf_wheel(uid) values (u) on conflict do nothing;
@@ -141,7 +179,7 @@ begin
     if n >= c.paid_max then raise exception 'wheel_limit'; end if;
     if s.bananas < c.price then raise exception 'no_bananas'; end if;
     w := 'main'; src := 'Tour payant';
-    s.bananas := s.bananas - c.price;
+    update public.pstate set bananas = bananas - c.price where uid = u;
     c.pot := c.pot + c.price;
     update public.mf_wheel set paid_day = d, paid_n = n + 1 where uid = u;
   end if;
@@ -150,60 +188,38 @@ begin
   k := (public._wheel_seg(w))[idx + 1];
   p := public._wheel_prize(k); tt := p->>'t'; v := (p->>'v')::int;
   sc := tt <> 'lose' and ((adm and coalesce(p_scam, false)) or random() < c.scam);
+  if tt = 'jackpot' and not sc then v := c.pot; c.pot := c.pot0; end if;   -- la cagnotte est prise : elle repart à zéro, même si le quitte ou double est perdu ensuite
 
   if sc then
     perform public._feed(jsonb_build_object('kind', 'wheel_scam', 'uid', u, 'lab', p->>'lab'));
     perform public._wheel_log(u, src || ' · Monkey Scam ! ' || (p->>'lab') || ' volé');
+  elsif tt = 'lose' then
+    perform public._wheel_log(u, src || ' · Perdu');
   else
-    if tt = 'ban' then
-      if v in (1, 2, 5, 10) then
-        update public.mf_wheel set pending = jsonb_build_object('stage', 'choice', 'gain', v) where uid = u;
-      else
-        s.bananas := s.bananas + v; gain := v;
-      end if;
-    elsif tt = 'relance' then
-      update public.mf_wheel set relance = relance + 1 where uid = u;
-    elsif tt = 'boost' then
-      s.stock := least(99, s.stock + v);
-    elsif tt = 'jackpot' then
-      gain := c.pot; s.bananas := s.bananas + gain; c.pot := c.pot0;
-    end if;
-    if tt in ('boost', 'time', 'jackpot') or (tt = 'ban' and v >= 25) then
-      perform public._feed(jsonb_build_object('kind', 'wheel', 'uid', u, 'r', tt, 'v', case when tt = 'jackpot' then gain else v end));
-    end if;
-    perform public._wheel_log(u, src || ' · ' || case when tt = 'jackpot' then 'JACKPOT ' || gain || ' 🍌' else p->>'lab' end);
+    -- tout lot gagné attend le choix « garder » ou « quitte ou double »
+    update public.mf_wheel set pending = jsonb_build_object('stage', 'choice', 't', tt, 'v', v, 'key', k) where uid = u;
+    perform public._wheel_log(u, src || ' · ' || public._wheel_lab(tt, v));
   end if;
-
-  update public.pstate set bananas = s.bananas, stock = s.stock where uid = u;
   update public.mf_wheel_cfg set pot = c.pot where id = 1;
-  if tt = 'time' and not sc then
-    kept := s.next_at is null or s.stock >= 3;
-    if not kept then
-      update public.pstate set next_at = next_at - make_interval(mins => v) where uid = u;
-    else
-      update public.pstate set slot_bank = least(1440, slot_bank + v) where uid = u;
-    end if;
-  end if;
-  perform public._tick(u);
   update public.mf_wheel set total = total + 1 where uid = u;
-  return jsonb_build_object('wheel', w, 'idx', idx, 'key', k, 'gain', gain, 'scam', sc, 'kept', kept, 'info', public._wheel_info(u));
+  return jsonb_build_object('wheel', w, 'idx', idx, 'key', k, 'gain', case when sc or tt = 'lose' then 0 else v end, 'scam', sc, 'info', public._wheel_info(u));
 end $$;
 
--- après un gain de 1, 2, 5 ou 10 🍌 : p_double = false pour garder, true pour le quitte ou double
--- p_force (admin) : 'OR' (doublé) ou 'NO' (perdu) ; p_scam (admin) : forcer le Monkey Scam si le quitte ou double est gagné
+-- après un lot gagné : p_double = false pour le garder, true pour le quitte ou double (le lot doublé ou rien)
 create or replace function public.mf_wheel_double(p_double boolean default false, p_force text default null, p_scam boolean default false)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare u uuid := public._check(); c public.mf_wheel_cfg; t public.mf_wheel; g int; idx int; k text; won boolean; sc boolean := false;
-  adm boolean := public.is_admin();
+declare u uuid := public._check(); c public.mf_wheel_cfg; t public.mf_wheel; tt text; v int; idx int; k text; won boolean; sc boolean := false;
+  adm boolean := public.is_admin(); g jsonb;
 begin
   select * into t from public.mf_wheel where uid = u for update;
   if t.pending is null or t.pending->>'stage' <> 'choice' then raise exception 'wheel_nothing'; end if;
-  g := (t.pending->>'gain')::int;
+  tt := coalesce(t.pending->>'t', 'ban'); v := coalesce((t.pending->>'v')::int, (t.pending->>'gain')::int);   -- ancien format {gain}
   update public.mf_wheel set pending = null where uid = u;
   if not coalesce(p_double, false) then
-    update public.pstate set bananas = bananas + g where uid = u;
-    perform public._wheel_log(u, 'Gardé · ' || g || ' 🍌');
-    return jsonb_build_object('kept', true, 'gain', g, 'info', public._wheel_info(u));
+    g := public._wheel_give(u, tt, v);
+    perform public._wheel_feed(u, tt, v, false);
+    perform public._wheel_log(u, 'Gardé · ' || public._wheel_lab(tt, v));
+    return jsonb_build_object('kept', true, 't', tt, 'v', v, 'gain', v, 'timeKept', g->'kept', 'info', public._wheel_info(u));
   end if;
   select * into c from public.mf_wheel_cfg where id = 1;
   idx := public._wheel_pick('qod', case when adm then nullif(p_force, '') end);
@@ -211,14 +227,17 @@ begin
   won := k = 'OR';
   sc := won and ((adm and coalesce(p_scam, false)) or random() < c.scam);
   if won and not sc then
-    update public.pstate set bananas = bananas + 2 * g where uid = u;
-    if 2 * g >= 20 then perform public._feed(jsonb_build_object('kind', 'wheel', 'uid', u, 'r', 'double', 'v', 2 * g)); end if;
+    g := public._wheel_give(u, tt, 2 * v);
+    perform public._wheel_feed(u, tt, 2 * v, true);
   end if;
-  if sc then perform public._feed(jsonb_build_object('kind', 'wheel_scam', 'uid', u, 'lab', (2 * g) || ' 🍌')); end if;
-  perform public._wheel_log(u, 'Quitte ou double · ' || case when sc then 'Monkey Scam ! ' || 2 * g || ' 🍌 volées' when won then 'doublé, ' || 2 * g || ' 🍌' else 'perdu ' || g || ' 🍌' end);
-  return jsonb_build_object('wheel', 'qod', 'idx', idx, 'key', k, 'gain', case when won and not sc then 2 * g else 0 end, 'stake', g, 'scam', sc,
-    'info', public._wheel_info(u));
+  if sc then perform public._feed(jsonb_build_object('kind', 'wheel_scam', 'uid', u, 'lab', public._wheel_lab(tt, 2 * v))); end if;
+  perform public._wheel_log(u, 'Quitte ou double · ' || case when sc then 'Monkey Scam ! ' || public._wheel_lab(tt, 2 * v) || ' volé' when won then 'doublé, ' || public._wheel_lab(tt, 2 * v) else 'perdu ' || public._wheel_lab(tt, v) end);
+  return jsonb_build_object('wheel', 'qod', 'idx', idx, 'key', k, 't', tt, 'v', v, 'gain', case when won and not sc then 2 * v else 0 end, 'stake', v, 'scam', sc,
+    'timeKept', coalesce(g->'kept', 'false'::jsonb), 'info', public._wheel_info(u));
 end $$;
+
+
+revoke execute on function public._wheel_give(uuid, text, int), public._wheel_lab(text, int), public._wheel_feed(uuid, text, int, boolean) from public, anon, authenticated;
 
 -- admin : 'reset' (rend le tour doré et les tours payants du jour), 'bananas' (+50 🍌 pour soi), 'pot' (cagnotte +50),
 -- 'open' / 'close' (visible par tous ou non)
