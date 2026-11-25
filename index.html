@@ -873,6 +873,7 @@ td.n{text-align:right}
 <script src="race.js"></script>
 <script src="scratch.js"></script>
 <script src="cocotier.js"></script>
+<script src="wheel.js"></script>
 <script>
 (function(){
   const W=750,H=1050;
@@ -3945,6 +3946,9 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         const gs=(Array.isArray(x.gains)?x.gains:[]).slice(0,4).map(g=>`<b>${esc(nameOf(g.uid))}</b> +${fmt(+g.v||0)} 🍌`).join(", ");
         const tail=gs?`Gagnants : ${gs}`:(+x.n?"Personne n'avait misé sur lui !":"Personne n'avait parié.");
         return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Monkey Run : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="wheel"){const v=+x.v||0,what=x.r==="jackpot"?`le <b>JACKPOT</b> : ${fmt(v)} 🍌`:x.r==="boost"?`${v} boosters`:x.r==="time"?`${v/60} h d'attente en moins`:x.r==="double"?`${fmt(v)} 🍌 en doublant sa mise`:`${fmt(v)} 🍌`;
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🎡</span><p>${who} a gagné ${what} à The Monkey Wheel<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="wheel_scam")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait <b>Monkey Scam</b> à The Monkey Wheel : le singe est reparti avec ${x.lab==="Relance"?"sa relance":esc(x.lab||"son lot")}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="scratch"){const v=+x.v||0,what=x.k==="singe"?`le <b>JACKPOT</b> : ${v} boosters`:x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎟️</span><p>${who} a gagné ${what} au Monkey Cash<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="coco"){const fm=v=>"×"+(+v).toFixed(2).replace(".",",").replace(",00",""),m=x.m==null?null:+x.m,c=+x.c||0,v=+x.v||0;
