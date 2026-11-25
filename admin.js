@@ -174,6 +174,8 @@
   }
   /* ---------- événements : boosters offerts, boosters spéciaux, attente réduite ---------- */
   const KINDS = {gift:"🎁 Boosters offerts", bananas:"🍌 Bananes offertes", special:"✨ Boosters spéciaux offerts", xpack:"🎁 Booster exclusif (cartes choisies)", card:"🃏 Carte exclusive offerte", speed:"⚡ Attente réduite"};
+  // types no longer offered when creating an event (an old event of this type can still be opened and edited)
+  const HIDDEN_KINDS = ["special", "card"];
   const SKINS = {noel:"Noël", gaming:"Lancement (gaming)"};
   const pad = n => String(n).padStart(2, "0");
   const localInput = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -197,7 +199,7 @@
     body.innerHTML = `<form class="mfev" id="mfEvForm">
         <p class="shint">${e.id ? "Modifier l'événement" : "Nouvel événement"} : les cadeaux arrivent tout seuls chez chaque joueur à sa prochaine visite après la date choisie (une fois par joueur).</p>
         <label><span>Nom</span><input id="evTitle" maxlength="60" required value="${esc(e.title || "")}" placeholder="Noël, Week-end turbo…"></label>
-        <label><span>Type</span><select id="evKind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}" ${e.kind === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+        <label><span>Type</span><select id="evKind">${Object.entries(KINDS).filter(([k]) => !HIDDEN_KINDS.includes(k) || e.kind === k).map(([k, v]) => `<option value="${k}" ${e.kind === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
         <label id="evBWrap"><span>Nombre de boosters</span><input id="evBoosters" type="number" min="1" max="20" value="${e.boosters || 2}"></label>
         <label id="evNWrap"><span id="evNLab">Bananes en plus (facultatif)</span><input id="evBananas" type="number" min="0" max="100000" step="1" inputmode="numeric" value="${e.bananas || 0}"></label>
         <label id="evCWrap"><span id="evCLab">Carte exclusive offerte</span><select id="evCard"></select></label>
