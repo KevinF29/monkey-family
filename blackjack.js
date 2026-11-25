@@ -6,7 +6,8 @@
 (function(){
 "use strict";
 
-const IMG={logo:"packs/bj-titre.webp",croupier:"packs/bj-croupier.webp",triche:"packs/bj-croupier-triche.webp",table:"packs/bj-table.webp",fond:"packs/bj-fond.webp"};
+const IMG={logo:"packs/bj-titre.webp",croupier:"packs/bj-croupier.webp",triche:"packs/bj-croupier-triche.webp",table:"packs/bj-table.webp",fond:"packs/bj-fond.webp",dos:"packs/bj-dos.webp",roi:"packs/bj-roi.webp",dame:"packs/bj-dame.webp",valet:"packs/bj-valet.webp",as:"packs/bj-as.webp"};
+const ART={0:"as",10:"valet",11:"dame",12:"roi"};
 const RK=["A","2","3","4","5","6","7","8","9","10","V","D","R"],SU=["♠","♥","♦","♣"];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",bj_limit:"Plus de mains aujourd'hui : reviens demain !",bj_closed:"Le blackjack n'est pas encore ouvert.",
@@ -53,9 +54,10 @@ const CSS=`
 .bj-lab{font-weight:700;font-size:13.5px;color:#e6f5ea;text-shadow:0 1px 2px #000;display:flex;gap:8px;align-items:center}
 .bj-tot{display:inline-block;min-width:34px;text-align:center;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:1px 9px;font-weight:700;color:#fff}
 .bj-tot.bust{background:#a3263b;border-color:#ff8fa3}.bj-tot.bj{background:#ffd23f;color:#2a1145;border-color:#fff2b3}
-.bj-hand{display:flex;justify-content:center;min-height:calc(var(--cw)*1.4);--cw:clamp(44px,min(15vw,9.5svh),86px)}
-.bj-card{position:relative;width:var(--cw);height:calc(var(--cw)*1.4);flex:none;perspective:600px;animation:bjIn .32s cubic-bezier(.2,1.2,.4,1) both}
-.bj-hand .bj-card+.bj-card{margin-left:calc(var(--cw)*-.34)}
+.bj-hand{display:flex;justify-content:center;min-height:calc(var(--cw)*4/3);--cw:clamp(44px,min(20vw,9.5svh),90px)}
+.bj-card{position:relative;width:var(--cw);height:calc(var(--cw)*4/3);flex:none;perspective:600px;animation:bjIn .32s cubic-bezier(.2,1.2,.4,1) both}
+.bj-hand .bj-card+.bj-card{margin-left:calc(var(--cw)*-.2)}
+.bj-hand.mid .bj-card+.bj-card{margin-left:calc(var(--cw)*-.42)}
 .bj-hand.many .bj-card+.bj-card{margin-left:calc(var(--cw)*-.55)}
 @keyframes bjIn{from{transform:translate(0,-80px) rotate(-12deg);opacity:0}to{opacity:1}}
 .bj-card.cheat{animation:bjSleeve .9s cubic-bezier(.2,1.1,.4,1) both}
@@ -72,7 +74,10 @@ const CSS=`
 .bj-f.king{background:linear-gradient(160deg,#fff7d6,#ffe38a);border-color:#d9a514}
 .bj-f.king .m{font-size:calc(var(--cw)*.5)}
 .bj-f.king .m small{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-size:calc(var(--cw)*.22)}
-.bj-b{transform:rotateY(180deg);background:#7b2fbf repeating-linear-gradient(45deg,rgba(255,210,63,.18) 0 6px,transparent 6px 12px);border:3px solid #fff;display:grid;place-items:center;font-size:calc(var(--cw)*.36)}
+.bj-f.art{background:#fdf1d6 center/100% 100% no-repeat;border:0}
+.bj-f.art .c{left:7%;top:4%;background:rgba(255,250,235,.93);border-radius:5px;padding:2px 2px 1px;box-shadow:0 0 0 1px rgba(201,151,26,.5)}
+.bj-f.art .c2{left:auto;top:auto;right:7%;bottom:4%}
+.bj-b{transform:rotateY(180deg);background:#a3101e url(${IMG.dos}) center/100% 100% no-repeat}
 .bj-stamp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-18deg);z-index:2;background:#e3183d;color:#fff;font:400 calc(var(--cw)*.16) "Titan One",sans-serif;padding:2px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.5)}
 .bj-bet{font-weight:700;font-size:13.5px;color:#fff;text-shadow:0 1px 2px #000;min-height:1.4em}
 .bj-bet b{color:#ffd23f}
@@ -105,7 +110,9 @@ const CSS=`
 .bj-mkT{font:400 clamp(34px,11vw,56px)/1 "Titan One",sans-serif;text-align:center;color:#fff;transform:rotate(-4deg);text-shadow:0 4px 0 #b8901a,0 0 24px rgba(0,0,0,.6);animation:bjBoom .6s cubic-bezier(.2,1.6,.4,1) both}
 .bj-mkT b{display:block;color:#ffd23f;font-weight:400}
 .bj-mkS{font-weight:700;font-size:17px;text-shadow:0 1px 3px #000;text-align:center;padding:0 16px}
-.bj-mkE{font-size:clamp(70px,20vw,120px);animation:bjWob .35s infinite alternate ease-in-out}
+.bj-mkE{display:flex;animation:bjWob .35s infinite alternate ease-in-out}
+.bj-mkE img{width:clamp(90px,26vw,150px);height:auto;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.bj-mkE img:first-child{transform:rotate(-10deg) translateX(14%)}.bj-mkE img:last-child{transform:rotate(8deg) translateX(-14%)}
 @keyframes bjBoom{from{transform:scale(.3) rotate(-20deg);opacity:0}}
 @keyframes bjFade{from{opacity:0}}
 .bj-flash{animation:bjRed .25s 4 alternate}@keyframes bjRed{to{box-shadow:inset 0 0 120px rgba(227,24,61,.85)}}
@@ -154,15 +161,15 @@ const sad=()=>{[392,330,262].forEach((f,i)=>beep(f,i*.14,.22,.05,"sawtooth"));vi
 /* ---------- cartes ---------- */
 function cardEl(c,back){
  const e=document.createElement("div");e.className="bj-card"+(back?" back":"");
- e.innerHTML=`<div class="bj-in"><div class="bj-f"></div><div class="bj-b" aria-hidden="true">🍌</div></div>`;
+ e.innerHTML=`<div class="bj-in"><div class="bj-f"></div><div class="bj-b" aria-hidden="true"></div></div>`;
  if(c!=null)face(e,c);else e.setAttribute("aria-label","carte cachée");return e;}
 function face(e,c){const r=c%13,s=Math.floor(c/13),f=e.querySelector(".bj-f"),k=RK[r],u=SU[s];
- f.className="bj-f"+(s===1||s===2?" red":"")+(r===12?" king":"");
- const mid=r===12?`<small>👑</small>🐒`:r===11?"👸":r===10?"🤴":u;
+ const art=ART[r];f.className="bj-f"+(s===1||s===2?" red":"")+(art?" art":"");f.style.backgroundImage=art?`url(${IMG[art]})`:"";
+ const mid=art?"":u;
  f.innerHTML=`<span class="c">${k}<i>${u}</i></span><span class="m">${mid}</span><span class="c c2">${k}<i>${u}</i></span>`;
  e.setAttribute("aria-label",cname(c));}
 function hand(id){return $(id);}
-function addCard(id,c,back,cls){const h=hand(id),e=cardEl(c,back);if(cls)e.classList.add(cls);h.appendChild(e);h.classList.toggle("many",h.children.length>4);flick();return e;}
+function addCard(id,c,back,cls){const h=hand(id),e=cardEl(c,back);if(cls)e.classList.add(cls);h.appendChild(e);h.classList.toggle("mid",h.children.length>3);h.classList.toggle("many",h.children.length>4);flick();return e;}
 function setTot(id,cards,hidden){const e=$(id),t=total(cards);e.textContent=cards.length?(hidden?total([cards[0]]):t):"";
  e.className="bj-tot"+(t>21?" bust":cards.length===2&&t===21&&!hidden?" bj":"");e.hidden=!cards.length;}
 let P=[],D=[];   // cartes affichées
@@ -304,7 +311,7 @@ function build(){
    <div class="bj-btns"><button type="button" id="bjReset">Rendre mes mains du jour</button><button type="button" id="bjAdd">+50 🍌</button></div>
   </div>
  </aside>
- <div class="bj-mk" hidden aria-live="assertive"><div class="bj-mkE" aria-hidden="true">👑🐒</div><div class="bj-mkT">MONKEY<b>BLACKJACK !</b></div><div class="bj-mkS" id="bjMkS"></div></div>
+ <div class="bj-mk" hidden aria-live="assertive"><div class="bj-mkE" aria-hidden="true"><img src="${IMG.as}" alt=""><img src="${IMG.roi}" alt=""></div><div class="bj-mkT">MONKEY<b>BLACKJACK !</b></div><div class="bj-mkS" id="bjMkS"></div></div>
  <div class="bj-toast" role="status"></div>`;
  document.body.appendChild(root);
  $("#bjAdm").hidden=!ADMIN;
