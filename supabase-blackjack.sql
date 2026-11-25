@@ -153,20 +153,20 @@ end $$;
 create or replace function public.mf_bj_deal(p_bet int, p_force text default null, p_cheat boolean default false)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare u uuid := public._check(); c public.mf_bj_cfg; t public.mf_bj; s public.pstate; d date := (now() at time zone 'Europe/Paris')::date;
-  n int; adm boolean := public.is_admin(); f text := case when adm then nullif(p_force, '') end; p jsonb; dl jsonb; h jsonb; ac int := floor(random() * 4)::int;
+  nn int; adm boolean := public.is_admin(); f text := case when adm then nullif(p_force, '') end; p jsonb; dl jsonb; h jsonb; ac int := floor(random() * 4)::int;
 begin
   if not public.mf_bj_open() and not adm then raise exception 'bj_closed'; end if;
   insert into public.mf_bj(uid) values (u) on conflict do nothing;
   select * into t from public.mf_bj where uid = u for update;
   if t.hand is not null then raise exception 'bj_in_hand'; end if;
   select * into c from public.mf_bj_cfg where id = 1;
-  n := case when t.day = d then t.n else 0 end;
-  if n >= c.hands then raise exception 'bj_limit'; end if;
+  nn := case when t.day = d then t.n else 0 end;
+  if nn >= c.hands then raise exception 'bj_limit'; end if;
   if p_bet is null or p_bet < c.min_bet or p_bet > c.max_bet then raise exception 'bj_bet'; end if;
   select * into s from public.pstate where uid = u for update;
   if s.bananas < p_bet then raise exception 'no_bananas'; end if;
   update public.pstate set bananas = bananas - p_bet where uid = u;
-  update public.mf_bj set day = d, n = n + 1 where uid = u;
+  update public.mf_bj set day = d, n = nn + 1 where uid = u;
 
   p := jsonb_build_array(public._bj_card(), public._bj_card());
   dl := jsonb_build_array(public._bj_card(), public._bj_card());
