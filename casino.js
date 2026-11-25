@@ -120,9 +120,11 @@ function paint(){
   if(!hub)return;const list=hub.querySelector("#csList");
   hub.classList.toggle("admin",!!ADMIN);hub.querySelector("#csAdm").hidden=!ADMIN;
   const rot=!!(CFG&&CFG.enabled);
-  const fixed=GAMES.filter(g=>!rot||!inPool(g)),week=rot?GAMES.filter(g=>inPool(g)&&featured(g)):[],out=rot&&ADMIN?GAMES.filter(g=>inPool(g)&&!featured(g)):[];
+  // jeux fixes en haut, puis les jeux de la rotation (même quand la rotation est coupée)
+  const fixed=GAMES.filter(g=>!inPool(g)),week=GAMES.filter(g=>inPool(g)&&(!rot||featured(g))),out=rot&&ADMIN?GAMES.filter(g=>inPool(g)&&!featured(g)):[];
   let h=fixed.map(g=>card(g)).join("");
-  if(week.length)h+=`<div class="cs-sec">Jeux de la semaine<small>${CLOCK}<i id="csNext">Changement dans ${esc(durLong(nextIn()))}</i></small></div>`+week.map(g=>card(g)).join("");
+  if(!rot)h+=week.map(g=>card(g)).join("");
+  else if(week.length)h+=`<div class="cs-sec">Jeux de la semaine<small>${CLOCK}<i id="csNext">Changement dans ${esc(durLong(nextIn()))}</i></small></div>`+week.map(g=>card(g)).join("");
   if(out.length)h+=`<div class="cs-sec off">Hors rotation</div>`+out.map(g=>card(g,true)).join("");
   list.innerHTML=h;
   list.querySelectorAll(".cs-card").forEach(c=>c.addEventListener("click",()=>launch(c.dataset.id)));
