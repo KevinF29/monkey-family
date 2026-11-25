@@ -9,6 +9,7 @@ const OPEN_TO_ALL=true;           // passer à true pour lancer le Casino chez t
 const TOP=112,STEP=56;            // position sous le bouton Classement (et espacement des anciens boutons)
 const LOGO="packs/casino-titre.webp";
 const GAMES=[];                   // {id,name,icon,order,open,status,root,line,hot}
+let CFG=null,cfgAt=0;          // rotation des jeux de la semaine (mf_casino_status)
 let ADMIN=null,adminP=null,btn=null,hub=null,watch=null,want=null,wantT=0;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const useHub=()=>OPEN_TO_ALL||ADMIN;
@@ -52,6 +53,27 @@ const CSS=`
 .cs-go{flex:none;font-size:22px;color:#ffd23f}
 /* très petit écran (téléphone couché…) : on laisse défiler plutôt que de couper un jeu */
 @media (max-height:540px){#mfCasino{overflow-y:auto;overscroll-behavior:contain}.cs-list{flex:none}}
+.cs-sec{flex:none;display:flex;align-items:center;gap:8px;margin:2px 2px 0;font:400 16px/1.2 "Titan One",sans-serif;color:#ffd23f}
+.cs-sec small{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:999px;font:700 12.5px/1.3 Quicksand,system-ui,sans-serif;white-space:nowrap;color:#ffe7a8;background:rgba(255,210,63,.12);border:1px solid rgba(255,210,63,.3)}
+.cs-sec small svg{width:13px;height:13px}.cs-sec i{font-style:normal}
+.cs-sec.off{color:#a99cc4}
+.cs-card.off{opacity:.55;border-style:dashed}
+.cs-adm{position:absolute;top:0;left:0;z-index:1;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#ffd23f;font-size:20px;cursor:pointer}
+.cs-adm[hidden]{display:none}
+#mfCasino.admin{overflow-y:auto;overscroll-behavior:contain}#mfCasino.admin .cs-list{flex:none}
+.cs-panel{position:absolute;inset:0;z-index:5;display:flex;justify-content:center;align-items:flex-start;padding:max(12px,env(safe-area-inset-top)) 16px 16px;background:rgba(10,5,20,.78);overflow-y:auto}
+.cs-panel[hidden]{display:none}
+.cs-pbox{width:min(440px,100%);padding:16px 18px;border-radius:18px;background:#24123f;border:1px solid rgba(255,217,138,.35);box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.cs-pbox h3{margin:0 0 4px;font:400 20px "Titan One",sans-serif;color:#ffd23f}
+.cs-pbox p{margin:0 0 12px;font-size:13.5px;color:#cbbfe0}
+.cs-row{display:flex;align-items:center;gap:10px;margin:10px 0;font-weight:700}
+.cs-row select{margin-left:auto;font:inherit;padding:6px 8px;border-radius:10px;background:#160b29;color:#fff;border:1px solid rgba(255,255,255,.25)}
+.cs-pick{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.cs-pick label{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);font-weight:700;font-size:14px}
+.cs-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.cs-btns button{flex:1 1 auto;min-height:42px;padding:8px 12px;border-radius:12px;font:700 14px Quicksand,system-ui,sans-serif;cursor:pointer;border:1px solid rgba(255,217,138,.4);background:rgba(255,255,255,.06);color:#fff}
+.cs-btns .cs-main{background:#ffd23f;color:#2a1450;border-color:#ffd23f}
+.cs-msg{min-height:1.2em;margin:10px 0 0;font-size:13px;color:#8fe3a8}
 .cs-note{flex:none;width:min(520px,100%);margin:clamp(8px,1.6dvh,16px) 0 0;text-align:center;font-size:13px;color:#a99cc4}
 `;
 
@@ -83,21 +105,66 @@ function legacy(g){
 /* ---------- la salle ---------- */
 function build(){
   hub=document.createElement("div");hub.id="mfCasino";hub.hidden=true;hub.setAttribute("role","dialog");hub.setAttribute("aria-modal","true");hub.setAttribute("aria-label","Casino");
-  hub.innerHTML=`<div class="cs-top"><h2><img src="${LOGO}" alt="Monkey Family Casino"></h2><button type="button" class="cs-x" id="csClose" aria-label="Fermer">✕</button></div>
-    <div class="cs-list" id="csList"></div><p class="cs-note">N'oubliez jamais qu'à la fin, c'est toujours le Casino qui gagne 🎰</p>`;
+  hub.innerHTML=`<div class="cs-top"><h2><img src="${LOGO}" alt="Monkey Family Casino"></h2><button type="button" class="cs-adm" id="csAdm" aria-label="Réglages de la rotation" hidden>⚙</button><button type="button" class="cs-x" id="csClose" aria-label="Fermer">✕</button></div>
+    <div class="cs-list" id="csList"></div><div class="cs-panel" id="csPanel" hidden role="dialog" aria-label="Rotation des jeux"><div class="cs-pbox" id="csPbox"></div></div><p class="cs-note">N'oubliez jamais qu'à la fin, c'est toujours le Casino qui gagne 🎰</p>`;
   document.body.appendChild(hub);
   hub.querySelector("#csClose").addEventListener("click",closeHub);
-  hub.addEventListener("keydown",e=>{if(e.key==="Escape"&&!gameOpen())closeHub();});
+  hub.querySelector("#csAdm").addEventListener("click",()=>panel(true));
+  hub.addEventListener("keydown",e=>{if(e.key!=="Escape"||gameOpen())return;if(!hub.querySelector("#csPanel").hidden)panel(false);else closeHub();});
 }
+const card=(g,off)=>`<button type="button" class="cs-card${g.hot&&!off?" hot":""}${off?" off":""}" data-id="${g.id}"><span class="cs-ic">${g.icon}</span>
+    <span class="cs-tx"><b>${esc(g.name)}</b><span>${esc(off?"Hors rotation cette semaine (visible par toi seul)":g.line||"…")}</span>${g.until&&!off?`<span class="cs-when">${CLOCK}<i>${esc(when(g))}</i></span>`:""}</span><span class="cs-go" aria-hidden="true">›</span><i class="cs-dot"></i></button>`;
+const inPool=g=>!!(CFG&&CFG.pool&&CFG.pool.includes(g.id));
+const featured=g=>!CFG||!CFG.enabled||!inPool(g)||CFG.featured.includes(g.id);
 function paint(){
   if(!hub)return;const list=hub.querySelector("#csList");
-  list.innerHTML=GAMES.map(g=>`<button type="button" class="cs-card${g.hot?" hot":""}" data-id="${g.id}"><span class="cs-ic">${g.icon}</span>
-    <span class="cs-tx"><b>${esc(g.name)}</b><span>${esc(g.line||"…")}</span>${g.until?`<span class="cs-when">${CLOCK}<i>${esc(when(g))}</i></span>`:""}</span><span class="cs-go" aria-hidden="true">›</span><i class="cs-dot"></i></button>`).join("");
+  hub.classList.toggle("admin",!!ADMIN);hub.querySelector("#csAdm").hidden=!ADMIN;
+  const rot=!!(CFG&&CFG.enabled);
+  const fixed=GAMES.filter(g=>!rot||!inPool(g)),week=rot?GAMES.filter(g=>inPool(g)&&featured(g)):[],out=rot&&ADMIN?GAMES.filter(g=>inPool(g)&&!featured(g)):[];
+  let h=fixed.map(g=>card(g)).join("");
+  if(week.length)h+=`<div class="cs-sec">Jeux de la semaine<small>${CLOCK}<i id="csNext">Changement dans ${esc(durLong(nextIn()))}</i></small></div>`+week.map(g=>card(g)).join("");
+  if(out.length)h+=`<div class="cs-sec off">Hors rotation</div>`+out.map(g=>card(g,true)).join("");
+  list.innerHTML=h;
   list.querySelectorAll(".cs-card").forEach(c=>c.addEventListener("click",()=>launch(c.dataset.id)));
 }
+/* ---------- réglages admin de la rotation ---------- */
+function panel(o){
+  const p=hub.querySelector("#csPanel");p.hidden=!o;
+  if(!o){hub.querySelector("#csAdm").focus({preventScroll:true});return;}
+  const c=CFG||{enabled:false,slots:1,pool:[],featured:[]},nm=id=>(GAMES.find(g=>g.id===id)||{name:id}).name,man=c.manual||[];
+  hub.querySelector("#csPbox").innerHTML=`<h3>Jeux de la semaine</h3>
+    <p>La Banana Machine, le Monkey Cash et The Monkey Wheel restent toujours là. Les jeux ci-dessous tournent chaque lundi à 0 h.</p>
+    <label class="cs-row"><input type="checkbox" id="csOn"${c.enabled?" checked":""}> Rotation activée</label>
+    <label class="cs-row">Jeux par semaine<select id="csSlots">${c.pool.map((_,i)=>`<option${i+1===c.slots?" selected":""}>${i+1}</option>`).join("")}</select></label>
+    <div class="cs-row">Cette semaine : ${c.enabled?esc(c.featured.map(nm).join(", ")||"aucun"):"tous (rotation coupée)"}</div>
+    <div class="cs-row">Choisir les jeux (sinon rotation automatique)</div>
+    <div class="cs-pick">${c.pool.map(id=>`<label><input type="checkbox" value="${esc(id)}"${man.includes(id)?" checked":""}> ${esc(nm(id))}</label>`).join("")}</div>
+    <div class="cs-btns"><button type="button" class="cs-main" id="csSave">Enregistrer (lundi prochain)</button><button type="button" id="csNow">Appliquer tout de suite</button><button type="button" id="csPx">Fermer</button></div>
+    <p class="cs-msg" id="csMsg" role="status"></p>`;
+  const $p=q=>hub.querySelector(q);
+  const send=async now=>{
+    const pick=[...hub.querySelectorAll(".cs-pick input:checked")].map(i=>i.value);
+    $p("#csMsg").textContent="…";
+    try{CFG=await window.MF_RPC("mf_casino_admin",{p:{enabled:$p("#csOn").checked,slots:+$p("#csSlots").value,manual:pick.length?pick:null,now}});cfgAt=Date.now();stamp();
+      $p("#csMsg").textContent=now?"C'est appliqué : les joueurs voient la nouvelle sélection à la prochaine ouverture de l'appli.":"Enregistré.";paint();}
+    catch(e){$p("#csMsg").textContent="Erreur : "+(e&&e.message||e);}
+  };
+  $p("#csSave").addEventListener("click",()=>send(false));
+  $p("#csNow").addEventListener("click",()=>send(true));
+  $p("#csPx").addEventListener("click",()=>panel(false));
+  $p("#csOn").focus({preventScroll:true});
+}
+const stamp=()=>{if(CFG&&CFG.now)CFG.skew=CFG.now-Date.now();};
+async function loadCfg(force){
+  if(!force&&CFG&&Date.now()-cfgAt<60000)return CFG;
+  try{CFG=await window.MF_RPC("mf_casino_status",{});cfgAt=Date.now();stamp();}catch(e){}
+  return CFG;
+}
+const durLong=ms=>{ms=Math.max(0,ms);const d=Math.floor(ms/86400000);return d?`${d}\u00a0j\u00a0${Math.floor(ms%86400000/3600000)}\u00a0h`:dur(ms);};
+const nextIn=()=>CFG?CFG.next-(Date.now()+(CFG.skew||0)):0;
 const when=g=>g.pre+dur(g.until-Date.now());
 // le compte à rebours avance tout seul tant que la salle est ouverte
-function tick(){if(!hub||hub.hidden)return;GAMES.forEach(g=>{const el=g.until&&hub.querySelector(`.cs-card[data-id="${g.id}"] .cs-when i`);if(el)el.textContent=when(g);});}
+function tick(){if(!hub||hub.hidden)return;const nx=hub.querySelector("#csNext");if(nx)nx.textContent="Changement dans "+durLong(nextIn());GAMES.forEach(g=>{const el=g.until&&hub.querySelector(`.cs-card[data-id="${g.id}"] .cs-when i`);if(el)el.textContent=when(g);});}
 setInterval(tick,15000);
 const gameOpen=()=>GAMES.some(g=>{const r=document.getElementById(g.root);return r&&!r.hidden;});
 let opener=null,prevOverflow="";
@@ -127,7 +194,7 @@ async function one(g){
 let busy=null;
 function refresh(){
   if(busy)return busy;
-  busy=Promise.all(GAMES.map(one)).then(()=>{busy=null;badge();paint();});
+  busy=Promise.all([loadCfg(),...GAMES.map(one)]).then(()=>{busy=null;badge();paint();});
   return busy;
 }
 
@@ -135,7 +202,7 @@ function refresh(){
 async function add(g){
   if(GAMES.some(x=>x.id===g.id))return;
   GAMES.push(g);GAMES.sort((a,b)=>(a.order||0)-(b.order||0));
-  await isAdmin();
+  await isAdmin();await loadCfg();
   if(useHub())ensureBtn();else legacy(g);
   await one(g);badge();paint();
   if(want===g.id){want=null;clearTimeout(wantT);openGame(g.id);}
