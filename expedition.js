@@ -3,13 +3,14 @@
    Avant chaque étape, chaque joueur choisit en secret de continuer ou de rentrer au camp.
    Trésors partagés entre ceux qui sont dedans ; le 2e danger du même type fait perdre le butin à ceux qui restent.
    Tout se passe sur le serveur (mf_exp_*, supabase-expedition.sql) ; jeu fixe du Casino.
-   Visuels provisoires (émojis et dégradés) en attendant ceux de Kévin : packs/exp-logo.webp est utilisé s'il existe.
+   Visuels de Kévin (packs/exp-*.webp) ; le fond reste un dégradé.
    Visible par l'admin seulement tant que le jeu n'est pas ouvert (réglages admin → « Ouvrir à tous »). */
 (function(){
 "use strict";
 
-const LOGO="packs/exp-logo.webp";
-const DANGER=[{e:"🐍",n:"Serpent"},{e:"🕷️",n:"Araignée"},{e:"🏜️",n:"Sables mouvants"},{e:"🐆",n:"Panthère"},{e:"🪨",n:"Éboulement"}];
+const P="packs/exp-",LOGO=P+"logo.webp";
+const IMG={singe:P+"singe.webp",camp:P+"camp.webp",perdu:P+"perdu.webp",dos:P+"dos.webp",tresor:P+"tresor.webp",idole:P+"idole.webp"};
+const DANGER=[{e:"🐍",n:"Serpent",i:P+"serpent.webp"},{e:"🕷️",n:"Araignée",i:P+"araignee.webp"},{e:"🏜️",n:"Sables mouvants",s:"Sables",i:P+"sables.webp"},{e:"🐆",n:"Panthère",i:P+"panthere.webp"},{e:"🪨",n:"Éboulement",i:P+"eboulement.webp"}];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={exp_closed:"L'Expédition n'est pas ouverte en ce moment.",exp_over:"Cette expédition est terminée.",exp_already:"Tu fais déjà partie de cette expédition.",
  exp_not_in:"Tu n'es plus dans l'expédition.",not_member:"Ton accès est en pause."};
@@ -44,27 +45,26 @@ const CSS=`
 .ex-ban .big{display:block;font:400 clamp(20px,5.5vw,26px)/1.2 "Titan One",sans-serif;color:#fff}
 .ex-ban.bad .big{color:#ff8f7a}.ex-ban.good .big{color:#8fe3a8}
 .ex-trail{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x proximity}
-.ex-c{flex:none;width:58px;height:80px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;scroll-snap-align:end;
- background:linear-gradient(160deg,#f7e7bd,#e0c286);color:#3b2410;border:2px solid #8a5a2e;box-shadow:0 3px 0 rgba(0,0,0,.35);font:700 12px/1.1 Quicksand,sans-serif;position:relative}
-.ex-c i{font-style:normal;font-size:26px;line-height:1}
-.ex-c b{font:400 15px "Titan One",sans-serif}
-.ex-c small{position:absolute;top:2px;left:5px;font-size:10px;opacity:.6}
-.ex-c.d{background:linear-gradient(160deg,#5a2a2a,#2e1414);color:#ffd9cf;border-color:#a0482f}
-.ex-c.fatal{background:linear-gradient(160deg,#c8102e,#6a0716);color:#fff;border-color:#ffd23f;box-shadow:0 0 0 3px rgba(255,80,60,.5)}
-.ex-c.r{background:linear-gradient(160deg,#ffe36e,#d9a514);border-color:#fff3b0}
-.ex-c.q{background:repeating-linear-gradient(135deg,#2f6a42 0 8px,#285c39 8px 16px);border:2px dashed #9fd3a8;color:#e3f5df}
-.ex-c.q i{animation:exPulse 1.6s ease-in-out infinite}
-.ex-c.off{background:rgba(255,255,255,.05);border:2px dashed rgba(255,255,255,.18);box-shadow:none;color:rgba(255,255,255,.3)}
+.ex-c{flex:none;width:76px;height:104px;position:relative;scroll-snap-align:end;background:center/100% 100% no-repeat;filter:drop-shadow(0 3px 3px rgba(0,0,0,.45));color:#3b2410}
+.ex-c small{position:absolute;top:-2px;left:-2px;z-index:2;min-width:20px;height:20px;border-radius:10px;background:#2a1a0c;border:1px solid #d9a514;color:#ffd23f;font:700 11px/18px Quicksand,sans-serif;text-align:center;padding:0 4px}
+.ex-c b{position:absolute;left:11%;right:11%;top:69%;bottom:9%;display:flex;align-items:center;justify-content:center;text-align:center;font:400 13px/1 "Titan One",sans-serif;white-space:nowrap;overflow:hidden}
+.ex-c b.n{font-size:17px}
+.ex-c.fatal{filter:drop-shadow(0 0 6px #ff3b2f) drop-shadow(0 0 3px #ffd23f)}
+.ex-c.fatal b{color:#a00d1e}
+.ex-c.q b{color:#ffe7a8;top:auto;bottom:6%;font-size:12px;text-shadow:0 1px 2px #000}
+.ex-c.q{animation:exPulse 1.8s ease-in-out infinite}
+.ex-c.off{opacity:.28;filter:grayscale(.6)}
 .ex-c.new{animation:exFlip .6s cubic-bezier(.2,1.4,.4,1) both}
 @keyframes exFlip{from{transform:rotateY(90deg) scale(.8);opacity:0}to{transform:none;opacity:1}}
-@keyframes exPulse{50%{transform:scale(1.15)}}
+@keyframes exPulse{50%{transform:translateY(-3px)}}
 .ex-path{display:flex;flex-wrap:wrap;gap:6px 14px;font-weight:700;font-size:14px;color:#ffe7a8}
 .ex-dang{display:flex;justify-content:space-between;gap:4px;margin-top:8px}
-.ex-dg{flex:1;text-align:center;border-radius:10px;padding:5px 2px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);font-size:11.5px;font-weight:700;color:#9fb59a}
-.ex-dg i{display:block;font-style:normal;font-size:22px;filter:grayscale(1) opacity(.45)}
-.ex-dg.on{background:rgba(200,16,46,.25);border-color:#ff8f7a;color:#ffd9cf}
-.ex-dg.on i{filter:none}
+.ex-dg{flex:1;text-align:center;font-size:11px;font-weight:700;color:#9fb59a;line-height:1.15}
+.ex-dg img{display:block;width:100%;max-width:56px;margin:0 auto 3px;aspect-ratio:300/410;object-fit:cover;object-position:top;border-radius:6px;filter:grayscale(1) brightness(.55)}
+.ex-dg.on{color:#ffb4a5}
+.ex-dg.on img{filter:drop-shadow(0 0 5px #ff3b2f)}
 .ex-me{display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center}
+.ex-hero{display:block;margin:0 auto;height:clamp(90px,16svh,140px);width:auto;max-width:80%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
 .ex-loot{font:400 clamp(30px,8vw,42px)/1 "Titan One",sans-serif;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.4)}
 .ex-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ex-ch{min-height:64px;border-radius:16px;border:2px solid rgba(255,255,255,.25);background:rgba(10,30,18,.7);color:#f6f0d8;font:400 17px/1.1 "Titan One",sans-serif;cursor:pointer;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
@@ -89,6 +89,7 @@ const CSS=`
 .ex-card{width:min(380px,100%);background:#14301f;border:2px solid #ffd23f;border-radius:20px;padding:18px 16px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;box-shadow:0 18px 40px rgba(0,0,0,.5);animation:exFlip .5s both}
 .ex-card h3{margin:0;font:400 24px "Titan One",sans-serif;color:#ffd23f}
 .ex-card .em{font-size:54px;line-height:1}
+.ex-card img{height:150px;width:auto;max-width:90%}
 .ex-panel{position:absolute;top:0;left:0;bottom:0;z-index:30;width:min(400px,100%);overflow-y:auto;overscroll-behavior:contain;background:#14301f;border-right:1px solid #2f5a3a;
  padding:max(14px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));box-shadow:20px 0 40px rgba(0,0,0,.5);transform:translateX(-105%);transition:transform .25s;visibility:hidden}
 .ex-panel.open{transform:none;visibility:visible}
@@ -105,7 +106,7 @@ const CSS=`
 .ex-btns button.on{background:#ffd23f;color:#3b2410;border-color:#ffd23f}
 .ex-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#1f4a30;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .ex-toast.on{transform:translate(-50%,0);opacity:1}
-@media(prefers-reduced-motion:reduce){.ex-toast,.ex-panel{transition:none}.ex-c.new,.ex-card,.ex-c.q i{animation:none}.ex-big:active{transform:none}}
+@media(prefers-reduced-motion:reduce){.ex-toast,.ex-panel{transition:none}.ex-c.new,.ex-card,.ex-c.q{animation:none}.ex-big:active{transform:none}}
 `;
 
 /* ---------- état ---------- */
@@ -119,13 +120,13 @@ const setShown=()=>{try{localStorage.setItem(seenKey,JSON.stringify({day:S.day,s
 const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}};
 
 /* ---------- morceaux d'écran ---------- */
-function cardHTML(c,isNew){const cls=c.k==="t"?"":c.k==="r"?"r":c.fatal?"d fatal":"d";
- const body=c.k==="t"?`<i>🍌</i><b>${esc(c.v)}</b>`:c.k==="r"?`<i>🗿</i><b>Idole</b>`:`<i>${DANGER[c.d]?DANGER[c.d].e:"⚠️"}</i>${c.fatal?"<b>2e !</b>":""}`;
- const t=c.k==="t"?`Étape ${c.s} : trésor de ${c.v} bananes`:c.k==="r"?`Étape ${c.s} : Idole d'or`:`Étape ${c.s} : ${DANGER[c.d]?DANGER[c.d].n:"danger"}${c.fatal?", deuxième : fin de l'expédition":""}`;
- return `<div class="ex-c ${cls}${isNew?" new":""}" role="listitem" aria-label="${esc(t)}"><small>${esc(c.s)}</small>${body}</div>`;}
+function cardHTML(c,isNew){const D=DANGER[c.d]||{},cls=c.k==="d"&&c.fatal?"fatal":"",img=c.k==="t"?IMG.tresor:c.k==="r"?IMG.idole:D.i;
+ const lab=c.k==="t"?`<b class="n">${esc(c.v)} 🍌</b>`:c.k==="r"?`<b>Idole</b>`:`<b>${c.fatal?"2e !":esc(D.s||D.n||"Danger")}</b>`;
+ const t=c.k==="t"?`Étape ${c.s} : trésor de ${c.v} bananes`:c.k==="r"?`Étape ${c.s} : Idole d'or`:`Étape ${c.s} : ${D.n||"danger"}${c.fatal?", deuxième : fin de l'expédition":""}`;
+ return `<div class="ex-c ${cls}${isNew?" new":""}" style="background-image:url(${img})" role="listitem" aria-label="${esc(t)}"><small>${esc(c.s)}</small>${lab}</div>`;}
 function trailHTML(){const cards=S.cards||[],n=+S.steps,old=shownStep();let h=cards.map(c=>cardHTML(c,+c.s>old)).join("");
- if(S.status==="run"&&cards.length<n)h+=`<div class="ex-c q" role="listitem" aria-label="Prochaine carte"><small>${cards.length+1}</small><i>❓</i><span>${S.nextAt?esc(hh(+S.nextAt)):""}</span></div>`;
- for(let i=cards.length+(S.status==="run"?2:1);i<=n;i++)h+=`<div class="ex-c off" role="listitem" aria-label="Étape ${i}"><small>${i}</small><i>·</i></div>`;
+ if(S.status==="run"&&cards.length<n)h+=`<div class="ex-c q" style="background-image:url(${IMG.dos})" role="listitem" aria-label="Prochaine carte"><small>${cards.length+1}</small><b>${S.nextAt?esc(hh(+S.nextAt)):""}</b></div>`;
+ for(let i=cards.length+(S.status==="run"?2:1);i<=n;i++)h+=`<div class="ex-c off" style="background-image:url(${IMG.dos})" role="listitem" aria-label="Étape ${i}"><small>${i}</small></div>`;
  return h;}
 function bannerHTML(){const me=S.me,next=S.nextAt?+S.nextAt-nowS():0;
  if(S.status==="run"&&S.step===0)return `<div class="ex-ban"><span class="big">Départ à ${esc(hh(+S.startAt))}</span>dans ${esc(dur(+S.startAt-nowS()))} · une étape par heure jusqu'à ${esc(hh(+S.startAt+(+S.steps-1)*3600000))}</div>`;
@@ -134,7 +135,7 @@ function bannerHTML(){const me=S.me,next=S.nextAt?+S.nextAt-nowS():0;
  if(S.status==="dead")return `<div class="ex-ban bad"><span class="big">${esc(DANGER[last.d]?DANGER[last.d].e+" "+DANGER[last.d].n:"Danger")} !</span>Le même danger est sorti deux fois : l'expédition s'est arrêtée à l'étape ${esc(last.s)}.</div>`;
  return `<div class="ex-ban good"><span class="big">Expédition terminée</span>Tous ceux qui restaient sont rentrés au camp à ${esc(hh(+S.startAt+(+S.steps-1)*3600000))}.</div>`;}
 function dangersHTML(){const seen=S.seen||[];
- return `<div class="ex-dang">${DANGER.slice(0,+S.dangers||5).map((d,i)=>`<div class="ex-dg${seen.includes(i)?" on":""}" title="${esc(d.n)}"><i>${d.e}</i>${seen.includes(i)?"déjà sorti":"pas encore"}</div>`).join("")}</div>`;}
+ return `<div class="ex-dang">${DANGER.slice(0,+S.dangers||5).map((d,i)=>`<div class="ex-dg${seen.includes(i)?" on":""}" title="${esc(d.n)}"><img src="${d.i}" alt="">${seen.includes(i)?"déjà sorti":"pas encore"}</div>`).join("")}</div>`;}
 function meHTML(){const me=S.me,run=S.status==="run"&&S.step<+S.steps;
  if(!me){
   if(run)return `<p class="ex-sub">${S.step?`L'expédition a déjà passé ${S.step} carte${S.step>1?"s":""}. Tu peux encore la rejoindre : tu partageras les prochains trésors (et ce qui traîne sur le chemin quand tu rentreras).`:"Rejoins l'expédition avant le départ, c'est gratuit !"}</p>
@@ -143,15 +144,15 @@ function meHTML(){const me=S.me,run=S.status==="run"&&S.step<+S.steps;
   if(nx.joined)return `<p><b>Tu es inscrit pour l'expédition de demain</b> (départ ${esc(hh(+nx.startAt))}).</p>${autoHTML(nx.auto)}<p class="ex-sub">${+nx.n} explorateur${+nx.n>1?"s":""} inscrit${+nx.n>1?"s":""} pour l'instant.</p>`;
   return `<p class="ex-sub">Tu n'as pas participé à l'expédition d'aujourd'hui.</p><button type="button" class="ex-big" id="exJoin"${busy?" disabled":""}>${busy?"…":"Je pars demain"}</button>`;}
  if(me.state==="in"){const can=me.canLeave;
-  return `<div class="ex-sub">Ton butin</div><div class="ex-loot">${esc(me.loot)} 🍌</div>
+  return `<img class="ex-hero" src="${IMG.singe}" alt=""><div class="ex-sub">Ton butin</div><div class="ex-loot">${esc(me.loot)} 🍌</div>
    ${S.status==="run"&&S.step<+S.steps?`<div class="ex-two" role="group" aria-label="Ton choix pour la prochaine étape">
     <button type="button" class="ex-ch go${me.choice==="go"?" on":""}" data-c="go" aria-pressed="${me.choice==="go"}"${busy?" disabled":""}>🧗 Continuer<small>je tente la suite</small></button>
     <button type="button" class="ex-ch home${me.choice==="home"?" on":""}" data-c="home" aria-pressed="${me.choice==="home"}"${busy||!can?" disabled":""}>🏕️ Rentrer<small>${can?"je garde mon butin":"après ta 1re carte"}</small></button></div>
    <p class="ex-sub">${!can?"Tu pourras rentrer au camp une fois que tu auras passé au moins une carte."
      :me.choice==="home"?`À ${esc(hh(+S.nextAt))}, tu rentres au camp avec ton butin et ta part de ce qui traîne sur le chemin.`
      :"Ton choix reste valable pour les étapes suivantes tant que tu ne le changes pas."}</p>${autoHTML(me.auto)}`:""}`;}
- if(me.state==="home")return `<div class="ex-sub">Rentré au camp${me.out?` après l'étape ${esc(me.out)}`:""}</div><div class="ex-loot">+${esc(me.gain)} 🍌</div>${+me.relic?`<p><b>🗿 Et l'Idole d'or : +${esc(+me.relic*(+S.relicBoost||1))} booster !</b></p>`:""}`;
- return `<div class="ex-sub">Butin perdu à l'étape ${esc(me.out)}…</div><div class="ex-loot" style="color:#ff8f7a">${esc(me.loot)} 🍌</div><p class="ex-sub">Consolation : +${esc(me.gain)} 🍌 (${esc(S.consol)} par carte passée).</p>`;}
+ if(me.state==="home")return `<img class="ex-hero" src="${IMG.camp}" alt=""><div class="ex-sub">Rentré au camp${me.out?` après l'étape ${esc(me.out)}`:""}</div><div class="ex-loot">+${esc(me.gain)} 🍌</div>${+me.relic?`<p><b>🗿 Et l'Idole d'or : +${esc(+me.relic*(+S.relicBoost||1))} booster !</b></p>`:""}`;
+ return `<img class="ex-hero" src="${IMG.perdu}" alt=""><div class="ex-sub">Butin perdu à l'étape ${esc(me.out)}…</div><div class="ex-loot" style="color:#ff8f7a">${esc(me.loot)} 🍌</div><p class="ex-sub">Consolation : +${esc(me.gain)} 🍌 (${esc(S.consol)} par carte passée).</p>`;}
 function autoHTML(v){v=+v||0;const opts=AUTO.includes(v)?AUTO:AUTO.concat(v).sort((a,b)=>a-b);
  return `<label class="ex-auto">Rentrer tout seul dès que j'ai <select id="exAuto">${opts.map(x=>`<option value="${x}"${x===v?" selected":""}>${x?x+" 🍌":"non, je décide"}</option>`).join("")}</select></label>`;}
 function playersHTML(){const L=S.players||[],me=S.me_uid;if(!L.length)return `<p class="ex-empty">Personne n'est encore parti. Sois le premier !</p>`;
@@ -182,7 +183,7 @@ const fmtDay=d=>{try{const [Y,M,D]=String(d).split("-").map(Number);return `${D}
 function showLast(){const L=S.last;if(!L)return;
  const o=document.createElement("div");o.className="ex-ov";o.setAttribute("role","dialog");o.setAttribute("aria-label","Résultat de l'expédition");
  const lost=L.state==="lost";
- o.innerHTML=`<div class="ex-card"><h3>Expédition du ${esc(fmtDay(L.day))}</h3><div class="em">${lost?(DANGER[L.danger]?DANGER[L.danger].e:"💀"):+L.relic?"🗿":"🏕️"}</div>
+ o.innerHTML=`<div class="ex-card"><h3>Expédition du ${esc(fmtDay(L.day))}</h3><img src="${lost?IMG.perdu:+L.relic?IMG.idole:IMG.camp}" alt="">
   <p>${lost?`Le 2e ${esc(DANGER[L.danger]?DANGER[L.danger].n.toLowerCase():"danger")} t'a surpris à l'étape ${esc(L.out)} : tu as perdu ton butin de <b>${esc(L.loot)} 🍌</b>.<br>Consolation : <b>+${esc(L.gain)} 🍌</b>.`
    :`Tu es rentré au camp après l'étape ${esc(L.out)} avec <b>+${esc(L.gain)} 🍌</b>${+L.relic?" et l'<b>Idole d'or</b> (+1 booster)":""} !`}</p>
   <button type="button" class="ex-big" id="exOk">Continuer</button></div>`;
@@ -268,6 +269,7 @@ async function boot(){
  try{ADMIN=!!(await USER.isOwner());}catch(e){}
  let can=ADMIN;if(!can){try{can=!!(await rpc("mf_exp_open"));}catch(e){}}
  if(!can||!window.MF_CASINO)return;
+ Object.values(IMG).concat(DANGER.map(d=>d.i),LOGO).forEach(u=>{const i=new Image();i.src=u;});
  window.MF_CASINO.add({id:"exp",name:"L'Expédition",order:13,root:"mfEXP",open,
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20h18"/><path d="M6 20l5-9 3 5 2-3 4 7"/><path d="M11 11V4l5 2-5 2"/></svg>`,
   status:async()=>{if(!(root&&!root.hidden)){take(await rpc("mf_exp_status"));}const I=S;if(!I)return null;
