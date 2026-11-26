@@ -63,7 +63,11 @@ const CSS=`
 .bn-mat.img{background:transparent;border:0;box-shadow:none}
 .bn-mat>.bn-tbl{position:absolute;inset:0;background:center/100% 100% no-repeat;pointer-events:none}
 .bn-mat.img{container-type:size}
-.bn-mat.img>.bn-tbl{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100cqw,150cqh);aspect-ratio:3/2;container-type:inline-size;pointer-events:auto}
+/* avec l'image de la table : le singe est posé sur le bord arrière de la table, et le groupe singe + table est centré et aussi grand que possible */
+.bn-scene.big{width:min(100%,900px)}
+.bn-mat.img>.bn-tbl{--W:min(100cqw,110cqh);inset:auto;left:50%;top:calc(50% - var(--W)*.2135);transform:translateX(-50%);width:var(--W);aspect-ratio:3/2;container-type:inline-size;pointer-events:auto}
+.bn-mat.img>.bn-res{top:auto;bottom:max(4px,calc(50% - var(--W,100cqw)*.45))}
+.bn-mat.img .bn-dealer{position:absolute;left:0;right:0;width:auto;bottom:calc(100% - 6cqw);--mh:30cqw;height:var(--mh);z-index:1;pointer-events:none}
 .bn-mat.img .bn-box{position:absolute;left:9%;right:9%;bottom:40%;width:auto;height:auto;top:6%;--cw:20cqw}
 .bn-box{position:relative;width:100%;--cw:clamp(78px,min(27vw,17svh),150px);height:calc(var(--cw)*1.38)}
 .bn-cup{position:absolute;left:50%;bottom:8%;width:var(--cw);height:calc(var(--cw)*.84);margin-left:calc(var(--cw)*-.5);padding:0;border:0;background:none;cursor:default;z-index:2;transition:transform .32s cubic-bezier(.3,.9,.4,1.1)}
@@ -128,6 +132,7 @@ const CSS=`
 @media(max-height:700px){.bn-quick{display:none}.bn-s{min-height:42px}.bn-mise{margin-bottom:6px}.bn-logo{height:54px}.bn-logoT{font-size:26px}.bn-top{gap:3px}}
 @media(max-height:480px){.bn-top{flex-direction:row;justify-content:center;gap:10px;padding-top:max(4px,env(safe-area-inset-top))}.bn-btn{top:max(4px,env(safe-area-inset-top))}
  .bn-logo{height:40px}.bn-logoT{font-size:22px}.bn-dealer{--mh:56px;position:absolute;left:4px;top:auto;bottom:max(10px,env(safe-area-inset-bottom));width:auto;z-index:5}.bn-say{display:none}
+ .bn-mat.img>.bn-tbl{--W:min(100cqw,150cqh);top:50%;transform:translate(-50%,-50%)}.bn-mat.img .bn-dealer{left:auto;right:calc(100% - 6px);bottom:4%;--mh:min(90px,40cqw);width:var(--mh)}.bn-mat.img .bn-monk{max-width:none;width:100%;height:auto}
  .bn-mat{margin-top:0}.bn-act{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px}#bnBetBox{display:flex;align-items:center;gap:8px}.bn-spd{margin:0}.bn-s{min-height:38px;padding:2px 8px;white-space:nowrap;max-width:none}.bn-s b{display:inline;margin-left:4px;font-size:14px}.bn-big{min-height:40px;padding:6px 16px;font-size:16px}.bn-sub{margin:0}}
 @media(prefers-reduced-motion:reduce){.bn-monk.wob,.bn-monkE.wob,.bn-res,.bn-flash,.bn-box.pick .bn-cup,.bn-ban.gl,.bn-stamp,`;
 
@@ -305,7 +310,7 @@ function build(){
  mk.onerror=()=>{if(mk.dataset.base){mk.src=mk.dataset.base;return;}tries++;if(tries===1){mk.src=IMG.singeB;return;}mk.hidden=true;$(".bn-monkE").hidden=false;};
  mk.src=IMG.singe;
  const tri=new Image();tri.onload=()=>{triche=true;};tri.src=IMG.triche;
- const tb=new Image();tb.onload=()=>{$(".bn-mat").classList.add("img");const t=$(".bn-tbl");t.style.backgroundImage=`url(${IMG.table})`;t.appendChild($(".bn-box"));if(!root.hidden&&!busy)relayout();};tb.src=IMG.table;
+ const tb=new Image();tb.onload=()=>{$(".bn-mat").classList.add("img");const t=$(".bn-tbl");t.style.backgroundImage=`url(${IMG.table})`;t.appendChild($(".bn-box"));t.insertBefore($(".bn-dealer"),t.firstChild);$(".bn-scene").classList.add("big");if(!root.hidden&&!busy)relayout();};tb.src=IMG.table;
  const bn=new Image();bn.onload=()=>{$(".bn-ban").innerHTML=`<img src="${IMG.banane}" alt="">`;$(".bn-hand").innerHTML=`<img src="${IMG.banane}" alt="">`;};bn.src=IMG.banane;
  const nx=new Image();nx.onload=()=>{cups().forEach(c=>{c.innerHTML=`<img src="${IMG.noix}" alt="">`;});};nx.src=IMG.noix;
  $("#bnClose").addEventListener("click",close);
