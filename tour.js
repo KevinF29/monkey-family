@@ -391,7 +391,7 @@ function build(){
  $("#ttOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"The Monkey Tower est de nouveau cachée.":`${NAME} est ouverte à tous les joueurs !`));
  $("#ttReset").addEventListener("click",()=>adm("reset","Tes montées du jour sont rendues."));
  $("#ttAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
- root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if($("#ttPanel").classList.contains("open"))panel(false);else close();});
+ document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!root||root.hidden)return;if($("#ttPanel").classList.contains("open"))panel(false);else close();});
  setInterval(()=>{if(!root.hidden&&!busy)render();},30000);
 }
 function panel(o){$("#ttPanel").classList.toggle("open",o);$("#ttTog").setAttribute("aria-expanded",String(o));}
