@@ -148,3 +148,8 @@ grant execute on function public.mf_pk_open(), public.mf_pk_status(), public.mf_
 -- 26/11 vers 15 h 55 (demande de Kévin) : 1-2-3-6 → 1-3-5-10 (appliqué directement dans Supabase)
 update public.mf_pk_cfg set prizes = '[{"t":"boost","v":5},{"t":"ban","v":20},{"t":"ban","v":10},{"t":"ban","v":5},{"t":"ban","v":3},{"t":"ban","v":1},
   {"t":"ban","v":3},{"t":"ban","v":5},{"t":"ban","v":10},{"t":"ban","v":20},{"t":"rpack","v":"Originel"}]'::jsonb where id = 1;
+
+-- 26/11 vers 17 h 10 (demande de Kévin) : Plinko Banana entre dans la rotation du Casino (appliqué dans Supabase, migration plinko_banana_rotation).
+-- Ordre choisi pour garder 30/11 = Bananateau + MonkeyJack 21 et 07/12 = Monkey Run + Poker Monkey ; Plinko le 14/12, puis une semaine sur trois.
+update public.mf_pk_cfg set open = true where id = 1;
+update public.mf_casino_cfg set pool = array['race','vp','coco','pk','bon','bj'] where id = 1;
