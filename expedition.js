@@ -45,15 +45,25 @@ const CSS=`
 .ex-ban .big{display:block;font:400 clamp(20px,5.5vw,26px)/1.2 "Titan One",sans-serif;color:#fff}
 .ex-ban.bad .big{color:#ff8f7a}.ex-ban.good .big{color:#8fe3a8}
 .ex-trail{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x proximity}
-.ex-c{flex:none;width:76px;height:104px;position:relative;scroll-snap-align:end;background:center/100% 100% no-repeat;filter:drop-shadow(0 3px 3px rgba(0,0,0,.45));color:#3b2410}
-.ex-c small{position:absolute;top:-2px;left:-2px;z-index:2;min-width:20px;height:20px;border-radius:10px;background:#2a1a0c;border:1px solid #d9a514;color:#ffd23f;font:700 11px/18px Quicksand,sans-serif;text-align:center;padding:0 4px}
-.ex-c b{position:absolute;left:11%;right:11%;top:69%;bottom:9%;display:flex;align-items:center;justify-content:center;text-align:center;font:400 13px/1 "Titan One",sans-serif;white-space:nowrap;overflow:hidden}
-.ex-c b.n{font-size:17px}
-.ex-c.fatal{filter:drop-shadow(0 0 6px #ff3b2f) drop-shadow(0 0 3px #ffd23f)}
-.ex-c.fatal b{color:#a00d1e}
-.ex-c.q b{color:#ffe7a8;top:auto;bottom:6%;font-size:12px;text-shadow:0 1px 2px #000}
+.ex-trail{gap:8px!important}
+.ex-cw{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;scroll-snap-align:end}
+.ex-h{font:700 11.5px/1 Quicksand,sans-serif;color:#cfe0c8;white-space:nowrap}
+.ex-cw.nx .ex-h{color:#ffd23f}
+.ex-c{width:92px;height:126px;position:relative;background:center/100% 100% no-repeat;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));color:#4a2a10}
+.ex-c b{position:absolute;left:12%;right:12%;top:70%;bottom:9%;display:flex;align-items:center;justify-content:center;gap:2px;text-align:center;
+ font:400 12.5px/1 "Titan One",sans-serif;letter-spacing:.2px;white-space:nowrap;overflow:hidden;color:#5a2a12;text-shadow:0 1px 0 rgba(255,240,200,.7)}
+.ex-c b.n{font-size:20px;color:#6b3f00}
+.ex-c b.n em{font-style:normal;font-size:13px;margin-left:1px}
+.ex-c b.i{flex-direction:column;gap:1px;font-size:12.5px;color:#6b4a00}
+.ex-c b.i small{font:700 9.5px/1 Quicksand,sans-serif;color:#4a3410}
+.ex-c b.d{color:#7a1a10}
+.ex-c.fatal{filter:drop-shadow(0 0 7px #ff3b2f) drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.ex-c .stamp{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%) rotate(-14deg);padding:3px 8px;border:3px solid #e3183d;border-radius:8px;background:rgba(255,240,220,.85);
+ color:#c8102e;font:400 18px/1 "Titan One",sans-serif;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .ex-c.q{animation:exPulse 1.8s ease-in-out infinite}
-.ex-c.off{opacity:.28;filter:grayscale(.6)}
+.ex-c.q i{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;display:grid;place-items:center;background:rgba(30,15,5,.82);border:2px solid #ffd23f;font:400 26px/1 "Titan One",sans-serif;font-style:normal;color:#ffd23f;box-shadow:0 0 14px rgba(255,210,63,.5)}
+.ex-cw.off{opacity:.35}
+.ex-cw.off .ex-c{filter:grayscale(.7)}
 .ex-c.new{animation:exFlip .6s cubic-bezier(.2,1.4,.4,1) both}
 @keyframes exFlip{from{transform:rotateY(90deg) scale(.8);opacity:0}to{transform:none;opacity:1}}
 @keyframes exPulse{50%{transform:translateY(-3px)}}
@@ -120,13 +130,14 @@ const setShown=()=>{try{localStorage.setItem(seenKey,JSON.stringify({day:S.day,s
 const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}};
 
 /* ---------- morceaux d'écran ---------- */
-function cardHTML(c,isNew){const D=DANGER[c.d]||{},cls=c.k==="d"&&c.fatal?"fatal":"",img=c.k==="t"?IMG.tresor:c.k==="r"?IMG.idole:D.i;
- const lab=c.k==="t"?`<b class="n">${esc(c.v)} 🍌</b>`:c.k==="r"?`<b>Idole</b>`:`<b>${c.fatal?"2e !":esc(D.s||D.n||"Danger")}</b>`;
+const stepAt=n=>+S.startAt+(n-1)*3600000;
+function cardHTML(c,isNew){const D=DANGER[c.d]||{},img=c.k==="t"?IMG.tresor:c.k==="r"?IMG.idole:D.i;
+ const lab=c.k==="t"?`<b class="n">${esc(c.v)}<em>🍌</em></b>`:c.k==="r"?`<b class="i">Idole d'or<small>1 booster</small></b>`:`<b class="d">${esc(D.s||D.n||"Danger")}</b>`;
  const t=c.k==="t"?`Étape ${c.s} : trésor de ${c.v} bananes`:c.k==="r"?`Étape ${c.s} : Idole d'or`:`Étape ${c.s} : ${D.n||"danger"}${c.fatal?", deuxième : fin de l'expédition":""}`;
- return `<div class="ex-c ${cls}${isNew?" new":""}" style="background-image:url(${img})" role="listitem" aria-label="${esc(t)}"><small>${esc(c.s)}</small>${lab}</div>`;}
+ return `<div class="ex-cw" role="listitem" aria-label="${esc(t)}"><div class="ex-c${c.fatal?" fatal":""}${isNew?" new":""}" style="background-image:url(${img})">${lab}${c.fatal?`<span class="stamp">2e !</span>`:""}</div><span class="ex-h">${c.s} · ${esc(hh(stepAt(c.s)))}</span></div>`;}
 function trailHTML(){const cards=S.cards||[],n=+S.steps,old=shownStep();let h=cards.map(c=>cardHTML(c,+c.s>old)).join("");
- if(S.status==="run"&&cards.length<n)h+=`<div class="ex-c q" style="background-image:url(${IMG.dos})" role="listitem" aria-label="Prochaine carte"><small>${cards.length+1}</small><b>${S.nextAt?esc(hh(+S.nextAt)):""}</b></div>`;
- for(let i=cards.length+(S.status==="run"?2:1);i<=n;i++)h+=`<div class="ex-c off" style="background-image:url(${IMG.dos})" role="listitem" aria-label="Étape ${i}"><small>${i}</small></div>`;
+ if(S.status==="run"&&cards.length<n)h+=`<div class="ex-cw nx" role="listitem" aria-label="Prochaine carte à ${esc(hh(stepAt(cards.length+1)))}"><div class="ex-c q" style="background-image:url(${IMG.dos})"><i>?</i></div><span class="ex-h">${cards.length+1} · ${esc(hh(stepAt(cards.length+1)))}</span></div>`;
+ for(let i=cards.length+(S.status==="run"?2:1);i<=n;i++)h+=`<div class="ex-cw off" role="listitem" aria-label="Étape ${i}${S.status==="run"?"":" (non jouée)"}"><div class="ex-c" style="background-image:url(${IMG.dos})"></div><span class="ex-h">${i} · ${esc(hh(stepAt(i)))}</span></div>`;
  return h;}
 function bannerHTML(){const me=S.me,next=S.nextAt?+S.nextAt-nowS():0;
  if(S.status==="run"&&S.step===0)return `<div class="ex-ban"><span class="big">Départ à ${esc(hh(+S.startAt))}</span>dans ${esc(dur(+S.startAt-nowS()))} · une étape par heure jusqu'à ${esc(hh(+S.startAt+(+S.steps-1)*3600000))}</div>`;
@@ -168,7 +179,7 @@ function render(){if(!root||!S)return;const st=S.state;
    <div class="ex-path"><span>🍌 ${esc(S.path)} sur le chemin</span>${+S.relic?`<span>🗿 ${+S.relic>1?esc(S.relic)+" Idoles":"une Idole d'or"} sur le chemin</span>`:""}</div>${dangersHTML()}</div>
   <div class="ex-box ex-me">${meHTML()}</div>
   <div class="ex-box"><h3>Les explorateurs<small>${inN} dans la jungle</small></h3>${playersHTML()}</div>`;
- const tr=$(".ex-trail");if(tr){const k=tr.querySelector(".ex-c.q")||tr.querySelector(".ex-c:not(.off):last-of-type")||[...tr.querySelectorAll(".ex-c:not(.off)")].pop();if(k)tr.scrollLeft=Math.max(0,k.offsetLeft-tr.offsetLeft+k.offsetWidth+40-tr.clientWidth);}
+ const tr=$(".ex-trail");if(tr){const k=tr.querySelector(".ex-cw.nx")||[...tr.querySelectorAll(".ex-cw:not(.off)")].pop();if(k)tr.scrollLeft=Math.max(0,k.offsetLeft-tr.offsetLeft+k.offsetWidth+40-tr.clientWidth);}
  const j=$("#exJoin");if(j)j.addEventListener("click",join);
  root.querySelectorAll(".ex-ch").forEach(b=>b.addEventListener("click",()=>choose(b.dataset.c)));
  const a=$("#exAuto");if(a)a.addEventListener("change",()=>choose(null,+a.value));
