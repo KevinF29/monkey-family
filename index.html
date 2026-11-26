@@ -2109,7 +2109,12 @@ td.n{text-align:right}
   pack.style.setProperty("--packimg",`url(${PACK_SRC[0]})`);pack.classList.add("art");
   const PACK_AR=1226/720, PACK_TEAR=.93;
   /* exclusive boosters (event): their own wrapper, same size as the normal one */
-  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël",ico:"🎄"},gaming:{src:["packs/gaming-front.webp","packs/gaming-back.webp"],name:"Booster de lancement",ico:"🎮",music:"__pack-gaming"}};
+  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël",ico:"🎄"},gaming:{src:["packs/gaming-front.webp","packs/gaming-back.webp"],name:"Booster de lancement",ico:"🎮",music:"__pack-gaming"},
+    /* boosters de rareté (1 carte de leur rareté, gagnés au casino) */
+    "r-legendaire":{src:["packs/r-legendaire-front.webp","packs/r-legendaire-back.webp"],name:"Booster Légendaire",ico:"⭐"},
+    "r-mythique":{src:["packs/r-mythique-front.webp","packs/r-mythique-back.webp"],name:"Booster Mythique",ico:"🍺"},
+    "r-secret":{src:["packs/r-secret-front.webp","packs/r-secret-back.webp"],name:"Booster Secret",ico:"🎮"},
+    "r-originel":{src:["packs/r-originel-front.webp","packs/r-originel-back.webp"],name:"Booster Originel",ico:"🐒"}};
   const skinImgs={};
   function skinLoad(k){if(!SKINS[k])return null;if(!skinImgs[k]){const imgs=SKINS[k].src.map(u=>{const i=new Image();i.decoding="async";i.src=u;return i;});
     skinImgs[k]={imgs,ready:Promise.all(imgs.map(i=>i.decode?i.decode().catch(()=>{}):new Promise(r=>{i.onload=i.onerror=r;})))};}return skinImgs[k];}  // height/width of the wrapper; the tear line sits just under the top crimp
