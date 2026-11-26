@@ -307,7 +307,7 @@ function build(){
  $("#ccOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le Champ de Cocos est de nouveau caché.":`${NAME} est ouvert à tous les joueurs !`));
  $("#ccReset").addEventListener("click",()=>adm("reset","Tes parties du jour sont rendues."));
  $("#ccAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
- root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if($("#ccPanel").classList.contains("open"))panel(false);else close();});
+ document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if($("#ccPanel").classList.contains("open"))panel(false);else close();});
  setInterval(()=>{if(!root.hidden&&!busy)render();},30000);
 }
 function panel(o){$("#ccPanel").classList.toggle("open",o);$("#ccTog").setAttribute("aria-expanded",String(o));}
