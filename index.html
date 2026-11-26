@@ -882,6 +882,7 @@ td.n{text-align:right}
 <script src="champ.js"></script>
 <script src="tour.js"></script>
 <script src="expedition.js"></script>
+<script src="rush.js"></script>
 <script>
 (function(){
   const W=750,H=1050;
@@ -3970,7 +3971,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Monkey Run : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="wheel"){const v=+x.v||0,what=x.r==="jackpot"?`le <b>JACKPOT</b> : ${fmt(v)} 🍌`:x.r==="boost"?`${v} boosters`:x.r==="time"?`${v/60} h d'attente en moins`:x.r==="relance"?`${v} relance${v>1?"s":""}`:`${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎡</span><p>${who} a gagné ${what}${x.d||x.r==="double"?" en doublant sa mise":""} à The Monkey Wheel<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
-      if(x.kind==="casino_week"){const N={race:"la Monkey Run",coco:"le Crash Cocotier",wheel:"The Monkey Wheel",slot:"la Banana Machine",scratch:"le Monkey Cash",bj:"MonkeyJack 21",vp:"le Poker Monkey",bon:"le Bananateau",pk:"le Plinko Banana",fly:"le Flying Monkey",mine:"le Champ de Cocos",tour:"The Monkey Tower"},g=(Array.isArray(x.games)?x.games:[]).map(k=>`<b>${esc(N[k]||k)}</b>`);
+      if(x.kind==="casino_week"){const N={race:"la Monkey Run",coco:"le Crash Cocotier",wheel:"The Monkey Wheel",slot:"la Banana Machine",scratch:"le Monkey Cash",bj:"MonkeyJack 21",vp:"le Poker Monkey",bon:"le Bananateau",pk:"le Plinko Banana",fly:"le Flying Monkey",mine:"le Champ de Cocos",tour:"The Monkey Tower",rush:"Monkey Rush"},g=(Array.isArray(x.games)?x.games:[]).map(k=>`<b>${esc(N[k]||k)}</b>`);
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>Nouveaux jeux de la semaine au Casino : ${g.length>1?g.slice(0,-1).join(", ")+" et "+g[g.length-1]:g[0]||"surprise"} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bj"){const v=+x.v||0,t=x.r==="monkey"?`${who} a sorti un <b>MONKEY BLACKJACK</b> à MonkeyJack 21 : +${fmt(v)} 🍌 !`:x.r==="bj"?`${who} a fait <b>blackjack</b> à MonkeyJack 21 : +${fmt(v)} 🍌`:`${who} a battu le singe croupier${x.dbl?" en doublant sa mise":""} : +${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🃏</span><p>${t}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
@@ -3981,6 +3982,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="pk")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${x.w?`${who} a fait tourner la roulette du Plinko Banana : <b>booster ${esc(String(x.v))}</b> 🎡`:`${who} a fait tomber la bille singe tout au bord du Plinko Banana : ${x.r==="rpack"?"<b>booster "+esc(String(x.v))+"</b> 🌈":"<b>"+fmt(+x.v||0)+" boosters</b> 🎁"}`} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="fly"){const M=["🥇","🥈","🥉"],pod=(Array.isArray(x.pod)?x.pod:[]).slice(0,3).map((p,i)=>`${M[i]} <b>${esc(nameOf(p.uid))}</b> ${fmt(+p.v||0)} pts`+(+p.boost?` (+${fmt(+p.boost)} booster${+p.boost>1?"s":""} et ${fmt(+p.ban||0)} 🍌)`:+p.ban?` (+${fmt(+p.ban)} 🍌)`:"")).join(" · ");
         return `<div class="fitem"><span class="fi" aria-hidden="true">✈️</span><p>Flying Monkey, podium de la manche : ${pod||"personne n'a volé"}${+x.n>3?` · ${fmt(+x.n)} pilotes`:""}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="rush"){const M=["🥇","🥈","🥉"],pod=(Array.isArray(x.pod)?x.pod:[]).slice(0,3).map((p,i)=>`${M[i]} <b>${esc(nameOf(p.uid))}</b> ${fmt(+p.v||0)} pts`+(+p.boost?` (+${fmt(+p.boost)} booster${+p.boost>1?"s":""} et ${fmt(+p.ban||0)} 🍌)`:+p.ban?` (+${fmt(+p.ban)} 🍌)`:"")).join(" · ");
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🏃</span><p>Monkey Rush, podium de la manche : ${pod||"personne n'a couru"}${+x.n>3?` · ${fmt(+x.n)} coureurs`:""}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="mine"){const m="×"+(+x.m).toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1").replace(".",",");
         return `<div class="fitem"><span class="fi" aria-hidden="true">🥥</span><p>${who} a traversé le Champ de Cocos : ${fmt(+x.k||0)} cocos sans serpent (${esc(String(x.n||""))} 🐍), encaissé à <b>${m}</b> : +${fmt(+x.v||0)} 🍌 !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="mine_bite")return `<div class="fitem"><span class="fi" aria-hidden="true">🐍</span><p>${who} avait ouvert ${fmt(+x.k||0)} cocos au Champ de Cocos… et n'a pas résisté à « encore une » : mordu par un serpent 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
