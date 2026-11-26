@@ -1,4 +1,4 @@
-/* Monkey Family — La Tour du Temple (jeu du Casino : on monte un temple étage par étage)
+/* Monkey Family — The Monkey Tower (ex-« La Tour du Temple », jeu du Casino : on monte un temple étage par étage)
    À chaque étage, 3 portes dont une piégée : la bonne porte fait monter, la mauvaise ouvre une trappe sous le singe.
    Après chaque étage passé, on peut redescendre avec son butin (mise × gain de l'étage). 8 étages, ×24 au sommet.
    La porte piégée est tirée par le serveur au moment du choix (mf_tour_*, supabase-tour.sql).
@@ -7,10 +7,11 @@
 "use strict";
 
 // images de Kévin (facultatives) : sans elles, le temple et les portes sont dessinés, et le singe est un emoji
-const IMG={logo:"packs/tour-titre.webp",fond:"packs/tour-fond.webp",singe:"packs/tour-singe.webp",chute:"packs/tour-chute.webp",idole:"packs/tour-idole.webp"};
-const NAME="La Tour du Temple";
+const IMG={logo:"packs/tour-titre.webp",fond:"packs/tour-fond.webp",mur:"packs/tour-mur.webp",porte:"packs/tour-porte.webp",or:"packs/tour-porte-or.webp",piege:"packs/tour-porte-piege.webp",
+ trappe:"packs/tour-trappe.webp",singe:"packs/tour-singe.webp",chute:"packs/tour-chute.webp",idole:"packs/tour-idole.webp"};
+const NAME="The Monkey Tower";
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const ERR={no_bananas:"Pas assez de bananes.",tour_limit:"Plus de montées aujourd'hui : reviens demain !",tour_closed:"La Tour du Temple n'est pas encore ouverte.",
+const ERR={no_bananas:"Pas assez de bananes.",tour_limit:"Plus de montées aujourd'hui : reviens demain !",tour_closed:"The Monkey Tower n'est pas encore ouverte.",
  tour_in_game:"Une montée est déjà en cours.",tour_no_game:"Pas de montée en cours.",tour_bet:"Mise impossible.",tour_door:"Porte inconnue.",tour_ground:"Passe au moins un étage avant de redescendre.",
  not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
@@ -27,7 +28,7 @@ const ord=n=>n===1?"1er":n+"e";
 /* ---------- style ---------- */
 const CSS=`
 #mfTOUR{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;overflow:hidden;overscroll-behavior:none;color:#f4eedc;font:16px/1.45 Quicksand,system-ui,sans-serif;
- background:#10200f;background-image:linear-gradient(rgba(8,18,8,.35),rgba(8,14,6,.8)),url(${IMG.fond}),radial-gradient(ellipse at 50% 0%,#3d6b2a,#17301a 55%,#0b170b);background-size:cover;background-position:center}
+ background:#10200f;background-image:linear-gradient(rgba(8,18,8,.1),rgba(8,14,6,.45)),url(${IMG.fond}),radial-gradient(ellipse at 50% 0%,#3d6b2a,#17301a 55%,#0b170b);background-size:cover;background-position:center}
 #mfTOUR[hidden]{display:none}
 #mfTOUR *{box-sizing:border-box;min-width:0}
 #mfTOUR [hidden]{display:none!important}
@@ -48,7 +49,7 @@ const CSS=`
 .tt-st.nx{border-color:#ffd23f;box-shadow:0 0 0 2px #ffd23f inset;animation:ttNx 1.2s infinite alternate}
 .tt-st.top b{color:#ffd23f}
 @keyframes ttNx{to{background:#33421f}}
-.tt-stage{flex:1;min-height:0;width:min(100%,640px);position:relative;overflow:hidden;margin:0 auto;container-type:size}
+.tt-stage{flex:1;min-height:0;max-height:calc(min(100vw,640px)*1.5);width:min(100%,640px);position:relative;overflow:hidden;margin:auto;container-type:size}
 .tt-floor{position:absolute;inset:0;container-type:size}
 /* le mur du temple */
 .tt-wall{position:absolute;left:3%;right:3%;top:4%;bottom:30%;border-radius:14px 14px 0 0;
@@ -144,6 +145,27 @@ const CSS=`
 .tt-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .tt-btns button{min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid #4d6a3a;background:#26361b;color:#f4eedc;font:700 14px Quicksand,sans-serif;cursor:pointer}
 .tt-btns button.on{background:#ffd23f;color:#2a1a00;border-color:#ffd23f}
+/* images de Kévin (classes posées quand elles ont chargé) */
+#mfTOUR.wimg .tt-wall{background:url(${IMG.mur}) center top/cover;box-shadow:0 10px 24px rgba(0,0,0,.5);border-radius:6px 6px 0 0}
+#mfTOUR.wimg .tt-land{background:linear-gradient(rgba(255,230,170,.08),rgba(0,0,0,.4)),url(${IMG.mur}) 50% 100%/100% auto}
+#mfTOUR.wimg .tt-steps{background:repeating-linear-gradient(180deg,transparent 0 calc(20% - 4px),rgba(0,0,0,.55) calc(20% - 4px) 20%),linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.35)),url(${IMG.mur}) 50% 100%/160% auto}
+#mfTOUR.wimg .tt-wall::before,#mfTOUR.wimg .tt-vine{display:none}
+#mfTOUR.wimg .tt-lvl{top:24%}
+.tt-door .im{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%;display:none;transition:opacity .35s;pointer-events:none;-webkit-user-drag:none}
+#mfTOUR.dimg .tt-door{width:auto;height:min(90%,43cqw);aspect-ratio:2/3;margin-left:0;transform:translateX(-50%);filter:drop-shadow(0 6px 8px rgba(0,0,0,.5))}
+#mfTOUR.dimg .tt-door .fr,#mfTOUR.dimg .tt-door .in,#mfTOUR.dimg .tt-door .pl,#mfTOUR.dimg .tt-door .gl{display:none}
+#mfTOUR.dimg .tt-door .im{display:block}
+#mfTOUR.dimg .tt-door .im.g,#mfTOUR.dimg .tt-door .im.d{opacity:0}
+#mfTOUR.dimg .tt-door.gold .im.g,#mfTOUR.dimg .tt-door.dark .im.d{opacity:1}
+#mfTOUR.dimg .tt-door.gold .im.c,#mfTOUR.dimg .tt-door.dark .im.c{opacity:0}
+#mfTOUR.dimg .tt-doors.pick .tt-door{animation:ttHintI 1.3s infinite ease-in-out}
+#mfTOUR.dimg .tt-doors.pick .tt-door:nth-child(2){animation-delay:.22s}#mfTOUR.dimg .tt-doors.pick .tt-door:nth-child(3){animation-delay:.44s}
+@keyframes ttHintI{50%{filter:drop-shadow(0 0 14px rgba(255,210,63,.95))}}
+#mfTOUR.dimg .tt-door.sel{filter:drop-shadow(0 0 16px #ffd23f)}
+#mfTOUR.timg .tt-trap{background:url(${IMG.trappe}) center/contain no-repeat;border-radius:0;box-shadow:none;width:30%;margin-left:-15%;height:auto;aspect-ratio:3/1;top:-30%;transform:scale(.15);opacity:0;transition:transform .25s ease-out,opacity .15s}
+#mfTOUR.timg .tt-trap.on{transform:none;opacity:1}
+@media(max-height:480px){#mfTOUR .tt-lvl,#mfTOUR.wimg .tt-lvl{top:1%;font-size:15px}#mfTOUR .tt-lvl small{display:inline;margin-left:6px}#mfTOUR.dimg .tt-door{height:min(80%,43cqw)}.tt-doors{top:24%}}
+@media(prefers-reduced-motion:reduce){#mfTOUR.dimg .tt-doors.pick .tt-door{animation:none}}
 .tt-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#26361b;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .tt-toast.on{transform:translate(-50%,0);opacity:1}
 @media(max-height:700px){.tt-logo{height:48px}.tt-logoT{font-size:24px}.tt-top{gap:3px}.tt-mise{margin-bottom:4px}.tt-big{min-height:46px;padding:8px 18px;font-size:17px}}
@@ -217,7 +239,7 @@ function render(){if(!root)return;
  $("#ttTab").innerHTML=`<tr><th>Étage</th>${M().map((m,i)=>`<th>${i+1}</th>`).join("")}</tr><tr><td>Gain</td>${M().map(m=>`<td>${fx(m)}</td>`).join("")}</tr><tr><td>Chances</td>${M().map((m,i)=>`<td>${Math.round(100*Math.pow(2/3,i+1))} %</td>`).join("")}</tr>`;
  $("#ttHist").innerHTML=(S.hist||[]).map(h=>`<li>${esc(h)}</li>`).join("");
  if(ADMIN){const o=$("#ttOpen");o.textContent=S.open?"Cacher aux joueurs":"Ouvrir à tous les joueurs";o.classList.toggle("on",!S.open);
-  $("#ttState").textContent=S.open?"La Tour du Temple est ouverte à tous les joueurs.":"La Tour du Temple est visible par toi seulement.";}}
+  $("#ttState").textContent=S.open?"The Monkey Tower est ouverte à tous les joueurs.":"The Monkey Tower est visible par toi seulement.";}}
 function show(t,s,cls,img){const r=$("#ttRes");r.innerHTML=`${img?`<img src="${img}" alt="">`:""}<div class="t${cls?" "+cls:""}"></div><div class="s"></div>`;r.querySelector(".t").textContent=t;r.querySelector(".s").textContent=s||"";r.hidden=false;}
 let tt=0;function toast(t){const e=$(".tt-toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),3500);}
 function setPick(on){$(".tt-doors").classList.toggle("pick",on);doors().forEach((d,i)=>{d.disabled=!on;d.setAttribute("aria-label",`Porte ${SIDE[i]}`);});
@@ -289,7 +311,7 @@ async function adm(x,msg){try{const r=await rpc("mf_tour_admin",{p_action:x});ta
 function build(){
  const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
  root=document.createElement("div");root.id="mfTOUR";root.hidden=true;root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label",NAME);
- const door=i=>`<button type="button" class="tt-door" style="left:${DX[i]}%" disabled aria-label="Porte ${SIDE[i]}"><span class="fr"></span><span class="in"><span class="sk" aria-hidden="true">💀</span></span><span class="pl a"></span><span class="pl b"></span><span class="gl" aria-hidden="true">🐒</span></button>`;
+ const door=i=>`<button type="button" class="tt-door" style="left:${DX[i]}%" disabled aria-label="Porte ${SIDE[i]}"><span class="fr"></span><span class="in"><span class="sk" aria-hidden="true">💀</span></span><span class="pl a"></span><span class="pl b"></span><span class="gl" aria-hidden="true">🐒</span><img class="im c" alt=""><img class="im g" alt=""><img class="im d" alt=""></button>`;
  root.innerHTML=`<div class="tt-top"><button type="button" class="tt-btn l" id="ttTog" aria-controls="ttPanel" aria-expanded="false" aria-label="Règles">?</button>
   <h2 style="margin:0"><img class="tt-logo" src="${IMG.logo}" alt="${NAME}"><span class="tt-logoT" hidden>${NAME}</span></h2>
   <div class="tt-chips"><span class="tt-chip">🍌 <b id="ttBan">…</b></span><span class="tt-chip">Boosters <b id="ttBoo">…</b></span></div>
@@ -343,6 +365,12 @@ function build(){
  const lg=$(".tt-logo"),noLogo=()=>{lg.hidden=true;$(".tt-logoT").hidden=false;};lg.onerror=noLogo;if(lg.complete&&!lg.naturalWidth)noLogo();
  const mk=$(".tt-monk img");mk.onerror=()=>{if(mk.getAttribute("src")===IMG.chute){mk.src=IMG.singe;return;}mk.hidden=true;$(".tt-monk .e").hidden=false;};mk.src=IMG.singe;
  const ch=new Image();ch.onload=()=>{chuteOk=true;};ch.src=IMG.chute;
+ const ld=(src,f)=>{const i=new Image();i.onload=()=>f(i);i.src=src;};
+ ld(IMG.mur,()=>root.classList.add("wimg"));
+ ld(IMG.trappe,()=>root.classList.add("timg"));
+ // les portes : on attend les trois images pour passer aux portes dessinées par Kévin
+ let nd=0;const dOk=()=>{if(++nd<3)return;root.querySelectorAll(".tt-door").forEach(d=>{d.querySelector(".im.c").src=IMG.porte;d.querySelector(".im.g").src=IMG.or;d.querySelector(".im.d").src=IMG.piege;});root.classList.add("dimg");};
+ [IMG.porte,IMG.or,IMG.piege].forEach(u=>ld(u,dOk));
  const id=new Image();id.onload=()=>{idoleOk=true;};id.src=IMG.idole;
  $("#ttClose").addEventListener("click",close);
  $("#ttMinus").addEventListener("click",()=>{bet=Math.max(+S.min||1,bet-1);render();});
@@ -354,7 +382,7 @@ function build(){
  $("#ttRes").addEventListener("click",()=>{$("#ttRes").hidden=true;});
  $("#ttTog").addEventListener("click",()=>panel(!$("#ttPanel").classList.contains("open")));
  $("#ttPanelX").addEventListener("click",()=>{panel(false);$("#ttTog").focus({preventScroll:true});});
- $("#ttOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"La Tour du Temple est de nouveau cachée.":`${NAME} est ouverte à tous les joueurs !`));
+ $("#ttOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"The Monkey Tower est de nouveau cachée.":`${NAME} est ouverte à tous les joueurs !`));
  $("#ttReset").addEventListener("click",()=>adm("reset","Tes montées du jour sont rendues."));
  $("#ttAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if($("#ttPanel").classList.contains("open"))panel(false);else close();});
