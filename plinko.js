@@ -15,7 +15,7 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const MAXFLY=5;   // billes en l'air en même temps
 const DEF_PRIZES=[{t:"boost",v:5},{t:"ban",v:20},{t:"ban",v:10},{t:"ban",v:5},{t:"ban",v:3},{t:"ban",v:1},{t:"ban",v:3},{t:"ban",v:5},{t:"ban",v:10},{t:"ban",v:20},{t:"rpack",v:"Originel"}];
 const lab=p=>p.t==="ban"?`${p.v} 🍌`:p.t==="boost"?`${p.v} boosters`:`Booster ${p.v}`;
-const short=p=>p.t==="ban"?String(p.v):p.t==="boost"?`🎁×${p.v}`:"🌈";
+const short=p=>p.t==="ban"?`<b>${esc(p.v)}</b><i>🍌</i>`:p.t==="boost"?`<i>🎁</i><b>×${esc(p.v)}</b>`:`<img src="${IMG.originel}" alt=""><b class="o">🌈</b>`;
 
 /* ---------- style ---------- */
 const CSS=`
@@ -42,14 +42,21 @@ const CSS=`
 .pk-board{position:relative;padding:10px 10px 12px;border-radius:22px;background:linear-gradient(180deg,#6b3f1d,#4a2a10);border:4px solid #d9a514;box-shadow:inset 0 0 0 2px #8a5a00,inset 0 12px 30px rgba(0,0,0,.45),0 12px 28px rgba(0,0,0,.5)}
 .pk-board canvas{display:block}
 .pk-board.img{background:none;box-shadow:none;border-radius:0;padding:0;border-style:solid;border-color:transparent;border-width:calc(var(--sp)*1.15) calc(var(--sp)*.8);border-image:url(${IMG.plateau}) 230 220 230 220 fill stretch;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))}
-.pk-bins{display:grid;gap:3px;margin-top:2px}
-.pk-bin{height:calc(var(--sp)*.95);min-height:24px;border-radius:7px;display:grid;place-items:center;font:400 calc(var(--sp)*.36)/1 "Titan One",sans-serif;color:#2a1a0c;
+.pk-bins{display:grid;gap:2px;margin-top:2px}
+.pk-bin{height:calc(var(--sp)*1.6);min-height:34px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:400 calc(var(--sp)*.5)/1 "Titan One",sans-serif;color:#2a1a0c;
  background:linear-gradient(180deg,#ffe27a,#e0a817);box-shadow:0 3px 0 #8a5a00;transition:transform .12s;white-space:nowrap;overflow:hidden}
 .pk-bin[data-k="1"]{background:linear-gradient(180deg,#9be36b,#2f8a18);box-shadow:0 3px 0 #1f5a10;color:#fff;text-shadow:0 1px 2px #0a3a00}
 .pk-bin[data-k="2"]{background:linear-gradient(180deg,#d4f06b,#8cbf1c);box-shadow:0 3px 0 #4a6a00;color:#1f3a00}
 .pk-bin[data-k="4"]{background:linear-gradient(180deg,#ffb06b,#e0661c);box-shadow:0 3px 0 #8a3a00}
 .pk-bin[data-k="5"]{background:linear-gradient(180deg,#ff7a6b,#d8301c);box-shadow:0 3px 0 #7a1000;color:#fff}
-.pk-bin.boost{background:linear-gradient(180deg,#8fd3ff,#2f6fd8);box-shadow:0 3px 0 #123b85;color:#fff;font-size:calc(var(--sp)*.3)}
+.pk-bin b{font-weight:400}
+.pk-bin i{font-style:normal;font-size:calc(var(--sp)*.32);line-height:1}
+.pk-bin.boost{background:linear-gradient(180deg,#8fd3ff,#2f6fd8);box-shadow:0 3px 0 #123b85;color:#fff;font-size:calc(var(--sp)*.4)}
+.pk-bin.boost i{font-size:calc(var(--sp)*.5)}
+.pk-bin.rpack img{height:92%;width:auto;max-width:96%;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.pk-bin.rpack .o{display:none}
+.pk-bin.rpack.noimg .o{display:block}
+.pk-bin.rpack.noimg img{display:none}
 .pk-bin.rpack{background:linear-gradient(135deg,#ff5b5b,#ffd23f,#5bff8a,#5bc8ff,#c45bff);background-size:300% 300%;animation:pkRain 4s linear infinite;box-shadow:0 3px 0 #5a2a8a;color:#fff;text-shadow:0 1px 2px #000;font-size:calc(var(--sp)*.42)}
 @keyframes pkRain{to{background-position:300% 0}}
 .pk-bin.hit{transform:translateY(5px) scale(1.06);filter:brightness(1.35)}
@@ -128,7 +135,7 @@ function layout(){if(!cv)return;const wrap=$(".pk-boardW"),R=ROWS();
  const im=$(".pk-board").classList.contains("img"),aw=Math.max(200,wrap.clientWidth-(im?0:28)),ah=Math.max(200,wrap.clientHeight-(im?0:28));
  // largeur = (R+2)·SP + cadre ; hauteur = TOP (1,1·SP) + (R-1)·écart vertical + 0,7·SP + cases (1,15·SP) + cadre.
  // On prend toute la largeur possible, puis on étire les rangées vers le haut pour remplir l'écran (écart de 0,88 à 1,7 × SP).
- const bw=im?1.6:0,bh=im?2.3:0,fix=1.1+.7+1.15+bh;
+ const bw=im?1.6:0,bh=im?2.3:0,fix=1.1+.7+1.7+bh;
  SP=Math.floor(Math.min(aw/(R+2+bw),ah/(fix+(R-1)*.88)));SP=Math.max(14,Math.min(SP,64));
  vg=Math.max(SP*.88,Math.min(SP*1.7,(ah-fix*SP)/(R-1)));
  W=SP*(R+2);H=Math.round(TOP()+(R-1)*VG()+SP*.7);DPR=Math.min(2,window.devicePixelRatio||1);
@@ -136,7 +143,8 @@ function layout(){if(!cv)return;const wrap=$(".pk-boardW"),R=ROWS();
  $(".pk-board").style.setProperty("--sp",SP+"px");const bins=$(".pk-bins");bins.style.width=W+"px";bins.style.padding=`0 ${SP/2-1.5}px`;
  bins.style.gridTemplateColumns=`repeat(${R+1},1fr)`;draw();}
 function bins(){const P=prizes(),n=P.length,b=$(".pk-bins");
- b.innerHTML=P.map((p,i)=>`<div class="pk-bin ${p.t==="ban"?"":p.t}" data-i="${i}" data-k="${Math.min(i,n-1-i)}" title="${esc(lab(p))}" aria-label="Case ${i+1} : ${esc(lab(p))}">${esc(short(p))}</div>`).join("");}
+ b.innerHTML=P.map((p,i)=>`<div class="pk-bin ${p.t==="ban"?"":p.t}" data-i="${i}" data-k="${Math.min(i,n-1-i)}" title="${esc(lab(p))}" aria-label="Case ${i+1} : ${esc(lab(p))}">${short(p)}</div>`).join("");
+ b.querySelectorAll(".pk-bin.rpack img").forEach(im=>{const no=()=>im.parentNode.classList.add("noimg");im.onerror=no;if(im.complete&&!im.naturalWidth)no();});}
 function monkey(x,y,r,rot){const c=cx;c.save();c.translate(x,y);c.rotate(rot||0);
  if(billeImg){c.shadowColor="rgba(0,0,0,.45)";c.shadowBlur=r*.4;c.shadowOffsetY=r*.15;c.drawImage(billeImg,-r*1.32,-r*1.32,r*2.64,r*2.64);c.restore();return;}
  c.shadowColor="rgba(0,0,0,.45)";c.shadowBlur=r*.5;c.shadowOffsetY=r*.2;
