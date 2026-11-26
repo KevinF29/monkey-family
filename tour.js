@@ -1,6 +1,6 @@
 /* Monkey Family — The Monkey Tower (ex-« La Tour du Temple », jeu du Casino : on monte un temple étage par étage)
    À chaque étage, 3 portes dont une piégée : la bonne porte fait monter, la mauvaise ouvre une trappe sous le singe.
-   Après chaque étage passé, on peut redescendre avec son butin (mise × gain de l'étage). 8 étages, ×24 au sommet.
+   Après chaque étage passé, on peut redescendre avec son butin (mise × gain de l'étage). 8 étages, ×15 au sommet ; trappe au 1er étage = mise rendue.
    La porte piégée est tirée par le serveur au moment du choix (mf_tour_*, supabase-tour.sql).
    Visible par l'admin seulement tant que le jeu n'est pas ouvert à tous (réglages admin → « Ouvrir à tous »). */
 (function(){
@@ -181,7 +181,7 @@ let root=null,USER=null,ADMIN=false,S=null,busy=false,bet=5,skew=0,shownFl=0;
 const $=s=>root.querySelector(s);
 function take(info){if(!info)return;S=info;try{if(window.MF_APPLY&&info.state)window.MF_APPLY(info.state);}catch(e){}}
 try{const b=+localStorage.getItem("mf_tour_bet");if(b>0)bet=b;}catch(e){}
-const M=()=>(S&&Array.isArray(S.mults)&&S.mults.length?S.mults:[1.4,2,3,4.5,7,10,15,24]).map(Number);
+const M=()=>(S&&Array.isArray(S.mults)&&S.mults.length?S.mults:[1,1.3,2,3,4.5,6.5,10,15]).map(Number);
 const TOP=()=>M().length;
 const payOf=(b,fl)=>fl<1?0:Math.floor(b*M()[fl-1]+1e-9);
 const G=()=>S&&S.game?{bet:+S.game.bet,fl:+S.game.fl}:null;
@@ -236,6 +236,7 @@ function render(){if(!root)return;
  if(g){const c=$("#ttCash");c.disabled=busy||g.fl<1;c.textContent=g.fl<1?"Choisis une porte":`Redescendre avec ${payOf(g.bet,g.fl)} 🍌`;
   $("#ttSub").textContent=`Mise : ${g.bet} 🍌 · étage suivant ${fx(M()[g.fl])} = ${payOf(g.bet,g.fl+1)} 🍌`;}
  else $("#ttSub").textContent=`Montées : ${S.left}/${S.max}`+(+S.left<=0?` · Nouvelles montées dans ${hhmm(+S.nextDay-(Date.now()+skew))}`:` · sommet = ${payOf(bet,TOP())} 🍌`);
+ $("#ttTop").textContent=`Au sommet (${TOP()}e étage), le singe prend l'idole : ${fx(M()[TOP()-1])} !`;
  $("#ttLim").textContent=`${S.max} montées par jour, mise de ${S.min} à ${S.maxBet} 🍌.`;
  $("#ttTab").innerHTML=`<tr><th>Étage</th>${M().map((m,i)=>`<th>${i+1}</th>`).join("")}</tr><tr><td>Gain</td>${M().map(m=>`<td>${fx(m)}</td>`).join("")}</tr><tr><td>Chances</td>${M().map((m,i)=>`<td>${Math.round(100*Math.pow(2/3,i+1))} %</td>`).join("")}</tr>`;
  $("#ttHist").innerHTML=(S.hist||[]).map(h=>`<li>${esc(h)}</li>`).join("");
@@ -277,8 +278,10 @@ async function choose(i){const g=G();if(busy||!g)return;ac();busy=true;setPick(f
   await wait(600);dd.forEach((d,k)=>{if(k!==i)d.classList.add("open","gold");});
   take(r.info);busy=false;render();
   const lost=+r.lost||0;
-  show("Trappe !",`La porte ${SIDE[i]} était piégée : chute au ${ord(+r.fl+1)} étage.`+(lost?` Tu avais ${lost} 🍌 en poche… −${r.bet} 🍌`:` −${r.bet} 🍌`),"lose");
-  say(pick(["Aïe aïe aïe… 🕳️","Qui a mis ce trou là ?!","Je reviendrai… 🐒"]),3000);
+  if(r.refund){show("Trappe… mais remboursé !",`La porte ${SIDE[i]} était piégée. Au 1er étage, ta mise de ${r.bet} 🍌 t'est rendue.`,"lose");
+   say(pick(["Ouf, je garde mes bananes ! 😅","Raté… mais rien de perdu !","Allez, on retente ? 🐒"]),3000);}
+  else{show("Trappe !",`La porte ${SIDE[i]} était piégée : chute au ${ord(+r.fl+1)} étage.`+(lost?` Tu avais ${lost} 🍌 en poche… −${r.bet} 🍌`:` −${r.bet} 🍌`),"lose");
+   say(pick(["Aïe aïe aïe… 🕳️","Qui a mis ce trou là ?!","Je reviendrai… 🐒"]),3000);}
   setTimeout(()=>{if(!busy&&!G()){monkImg(false);idle();}},3600);
   return;}
  // bonne porte : le singe entre, on montre où était le piège, puis l'étage suivant descend
@@ -345,7 +348,8 @@ function build(){
    <li>Mise, puis monte le temple étage par étage. À chaque étage, <b>3 portes dont une piégée</b>.</li>
    <li>Bonne porte : tu montes et ton butin grossit. Mauvaise porte : une trappe s'ouvre sous le singe, tu perds ta mise.</li>
    <li>Après chaque étage passé, tu peux <b>redescendre avec ton butin</b> : ta mise × le gain de l'étage (arrondi en dessous).</li>
-   <li>Au sommet (8e étage), le singe prend l'idole : ×24 !</li>
+   <li>Trappe au <b>1er étage</b> : ta mise t'est rendue.</li>
+   <li id="ttTop">Au sommet (8e étage), le singe prend l'idole : ×15 !</li>
    <li id="ttLim">5 montées par jour, mise de 1 à 10 🍌.</li>
   </ul>
   <table class="tt-tab" id="ttTab"></table>

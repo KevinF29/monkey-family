@@ -9,8 +9,9 @@
 --  - à chaque étage, 3 portes dont 1 piégée : le serveur tire la porte piégée AU MOMENT où le joueur choisit
 --    (rien à lire à l'avance dans le réseau)
 --  - après chaque étage passé, le joueur peut redescendre avec mise × mults[étage] (arrondi en dessous)
---  - 8 étages : ×1,4 ×2 ×3 ×4,5 ×7 ×10 ×15 ×24 ; au sommet, l'idole encaisse toute seule
---  - chances d'arriver à l'étage k : (2/3)^k ; le jeu rend 88 à 94 % de la mise selon l'étage où l'on s'arrête
+--  - 8 étages : ×1 ×1,3 ×2 ×3 ×4,5 ×6,5 ×10 ×15 ; au sommet, l'idole encaisse toute seule
+--  - trappe au 1er étage : la mise est rendue
+--  - chances d'arriver à l'étage k : (2/3)^k ; avec le remboursement, le jeu rend 90 à 93 % (100 % en s'arrêtant au 1er étage)
 
 create table if not exists public.mf_tour (
   uid uuid primary key,
@@ -28,7 +29,7 @@ create table if not exists public.mf_tour_cfg (
   min_bet int not null default 1,
   max_bet int not null default 10,
   games int not null default 5,
-  mults jsonb not null default '[1.4, 2, 3, 4.5, 7, 10, 15, 24]'::jsonb   -- gain après l'étage 1, 2, … ; la longueur = nombre d'étages
+  mults jsonb not null default '[1, 1.3, 2, 3, 4.5, 6.5, 10, 15]'::jsonb   -- gain après l'étage 1, 2, … ; la longueur = nombre d'étages
 );
 alter table public.mf_tour_cfg enable row level security;
 insert into public.mf_tour_cfg(id) values (1) on conflict do nothing;
@@ -131,9 +132,15 @@ begin
   if trap = p_door then
     lost := public._tour_pay(bet, fl);   -- ce qu'il avait « en poche »
     update public.mf_tour set game = null, total = total + 1 where uid = u;
-    perform public._tour_log(u, 'Mise ' || bet || ' 🍌 · trappe à l''étage ' || (fl + 1) || ' · −' || bet || ' 🍌');
+    if fl = 0 then   -- trappe au 1er étage : la mise est rendue (choix de Kévin, 26/11)
+      update public.pstate set bananas = bananas + bet where uid = u;
+      perform public._tour_log(u, 'Mise ' || bet || ' 🍌 · trappe au 1er étage · mise rendue');
+    else
+      perform public._tour_log(u, 'Mise ' || bet || ' 🍌 · trappe à l''étage ' || (fl + 1) || ' · −' || bet || ' 🍌');
+    end if;
     if fl >= 5 then perform public._feed(jsonb_build_object('kind', 'tour_fall', 'uid', u, 'fl', fl + 1, 'v', lost)); end if;
-    return jsonb_build_object('door', p_door, 'trap', trap, 'out', 'fall', 'fl', fl, 'bet', bet, 'pay', 0, 'lost', lost, 'info', public._tour_info(u));
+    return jsonb_build_object('door', p_door, 'trap', trap, 'out', 'fall', 'fl', fl, 'bet', bet, 'pay', case when fl = 0 then bet else 0 end,
+      'refund', fl = 0, 'lost', lost, 'info', public._tour_info(u));
   end if;
 
   fl := fl + 1;
