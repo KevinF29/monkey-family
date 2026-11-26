@@ -7,7 +7,7 @@
 "use strict";
 
 const IMG={logo:"packs/vp-titre.webp",croupier:"packs/vp-croupier.webp",table:"packs/vp-table.webp",fond:"packs/vp-fond.webp",
- dos:"packs/bj-dos.webp",roi:"packs/bj-roi.webp",dame:"packs/bj-dame.webp",valet:"packs/bj-valet.webp",as:"packs/bj-as.webp",joker:"packs/vp-joker.webp"};
+ dos:"packs/bj-dos.webp",roi:"packs/bj-roi.webp",dame:"packs/bj-dame.webp",valet:"packs/bj-valet.webp",as:"packs/bj-as.webp",joker:"packs/vp-joker.webp",perd:"packs/vp-singe-perd.webp",halo:"packs/vp-gain-halo.webp",jeton:"packs/vp-jeton.webp",piece:"packs/vp-piece.webp"};
 const ART={0:"as",10:"valet",11:"dame",12:"roi"};
 const RK=["A","2","3","4","5","6","7","8","9","10","V","D","R"],SU=["♠","♥","♦","♣"];
 const NAMES=["Rien","Paire de Rois ou d'As","Double paire","Brelan","Quinte","Couleur","Full","Carré","Quinte flush","Quinte flush royale (Joker)","Cinq identiques","Quinte flush royale"];
@@ -109,10 +109,20 @@ const CSS=`
 .vp-big:disabled{background:#4a4060;color:#9d93b8;box-shadow:none;cursor:default}
 .vp-big.p{background:#ff7aa8;box-shadow:0 4px 0 #a8305c}
 .vp-sub{color:#fff;text-shadow:0 1px 3px #000;font-size:13px;margin-top:6px;font-weight:700}
-.vp-mk{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(circle at 50% 45%,rgba(255,210,63,.6),rgba(21,17,31,.94) 70%);cursor:pointer;animation:vpFade .25s}
+.vp-mk{position:absolute;inset:0;z-index:50;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(circle at 50% 45%,rgba(255,210,63,.6),rgba(21,17,31,.94) 70%);cursor:pointer;animation:vpFade .25s}
 .vp-mkT{font:400 clamp(30px,9vw,52px)/1.05 "Titan One",sans-serif;text-align:center;color:#ffd23f;transform:rotate(-4deg);text-shadow:0 4px 0 #8a5a00,0 0 24px rgba(0,0,0,.6);animation:vpBoom .6s cubic-bezier(.2,1.6,.4,1) both;padding:0 12px}
 .vp-mkS{font-weight:700;font-size:17px;text-shadow:0 1px 3px #000;text-align:center;padding:0 16px}
 .vp-mkE{font-size:clamp(64px,18vw,110px);animation:vpWob .35s infinite alternate ease-in-out}
+.vp-mkV{position:relative;width:min(66vw,46svh,340px);aspect-ratio:1;display:grid;place-items:center;flex:none}
+.vp-halo{position:absolute;left:-30%;top:-30%;width:160%;height:160%;object-fit:contain;animation:vpSpin 16s linear infinite,vpFade .5s both}
+.vp-lose{position:relative;width:100%;height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.5));animation:vpPop .7s cubic-bezier(.2,1.6,.4,1) both,vpShake .12s .7s 10 alternate ease-in-out}
+@keyframes vpSpin{to{transform:rotate(360deg)}}
+@keyframes vpPop{from{transform:scale(.2) rotate(-25deg);opacity:0}}
+@keyframes vpShake{from{transform:translateX(-5px) rotate(-2deg)}to{transform:translateX(5px) rotate(2deg)}}
+.vp-rain{position:absolute;inset:0;pointer-events:none;z-index:-1}
+.vp-mk>*:not(.vp-rain){position:relative}
+.vp-drop{position:absolute;top:-90px;width:var(--s);height:auto;animation:vpFall var(--d) cubic-bezier(.35,.1,.7,1) var(--w) both}
+@keyframes vpFall{from{transform:translate(0,0) rotate(0)}to{transform:translate(var(--x),calc(100svh + 180px)) rotate(var(--r))}}
 @keyframes vpBoom{from{transform:scale(.3) rotate(-20deg);opacity:0}}
 @keyframes vpWob{from{transform:rotate(-8deg)}to{transform:rotate(8deg) scale(1.05)}}
 @keyframes vpFade{from{opacity:0}}
@@ -137,7 +147,7 @@ const CSS=`
 .vp-toast.on{transform:translate(-50%,0);opacity:1}
 @media(max-height:760px){.vp-dealer{display:none}}
 @media(max-height:700px){.vp-quick{display:none}.vp-logo{height:52px}.vp-logoT{font-size:26px}.vp-top{gap:3px}.vp-pr{font-size:11.5px;line-height:1.25}}
-@media(prefers-reduced-motion:reduce){.vp-mkT,.vp-mkE,.vp-pr.won{animation:none}.vp-in,.vp-say,.vp-toast,.vp-panel,.vp-card{transition:none}}
+@media(prefers-reduced-motion:reduce){.vp-rain{display:none}.vp-halo,.vp-lose,.vp-mkT,.vp-mkE,.vp-pr.won{animation:none}.vp-in,.vp-say,.vp-toast,.vp-panel,.vp-card{transition:none}}
 `;
 
 /* ---------- état ---------- */
@@ -237,9 +247,13 @@ function outcome(r){const k=+r.cat,n=+r.net,b=+r.bet;
  if(n===0){msg(`${NAMES[k]} : mise rendue`,true);say("Tu récupères ta mise. Pfff.");win(false);return;}
  msg(`${NAMES[k]} ! +${n} 🍌`,true);win(k>=7);
  if(k>=7)big(k,r);else say(pick(["Grrr… bien joué.","Chance du débutant !","Pas mal, pas mal…"]));}
+function rain(){const R=$(".vp-rain");R.innerHTML="";if(reduce)return;
+ for(let i=0;i<34;i++){const d=document.createElement("img");d.className="vp-drop";d.alt="";d.src=Math.random()<.5?IMG.jeton:IMG.piece;
+  d.style.left=(Math.random()*100)+"%";d.style.setProperty("--s",(28+Math.random()*34)+"px");d.style.setProperty("--d",(1.6+Math.random()*1.6)+"s");
+  d.style.setProperty("--w",(Math.random()*2.2)+"s");d.style.setProperty("--x",((Math.random()-.5)*120)+"px");d.style.setProperty("--r",((Math.random()-.5)*1080)+"deg");R.appendChild(d);}}
 function big(k,r){const o=$(".vp-mk");$("#vpMkT").textContent=NAMES[k].toUpperCase()+" !";
  $("#vpMkS").textContent=(r.booster?`Booster ${r.booster} gagné 🎁 (et ta mise rendue) : il t'attend avec tes boosters`:`Ta mise ×${r.mult} : +${r.net} 🍌`)+(r.c.includes(52)&&k<9?" · merci le Joker 🐒":"");
- o.hidden=false;setTimeout(()=>win(true),700);const end=()=>{o.hidden=true;o.onclick=null;clearTimeout(t);};const t=setTimeout(end,4200);setTimeout(()=>{o.onclick=end;},800);
+ rain();o.hidden=false;vib([80,40,80,40,200]);setTimeout(()=>win(true),700);const end=()=>{o.hidden=true;o.onclick=null;clearTimeout(t);$(".vp-rain").innerHTML="";};const t=setTimeout(end,5200);setTimeout(()=>{o.onclick=end;},800);
  say("Mes bananes !! 😱",3500);}
 
 /* ---------- admin ---------- */
@@ -292,12 +306,13 @@ function build(){
    <div class="vp-btns"><button type="button" id="vpReset">Rendre mes mains du jour</button><button type="button" id="vpAdd">+50 🍌</button></div>
   </div>
  </aside>
- <div class="vp-mk" hidden aria-live="assertive"><div class="vp-mkE" aria-hidden="true">🐒</div><div class="vp-mkT" id="vpMkT"></div><div class="vp-mkS" id="vpMkS"></div></div>
+ <div class="vp-mk" hidden aria-live="assertive"><div class="vp-rain" aria-hidden="true"></div><div class="vp-mkV" aria-hidden="true"><img class="vp-halo" src="${IMG.halo}" alt=""><img class="vp-lose" src="${IMG.perd}" alt=""></div><div class="vp-mkE" aria-hidden="true" hidden>🐒</div><div class="vp-mkT" id="vpMkT"></div><div class="vp-mkS" id="vpMkS"></div></div>
  <div class="vp-toast" role="status"></div>`;
  document.body.appendChild(root);
  $("#vpAdm").hidden=!ADMIN;
  const hand=$(".vp-hand");for(let i=0;i<5;i++)hand.appendChild(slotEl(i));
  const lg=$(".vp-logo"),noLogo=()=>{lg.hidden=true;$(".vp-logoT").hidden=false;};lg.onerror=noLogo;if(lg.complete&&!lg.naturalWidth)noLogo();
+ const ls=$(".vp-lose"),noLose=()=>{$(".vp-mkV").hidden=true;$(".vp-mkE").hidden=false;};ls.onerror=noLose;if(ls.complete&&!ls.naturalWidth)noLose();
  const mk=$(".vp-monk"),noMonk=()=>{mk.hidden=true;$(".vp-monkE").hidden=false;};mk.onerror=noMonk;if(mk.complete&&!mk.naturalWidth)noMonk();
  const j=new Image();j.onload=()=>{jokerOK=true;root.querySelectorAll(".vp-f.jk").forEach(f=>{f.classList.add("img");f.style.backgroundImage=`url(${IMG.joker})`;});};j.onerror=()=>{jokerOK=false;};j.src=IMG.joker;
  $("#vpClose").addEventListener("click",close);
