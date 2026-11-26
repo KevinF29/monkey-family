@@ -881,6 +881,7 @@ td.n{text-align:right}
 <script src="flying.js"></script>
 <script src="champ.js"></script>
 <script src="tour.js"></script>
+<script src="expedition.js"></script>
 <script>
 (function(){
   const W=750,H=1050;
@@ -3985,6 +3986,11 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="mine_bite")return `<div class="fitem"><span class="fi" aria-hidden="true">🐍</span><p>${who} avait ouvert ${fmt(+x.k||0)} cocos au Champ de Cocos… et n'a pas résisté à « encore une » : mordu par un serpent 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="tour")return `<div class="fitem"><span class="fi" aria-hidden="true">🗿</span><p>${x.top?`${who} a atteint <b>le sommet de la Tour du Temple</b> et rapporté l'idole : +${fmt(+x.v||0)} 🍌 !`:`${who} est redescendu du <b>${+x.fl===1?"1er":(+x.fl||0)+"e"} étage</b> de la Tour du Temple : +${fmt(+x.v||0)} 🍌`}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="tour_fall")return `<div class="fitem"><span class="fi" aria-hidden="true">🕳️</span><p>${who} est tombé dans une trappe au <b>${(+x.fl||0)}e étage</b> de la Tour du Temple avec ${fmt(+x.v||0)} 🍌 en poche 🐒<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="exp_home"){const v=+x.v||0,r=+x.r||0;
+        return `<div class="fitem"><span class="fi" aria-hidden="true">${r?"🗿":"🏕️"}</span><p>${who} ${x.end?"est revenu(e) de L'Expédition":`est rentré(e) au camp de L'Expédition après l'étape ${fmt(+x.s||0)}`} avec <b>${fmt(v)} 🍌</b>${r?` et l'<b>Idole d'or</b> (+${fmt(r)} booster${r>1?"s":""})`:""} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="exp_lost"){const D=[["🐍","un 2e serpent"],["🕷️","une 2e araignée"],["🏜️","de nouveaux sables mouvants"],["🐆","une 2e panthère"],["🪨","un 2e éboulement"]][+x.d||0]||["⚠️","un danger"];
+        const us=(Array.isArray(x.us)?x.us:[]).map(u=>`<b>${esc(nameOf(u))}</b>`),list=us.length>1?us.slice(0,-1).join(", ")+" et "+us[us.length-1]:us[0]||"Personne";
+        return `<div class="fitem"><span class="fi" aria-hidden="true">${D[0]}</span><p>L'Expédition : ${D[1]} à l'étape ${fmt(+x.s||0)} ! ${list} ${us.length>1?"perdent":"perd"} ${fmt(+x.v||0)} 🍌 de butin 🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bon_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} avait trouvé la bonne noix de coco… mais le singe avait déjà la banane dans la main 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="wheel_scam")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait scam, dommage 🐒🙊<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="scratch"){const v=+x.v||0,what=x.k==="singe"?`le <b>JACKPOT</b> : ${v} boosters`:x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;

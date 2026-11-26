@@ -225,6 +225,6 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 setInterval(()=>{if(GAMES.length&&(!hub||hub.hidden))refresh();},10*60*1000);
 
 // clic sur une notification de course : l'appli était fermée (#race) ou déjà ouverte (message du service worker)
-if(location.hash==="#race"){openGame("race");try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
+if(location.hash==="#race"||location.hash==="#exp"){openGame(location.hash.slice(1));try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
 if(navigator.serviceWorker)navigator.serviceWorker.addEventListener("message",e=>{const d=e.data;if(d&&d.mf==="open"&&d.game)openGame(d.game);});
 })();
