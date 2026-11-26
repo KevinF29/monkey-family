@@ -55,6 +55,7 @@ const CSS=`
 .vp-pr{display:flex;justify-content:space-between;gap:6px;padding:1px 6px;border-radius:6px;font-size:12.5px;line-height:1.35;font-weight:700;color:#e6f5ea;white-space:nowrap}
 .vp-pr span{overflow:hidden;text-overflow:ellipsis}
 .vp-pr b{color:#ffd23f;font-weight:700}
+.vp-pr.bo b{color:#ff9ce0}
 .vp-pr.now{background:rgba(255,210,63,.22);outline:1px solid rgba(255,210,63,.6)}
 .vp-pr.won{background:#ffd23f;color:#2a1145;animation:vpBlink .45s 4 alternate}
 .vp-pr.won b{color:#2a1145}
@@ -181,7 +182,8 @@ const hhmm=ms=>{const m=Math.max(0,Math.round(ms/60000));return `${Math.floor(m/
 function clampBet(){if(!S)return;bet=Math.max(+S.min||1,Math.min(+S.maxBet||20,bet));}
 function payRows(){if(!S)return;const p=S.pays||[0,1,1,2,3,5,7,20,50,100,200,250],b=phase==="bet"?bet:(S.hand?+S.hand.bet:bet);
  const order=[11,10,9,8,7,6,5,4,3,2,1];   // du plus gros au plus petit, en 2 colonnes
- $(".vp-pay").innerHTML=order.map(k=>`<div class="vp-pr" data-k="${k}"><span>${SHORT[k]}</span><b>${(p[k]*b).toLocaleString("fr-FR")}</b></div>`).join("");}
+ const bo=S.boosters||{};
+ $(".vp-pay").innerHTML=order.map(k=>`<div class="vp-pr${bo[k]?" bo":""}" data-k="${k}"><span>${SHORT[k]}</span><b>${bo[k]?"🎁 "+esc(bo[k]):(p[k]*b).toLocaleString("fr-FR")}</b></div>`).join("");}
 function mark(k,cls){root.querySelectorAll(".vp-pr").forEach(r=>{r.classList.remove("now","won");if(k>0&&+r.dataset.k===k)r.classList.add(cls);});}
 function render(){if(!root)return;
  const st=S&&S.state;$("#vpBan").textContent=st?st.bananas:"…";$("#vpBoo").textContent=st?st.stock:"…";
@@ -230,11 +232,13 @@ async function draw(){if(busy||phase!=="hold")return;ac();busy=true;render();
  C=r.c.slice();phase="done";take(r.info);busy=false;outcome(r);render();}
 function outcome(r){const k=+r.cat,n=+r.net,b=+r.bet;
  mark(k,"won");
+ if(r.booster){msg(`${NAMES[k]} ! Booster ${r.booster} 🎁`,true);win(true);big(k,r);return;}
  if(k===0){sad();msg(`Rien… −${b} 🍌`);say(pick(["Merci pour les bananes 🍌","Hé hé, encore une ?","Le singe gagne toujours."]));return;}
  if(n===0){msg(`${NAMES[k]} : mise rendue`,true);say("Tu récupères ta mise. Pfff.");win(false);return;}
  msg(`${NAMES[k]} ! +${n} 🍌`,true);win(k>=7);
  if(k>=7)big(k,r);else say(pick(["Grrr… bien joué.","Chance du débutant !","Pas mal, pas mal…"]));}
-function big(k,r){const o=$(".vp-mk");$("#vpMkT").textContent=NAMES[k].toUpperCase()+" !";$("#vpMkS").textContent=`Ta mise ×${r.mult} : +${r.net} 🍌`+(r.c.includes(52)?" · merci le Joker 🐒":"");
+function big(k,r){const o=$(".vp-mk");$("#vpMkT").textContent=NAMES[k].toUpperCase()+" !";
+ $("#vpMkS").textContent=(r.booster?`Booster ${r.booster} gagné 🎁 (et ta mise rendue) : il t'attend avec tes boosters`:`Ta mise ×${r.mult} : +${r.net} 🍌`)+(r.c.includes(52)&&k<9?" · merci le Joker 🐒":"");
  o.hidden=false;setTimeout(()=>win(true),700);const end=()=>{o.hidden=true;o.onclick=null;clearTimeout(t);};const t=setTimeout(end,4200);setTimeout(()=>{o.onclick=end;},800);
  say("Mes bananes !! 😱",3500);}
 
@@ -274,6 +278,7 @@ function build(){
    <li>Ta main finale est payée selon la table : il faut au moins une <b>paire de Rois ou d'As</b>.</li>
    <li>🐒 Le <b>Joker singe</b> remplace n'importe quelle carte pour faire la meilleure main.</li>
    <li>Les chiffres de la table sont ce que tu récupères pour ta mise (mise comprise). Paire de Rois et double paire : ta mise revient.</li>
+   <li>🎁 Les plus grosses mains donnent un <b>booster de rareté</b> (1 carte de cette rareté) et te rendent ta mise : quinte flush → Légendaire, royale avec le Joker → Mythique, cinq identiques → Secret, royale sans Joker → Originel. Il t'attend avec tes boosters.</li>
    <li>Cinq identiques : quatre cartes pareilles + le Joker.</li>
    <li>10 mains par jour, mise de 1 à 20 🍌.</li>
   </ul>

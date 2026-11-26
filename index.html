@@ -1811,7 +1811,7 @@ td.n{text-align:right}
     if(!st||typeof st!=="object")return;if(st.state)st=st.state;
     const off=Date.now()-(+st.now||Date.now()),owned={};
     Object.entries(st.owned||{}).forEach(([k,n])=>{const c=cardOfKey(k);if(c&&n>0)owned[c.id]=(owned[c.id]||0)+(+n);});
-    if(+st.packMs>0)PACK_MS=+st.packMs;S.special=+st.special||0;S.xpacks=Array.isArray(st.xpacks)?st.xpacks:[];EVENTS=(st.events||[]).map(e=>({...e,ends:+e.ends+off}));
+    if(+st.packMs>0)PACK_MS=+st.packMs;S.special=+st.special||0;S.xpacks=Array.isArray(st.xpacks)?st.xpacks:[];S.rpacks=Array.isArray(st.rpacks)?st.rpacks:[];EVENTS=(st.events||[]).map(e=>({...e,ends:+e.ends+off}));
     S.owned=owned;S.opened=+st.opened||0;S.bananas=+st.bananas||0;S.stock=+st.stock;S.nextAt=+st.nextAt?(+st.nextAt+off):0;S.counts=st.counts||{};
     S.styles=[...new Set([0,...(st.styles||[]).map(n=>STYLES.findIndex(x=>x.name===n)).filter(i=>i>=0)])];S.style=Math.max(0,STYLES.findIndex(x=>x.name===st.style));
     if(st.pseudo&&st.pseudo!==PREFS.pseudo){PREFS.pseudo=st.pseudo;savePrefs();const pi=document.getElementById("pseudoIn");if(pi&&document.activeElement!==pi)pi.value=st.pseudo;}
@@ -2473,7 +2473,7 @@ td.n{text-align:right}
     if(!xp&&!takePack()){if(use3d)P3.show(false);setHint("Plus de booster : le prochain arrive dans "+hms(S.nextAt-Date.now()));renderPacks();return;}
     busy=true;mode="opening";say("");setBtn("Ouverture…",true);
     if(SRV){let res;
-      try{res=xp?await window.MF_RPC("mf_open_xpack",{}):await window.MF_RPC("mf_open",{p_free:!limitOn(),p_force:$("force").value||null});}
+      try{res=xp?await window.MF_RPC(xp.rk?"mf_open_rpack":"mf_open_xpack",{}):await window.MF_RPC("mf_open",{p_free:!limitOn(),p_force:$("force").value||null});}
       catch(e){const m=String(e&&e.message||e);const k=Object.keys(SRV_MSG).find(x=>m.includes(x));say(k?SRV_MSG[k]:"Connexion impossible : le booster n'a pas été ouvert, réessaie.");
         busy=false;mode="pack";if(use3d)P3.show(false);else gsap.set(pack,{display:"block",opacity:1});srvRefresh();renderPacks();if(!/Prochain/.test(openBtn.textContent))setBtn("Ouvrir le booster");return;}
       const got=(res.cards||[]).map(cardOfKey).filter(Boolean);
@@ -2522,6 +2522,11 @@ td.n{text-align:right}
   function toRecap(wait){mode="revealed";setTimeout(()=>{setHint("Touche pour voir le récap");setBtn("Voir le récap");},wait||0);}
   /* exclusive booster: every card is flipped with a festive burst, the last one with the big finish */
   function xmasReveal(s,last){const p=center(s.el),k=shown.indexOf(s)+1;
+    if(XP&&XP.rk){const rk=XP.rk,col=RCOL[rk]||"#ffd75e";  // rarity booster: its single card, with the rarity's colours
+      try{SFX.play(rk);}catch(e){}
+      burst(p.x,p.y,140,rk==="Originel"?["#ffffff","#ff7ad9","#7ad8ff","#ffe36e"]:[col,"#ffffff",col],7,{up:1.2,stars:.6});rays(col,2.6,rk==="Originel");
+      setTimeout(()=>burst(p.x,p.y,90,["#ffffff",col],5,{ring:true,g:.02,stars:.8}),300);
+      banner(rk.toUpperCase()+" !",col,rk==="Originel");setHint(`Booster ${rk} : ta carte !`);return;}
     try{SFX.play(last?"Légendaire":"Épique");}catch(e){}
     const gm=curSkin==="gaming";
     burst(p.x,p.y,last?130:55,gm?["#ffffff","#3ee8ff","#b16bff","#ffd75e"]:["#ffffff","#ff4b45","#ffd75e","#3fcf72"],last?7:4.5,{up:1.2,stars:.6});
@@ -3820,8 +3825,12 @@ td.n{text-align:right}
 
   /* ---------- limite : 3 boosters par jour, un toutes les 8 h, stock de 3 au maximum ---------- */
   let PACK_MS=8*3600*1000;const PACK_MAX=3;  // the wait is shorter during a "speed" event (value sent by the server)
-  const avail=()=>(S.stock|0)+(S.special|0)+((SRV&&S.xpacks)||[]).length;
-  const XPK=()=>SRV&&S.xpacks&&S.xpacks.length?S.xpacks[0]:null;  // an exclusive booster waiting: it is opened first
+  const avail=()=>(S.stock|0)+(S.special|0)+((SRV&&S.xpacks)||[]).length+((SRV&&S.rpacks)||[]).length;
+  /* rarity boosters (1 card of their rarity, won in the casino): skin of each one, used once its pictures are in packs/ */
+  const RSKIN={"Légendaire":"r-legendaire","Mythique":"r-mythique","Secret":"r-secret","Originel":"r-originel"};
+  const RCOL={"Légendaire":"#ffd75e","Mythique":"#ff3b30","Secret":"#ff8a1f","Originel":"#ffffff"};
+  // an exclusive booster waiting is opened first, then the rarity boosters
+  const XPK=()=>SRV&&S.xpacks&&S.xpacks.length?S.xpacks[0]:SRV&&S.rpacks&&S.rpacks.length?{rk:S.rpacks[0],skin:RSKIN[S.rpacks[0]]||"",title:"Booster "+S.rpacks[0],n:1}:null;
   const limitOn=()=>!ADMIN||PREVIEW||$("limit").checked;
   function tickPacks(){
     if(S.stock===undefined)S.stock=PACK_MAX;
@@ -3836,10 +3845,10 @@ td.n{text-align:right}
   function takePack(){if(!limitOn())return true;tickPacks();if(avail()<=0)return false;if(S.special>0){S.special--;save();renderPacks();return true;}S.stock--;if(!S.nextAt)S.nextAt=Date.now()+PACK_MS;save();renderPacks();return true;}
   const hms=ms=>{const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h} h ${String(m).padStart(2,"0")}`:`${m} min ${String(x).padStart(2,"0")}`;};
   function renderPacks(){
-    const el=$("packs"),xp=XPK(),nx=((SRV&&S.xpacks)||[]).length;
+    const el=$("packs"),xp=XPK(),nx=((SRV&&S.xpacks)||[]).length,nr=((SRV&&S.rpacks)||[]).length;
     if(mode==="pack"&&!busy)try{setSkin(xp?xp.skin:"");}catch(e){}
     if(mode==="pack"&&!busy&&SFX.mute){SFX.mute=false;VOICE.stopMusic(1200);}  // an opening that failed: no music left behind
-    const xLbl="Ouvrir le booster exclusif",xTag=nx?` <span class="xpk">+ ${nx} exclusi${nx>1?"fs":"f"}</span>`:"";
+    const xLbl=xp&&xp.rk?`Ouvrir le booster ${xp.rk}`:"Ouvrir le booster exclusif",xTag=(nx?` <span class="xpk">+ ${nx} exclusi${nx>1?"fs":"f"}</span>`:"")+(nr?` <span class="xpk">+ ${nr} de rareté</span>`:"");
     if(!limitOn()){el.innerHTML=`<b>Boosters illimités${xTag}</b><span>mode test</span>`;stage.classList.remove("nopack");
       if(mode==="pack"&&!busy){const l=xp?xLbl:"Ouvrir le booster";if(/Prochain|^Ouvrir le booster/.test(openBtn.textContent)&&openBtn.textContent!==l)setBtn(l);}return;}
     tickPacks();
@@ -3958,7 +3967,7 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="bj_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait arnaquer par le singe croupier : une carte sortie de sa manche 🃏🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="bon")return `<div class="fitem"><span class="fi" aria-hidden="true">🥥</span><p>${who} a trouvé la banane au Bananateau${x.sp==="turbo"?" en <b>turbo</b>":x.sp==="fast"?" en rapide":x.sp==="slow"?" en lent":""} : +${fmt(+x.v||0)} 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="vp"){const VN=["","une paire de Rois","une double paire","un brelan","une quinte","une couleur","un full","un <b>carré</b>","une <b>quinte flush</b>","une <b>quinte flush royale</b> avec le Joker","<b>cinq cartes identiques</b>","une <b>QUINTE FLUSH ROYALE</b>"];
-        return `<div class="fitem"><span class="fi" aria-hidden="true">🃏</span><p>${who} a sorti ${VN[+x.r]||"une belle main"} au Poker Monkey${x.j&&+x.r<9?" avec le Joker 🐒":""} : +${fmt(+x.v||0)} 🍌 !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🃏</span><p>${who} a sorti ${VN[+x.r]||"une belle main"} au Poker Monkey${x.j&&+x.r<9?" avec le Joker 🐒":""} : ${x.b?"<b>booster "+esc(x.b)+"</b> 🎁":"+"+fmt(+x.v||0)+" 🍌"} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bon_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} avait trouvé la bonne noix de coco… mais le singe avait déjà la banane dans la main 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="wheel_scam")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait scam, dommage 🐒🙊<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="scratch"){const v=+x.v||0,what=x.k==="singe"?`le <b>JACKPOT</b> : ${v} boosters`:x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;
