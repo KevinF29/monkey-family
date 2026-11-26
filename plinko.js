@@ -41,7 +41,7 @@ const CSS=`
 .pk-boardW{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
 .pk-board{position:relative;padding:10px 10px 12px;border-radius:22px;background:linear-gradient(180deg,#6b3f1d,#4a2a10);border:4px solid #d9a514;box-shadow:inset 0 0 0 2px #8a5a00,inset 0 12px 30px rgba(0,0,0,.45),0 12px 28px rgba(0,0,0,.5)}
 .pk-board canvas{display:block}
-.pk-board.img{background:url(${IMG.plateau}) center/100% 100% no-repeat;border:0;box-shadow:none;border-radius:0;padding:calc(var(--sp)*.9) calc(var(--sp)*.8) calc(var(--sp)*1)}
+.pk-board.img{background:none;box-shadow:none;border-radius:0;padding:0;border-style:solid;border-color:transparent;border-width:calc(var(--sp)*1.15) calc(var(--sp)*1.1);border-image:url(${IMG.plateau}) 230 220 230 220 fill stretch;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))}
 .pk-bins{display:grid;gap:3px;margin-top:2px}
 .pk-bin{height:calc(var(--sp)*.95);min-height:24px;border-radius:7px;display:grid;place-items:center;font:400 calc(var(--sp)*.36)/1 "Titan One",sans-serif;color:#2a1a0c;
  background:linear-gradient(180deg,#ffe27a,#e0a817);box-shadow:0 3px 0 #8a5a00;transition:transform .12s;white-space:nowrap;overflow:hidden}
@@ -122,9 +122,9 @@ const pegX=(r,j)=>W/2+(j-(r+2)/2)*SP;          // rangée r : r+3 clous
 const onPeg=(r,k)=>({x:W/2+(k-r/2)*SP,y:rowY(r)-SP*.11-SP*.34});   // bille posée sur le clou de la rangée r après k rebonds à droite
 const binX=s=>W/2+(s-ROWS()/2)*SP;
 function layout(){if(!cv)return;const wrap=$(".pk-boardW"),R=ROWS();
- const aw=Math.max(200,wrap.clientWidth-28),ah=Math.max(200,wrap.clientHeight-28);
+ const im=$(".pk-board").classList.contains("img"),aw=Math.max(200,wrap.clientWidth-(im?0:28)),ah=Math.max(200,wrap.clientHeight-(im?0:28));
  // hauteur totale ≈ canvas (TOP + (R-1)·VG + 0,7·SP) + cases (≈1,05·SP)
- SP=Math.floor(Math.min(aw/(R+3),ah/(1.25+(R-1)*.88+.7+1.15)));SP=Math.max(14,Math.min(SP,58));
+ SP=Math.floor(Math.min(aw/(R+3+(im?2.2:0)),ah/(1.25+(R-1)*.88+.7+1.15+(im?2.3:0))));SP=Math.max(14,Math.min(SP,58));
  W=SP*(R+3);H=Math.round(TOP()+(R-1)*VG()+SP*.7);DPR=Math.min(2,window.devicePixelRatio||1);
  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+"px";cv.style.height=H+"px";
  $(".pk-board").style.setProperty("--sp",SP+"px");const bins=$(".pk-bins");bins.style.width=W+"px";bins.style.padding=`0 ${SP-1.5}px`;
@@ -132,7 +132,7 @@ function layout(){if(!cv)return;const wrap=$(".pk-boardW"),R=ROWS();
 function bins(){const P=prizes(),n=P.length,b=$(".pk-bins");
  b.innerHTML=P.map((p,i)=>`<div class="pk-bin ${p.t==="ban"?"":p.t}" data-i="${i}" data-k="${Math.min(i,n-1-i)}" title="${esc(lab(p))}" aria-label="Case ${i+1} : ${esc(lab(p))}">${esc(short(p))}</div>`).join("");}
 function monkey(x,y,r,rot){const c=cx;c.save();c.translate(x,y);c.rotate(rot||0);
- if(billeImg){c.drawImage(billeImg,-r*1.25,-r*1.25,r*2.5,r*2.5);c.restore();return;}
+ if(billeImg){c.shadowColor="rgba(0,0,0,.45)";c.shadowBlur=r*.4;c.shadowOffsetY=r*.15;c.drawImage(billeImg,-r*1.32,-r*1.32,r*2.64,r*2.64);c.restore();return;}
  c.shadowColor="rgba(0,0,0,.45)";c.shadowBlur=r*.5;c.shadowOffsetY=r*.2;
  c.fillStyle="#7a4a22";[[-1,1],[1,1]].forEach(([s])=>{c.beginPath();c.arc(s*r*.92,-r*.12,r*.38,0,7);c.fill();});
  c.beginPath();c.arc(0,0,r,0,7);c.fill();c.shadowColor="transparent";
@@ -259,7 +259,7 @@ function build(){
  cv=$("canvas");cx=cv.getContext("2d");bins();
  const lg=$(".pk-logo"),noLogo=()=>{lg.hidden=true;$(".pk-logoT").hidden=false;};lg.onerror=noLogo;if(lg.complete&&!lg.naturalWidth)noLogo();
  const f=new Image();f.onload=()=>root.classList.add("fond");f.src=IMG.fond;
- const pl=new Image();pl.onload=()=>$(".pk-board").classList.add("img");pl.src=IMG.plateau;
+ const pl=new Image();pl.onload=()=>{$(".pk-board").classList.add("img");layout();};pl.src=IMG.plateau;
  const bi=new Image();bi.onload=()=>{billeImg=bi;draw();};bi.src=IMG.bille;
  try{new ResizeObserver(()=>layout()).observe($(".pk-boardW"));}catch(e){addEventListener("resize",layout);}
  $("#pkClose").addEventListener("click",close);
