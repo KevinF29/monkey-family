@@ -8,7 +8,7 @@
 
 // images de Kévin (facultatives) : sans elles, le temple et les portes sont dessinés, et le singe est un emoji
 const IMG={logo:"packs/tour-titre.webp",fond:"packs/tour-fond.webp",mur:"packs/tour-mur.webp",porte:"packs/tour-porte.webp",or:"packs/tour-porte-or.webp",piege:"packs/tour-porte-piege.webp",
- trappe:"packs/tour-trappe.webp",singe:"packs/tour-singe.webp",chute:"packs/tour-chute.webp",idole:"packs/tour-idole.webp"};
+ trappe:"packs/tour-trappe.webp",escalier:"packs/tour-escalier.webp",singe:"packs/tour-singe.webp",chute:"packs/tour-chute.webp",idole:"packs/tour-idole.webp"};
 const NAME="The Monkey Tower";
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",tour_limit:"Plus de montées aujourd'hui : reviens demain !",tour_closed:"The Monkey Tower n'est pas encore ouverte.",
@@ -162,6 +162,7 @@ const CSS=`
 #mfTOUR.dimg .tt-doors.pick .tt-door:nth-child(2){animation-delay:.22s}#mfTOUR.dimg .tt-doors.pick .tt-door:nth-child(3){animation-delay:.44s}
 @keyframes ttHintI{50%{filter:drop-shadow(0 0 14px rgba(255,210,63,.95))}}
 #mfTOUR.dimg .tt-door.sel{filter:drop-shadow(0 0 16px #ffd23f)}
+#mfTOUR.simg .tt-steps{left:7%;right:7%;top:calc(78% - 4px);bottom:auto;height:auto;aspect-ratio:1200/473;clip-path:none;background:url(${IMG.escalier}) center top/100% 100% no-repeat;filter:drop-shadow(0 8px 10px rgba(0,0,0,.5))}
 #mfTOUR.timg .tt-trap{background:url(${IMG.trappe}) center/contain no-repeat;border-radius:0;box-shadow:none;width:30%;margin-left:-15%;height:auto;aspect-ratio:3/1;top:-30%;transform:scale(.15);opacity:0;transition:transform .25s ease-out,opacity .15s}
 #mfTOUR.timg .tt-trap.on{transform:none;opacity:1}
 @media(max-height:480px){#mfTOUR .tt-lvl,#mfTOUR.wimg .tt-lvl{top:1%;font-size:15px}#mfTOUR .tt-lvl small{display:inline;margin-left:6px}#mfTOUR.dimg .tt-door{height:min(80%,43cqw)}.tt-doors{top:24%}}
@@ -368,6 +369,7 @@ function build(){
  const ld=(src,f)=>{const i=new Image();i.onload=()=>f(i);i.src=src;};
  ld(IMG.mur,()=>root.classList.add("wimg"));
  ld(IMG.trappe,()=>root.classList.add("timg"));
+ ld(IMG.escalier,()=>root.classList.add("simg"));
  // les portes : on attend les trois images pour passer aux portes dessinées par Kévin
  let nd=0;const dOk=()=>{if(++nd<3)return;root.querySelectorAll(".tt-door").forEach(d=>{d.querySelector(".im.c").src=IMG.porte;d.querySelector(".im.g").src=IMG.or;d.querySelector(".im.d").src=IMG.piege;});root.classList.add("dimg");};
  [IMG.porte,IMG.or,IMG.piege].forEach(u=>ld(u,dOk));
