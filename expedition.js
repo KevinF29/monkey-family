@@ -10,7 +10,7 @@
 
 const P="packs/exp-",LOGO=P+"logo.webp";
 const IMG={singe:P+"singe.webp",camp:P+"camp.webp",perdu:P+"perdu.webp",dos:P+"dos.webp",tresor:P+"tresor.webp",idole:P+"idole.webp"};
-const DANGER=[{e:"🐍",n:"Serpent",i:P+"serpent.webp"},{e:"🕷️",n:"Araignée",i:P+"araignee.webp"},{e:"🏜️",n:"Sables mouvants",s:"Sables",i:P+"sables.webp"},{e:"🐆",n:"Panthère",i:P+"panthere.webp"},{e:"🪨",n:"Éboulement",i:P+"eboulement.webp"}];
+const DANGER=[{e:"🐍",n:"Serpent",d2:"Un 2e serpent",i:P+"serpent.webp"},{e:"🕷️",n:"Araignée",d2:"Une 2e araignée",i:P+"araignee.webp"},{e:"🏜️",n:"Sables mouvants",s:"Sables",d2:"De nouveaux sables mouvants",i:P+"sables.webp"},{e:"🐆",n:"Panthère",d2:"Une 2e panthère",i:P+"panthere.webp"},{e:"🪨",n:"Éboulement",d2:"Un 2e éboulement",i:P+"eboulement.webp"}];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={exp_closed:"L'Expédition n'est pas ouverte en ce moment.",exp_over:"Cette expédition est terminée.",exp_already:"Tu fais déjà partie de cette expédition.",
  exp_not_in:"Tu n'es plus dans l'expédition.",not_member:"Ton accès est en pause."};
@@ -132,19 +132,21 @@ const setShown=()=>{try{localStorage.setItem(seenKey,JSON.stringify({day:S.day,s
 const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}};
 
 /* ---------- morceaux d'écran ---------- */
-const stepAt=n=>+S.startAt+(n-1)*3600000;
+const stepAt=n=>{const c=(S.cards||[])[n-1];return c&&c.at?+c.at:n===(S.cards||[]).length+1&&S.nextAt?Math.max(+S.nextAt,nowS()):0;};
+const lbl=n=>{const t=stepAt(n);if(!t)return `${n}`;return n===(S.cards||[]).length+1&&S.step>=1?`${n} · avant ${hh(t)}`:`${n} · ${hh(t)}`;};
 function cardHTML(c,isNew){const D=DANGER[c.d]||{},img=c.k==="t"?IMG.tresor:c.k==="r"?IMG.idole:D.i;
  const lab=c.k==="t"?`<b class="n"><span>${esc(c.v)}<em>🍌</em></span></b>`:c.k==="r"?`<b class="i">Idole d'or<small>1 booster</small></b>`:`<b class="d">${esc(D.s||D.n||"Danger")}</b>`;
  const t=c.k==="t"?`Étape ${c.s} : trésor de ${c.v} bananes`:c.k==="r"?`Étape ${c.s} : Idole d'or`:`Étape ${c.s} : ${D.n||"danger"}${c.fatal?", deuxième : fin de l'expédition":""}`;
- return `<div class="ex-cw" role="listitem" aria-label="${esc(t)}"><div class="ex-c${c.fatal?" fatal":""}${isNew?" new":""}" style="background-image:url(${img})">${lab}${c.fatal?`<span class="stamp">2e !</span>`:""}</div><span class="ex-h">${c.s} · ${esc(hh(stepAt(c.s)))}</span></div>`;}
+ return `<div class="ex-cw" role="listitem" aria-label="${esc(t)}"><div class="ex-c${c.fatal?" fatal":""}${isNew?" new":""}" style="background-image:url(${img})">${lab}${c.fatal?`<span class="stamp">2e !</span>`:""}</div><span class="ex-h">${esc(lbl(c.s))}</span></div>`;}
 function trailHTML(){const cards=S.cards||[],n=+S.steps,old=shownStep();let h=cards.map(c=>cardHTML(c,+c.s>old)).join("");
- if(S.status==="run"&&cards.length<n)h+=`<div class="ex-cw nx" role="listitem" aria-label="Prochaine carte à ${esc(hh(stepAt(cards.length+1)))}"><div class="ex-c q" style="background-image:url(${IMG.dos})"><i>?</i></div><span class="ex-h">${cards.length+1} · ${esc(hh(stepAt(cards.length+1)))}</span></div>`;
- for(let i=cards.length+(S.status==="run"?2:1);i<=n;i++)h+=`<div class="ex-cw off" role="listitem" aria-label="Étape ${i}${S.status==="run"?"":" (non jouée)"}"><div class="ex-c" style="background-image:url(${IMG.dos})"></div><span class="ex-h">${i} · ${esc(hh(stepAt(i)))}</span></div>`;
+ if(S.status==="run"&&cards.length<n)h+=`<div class="ex-cw nx" role="listitem" aria-label="Prochaine carte"><div class="ex-c q" style="background-image:url(${IMG.dos})"><i>?</i></div><span class="ex-h">${esc(lbl(cards.length+1))}</span></div>`;
+ for(let i=cards.length+(S.status==="run"?2:1);i<=n;i++)h+=`<div class="ex-cw off" role="listitem" aria-label="Étape ${i}${S.status==="run"?"":" (non jouée)"}"><div class="ex-c" style="background-image:url(${IMG.dos})"></div><span class="ex-h">${i}</span></div>`;
  return h;}
 function bannerHTML(){const me=S.me,next=S.nextAt?+S.nextAt-nowS():0;
+ if(S.status==="run"&&S.step===0&&+S.startAt<=nowS())return `<div class="ex-ban"><span class="big">L'expédition attend ses explorateurs</span>Rejoins-la : la 1re carte est révélée dès que quelqu'un est parti.</div>`;
  if(S.status==="run"&&S.step===0)return `<div class="ex-ban"><span class="big">Départ à ${esc(hh(+S.startAt))}</span>dans ${esc(dur(+S.startAt-nowS()))} · ensuite, une carte dès que tout le monde a choisi (au plus tard 1 h après la précédente)</div>`;
  if(S.status==="run"){const inN=+S.inN||0,rd=+S.readyN||0;
-  if(!inN)return `<div class="ex-ban"><span class="big">Étape ${S.step+1} à ${esc(hh(+S.nextAt))}</span>dans ${esc(dur(next))} · plus personne dans la jungle</div>`;
+  if(!inN)return `<div class="ex-ban"><span class="big">Plus personne dans la jungle</span>L'expédition attend : la carte ${S.step+1} sera révélée quand quelqu'un l'aura rejointe.</div>`;
   return `<div class="ex-ban"><span class="big">Étape ${S.step+1} dès que tout le monde a choisi</span>${rd}/${inN} explorateur${inN>1?"s ont":" a"} choisi · au plus tard à ${esc(hh(+S.nextAt))} (dans ${esc(dur(next))})</div>`;}
  const last=(S.cards||[])[S.cards.length-1]||{};
  if(S.status==="dead")return `<div class="ex-ban bad"><span class="big">${esc(DANGER[last.d]?DANGER[last.d].e+" "+DANGER[last.d].n:"Danger")} !</span>Le même danger est sorti deux fois : l'expédition s'est arrêtée à l'étape ${esc(last.s)}.</div>`;
@@ -160,7 +162,7 @@ function meHTML(){const me=S.me,run=S.status==="run"&&S.step<+S.steps;
   return `<p class="ex-sub">Tu n'as pas participé à l'expédition d'aujourd'hui.</p><button type="button" class="ex-big" id="exJoin"${busy?" disabled":""}>${busy?"…":"Je pars demain"}</button>`;}
  if(me.state==="in"){const can=me.canLeave,live=S.status==="run"&&S.step<+S.steps,first=S.step===0,rd=!!me.ready,wait=Math.max(0,(+S.inN||0)-(+S.readyN||0));
   const on=c=>me.choice===c?(rd||first?" on":" last"):"";
-  const msg=first?"Le départ est à 10 h : tout le monde passe la 1re carte. Tu pourras choisir ensuite."
+  const msg=first?`Départ à ${esc(hh(+S.startAt))} : tout le monde passe la 1re carte. Tu pourras choisir ensuite.`
    :rd?`<b>✅ Choix confirmé : ${me.choice==="home"?"tu rentres au camp":"tu continues"}.</b> ${wait?`En attente de ${wait} explorateur${wait>1?"s":""}… (au plus tard ${esc(hh(+S.nextAt))})`:"La carte arrive !"}<br>Tu peux encore changer d'avis.`
    :`<b>À toi de choisir pour l'étape ${S.step+1} !</b> Dès que tout le monde a choisi, la carte est révélée. Sans réponse à ${esc(hh(+S.nextAt))}, tu ${me.choice==="home"?"rentres":"continues"} (ton dernier choix).`;
   return `<img class="ex-hero" src="${IMG.singe}" alt=""><div class="ex-sub">Ton butin</div><div class="ex-loot">${esc(me.loot)} 🍌</div>
@@ -201,7 +203,7 @@ function showLast(){const L=S.last;if(!L)return;
  const o=document.createElement("div");o.className="ex-ov";o.setAttribute("role","dialog");o.setAttribute("aria-label","Résultat de l'expédition");
  const lost=L.state==="lost";
  o.innerHTML=`<div class="ex-card"><h3>Expédition du ${esc(fmtDay(L.day))}</h3><img src="${lost?IMG.perdu:+L.relic?IMG.idole:IMG.camp}" alt="">
-  <p>${lost?`Le 2e ${esc(DANGER[L.danger]?DANGER[L.danger].n.toLowerCase():"danger")} t'a surpris à l'étape ${esc(L.out)} : tu as perdu ton butin de <b>${esc(L.loot)} 🍌</b>.<br>Consolation : <b>+${esc(L.gain)} 🍌</b>.`
+  <p>${lost?`${esc(DANGER[L.danger]?DANGER[L.danger].d2:"Un 2e danger")} t'a surpris à l'étape ${esc(L.out)} : tu as perdu ton butin de <b>${esc(L.loot)} 🍌</b>.<br>Consolation : <b>+${esc(L.gain)} 🍌</b>.`
    :`Tu es rentré au camp après l'étape ${esc(L.out)} avec <b>+${esc(L.gain)} 🍌</b>${+L.relic?" et l'<b>Idole d'or</b> (+1 booster)":""} !`}</p>
   <button type="button" class="ex-big" id="exOk">Continuer</button></div>`;
  root.appendChild(o);const b=o.querySelector("#exOk");b.focus({preventScroll:true});
@@ -239,7 +241,7 @@ function build(){
   <ul class="r">
    <li>Chaque jour, une <b>expédition commune</b> part dans la jungle. C'est <b>gratuit</b>.</li>
    <li>Départ à <b>10 h</b>, 13 cartes en tout : un <b>trésor</b> 🍌, un <b>danger</b> ou l'<b>Idole d'or</b> 🗿.</li>
-   <li>Après chaque carte, chacun choisit en secret : <b>continuer</b> ou <b>rentrer au camp</b>. <b>Dès que tout le monde a choisi, la carte suivante est révélée.</b> Au plus tard 1 h après la précédente ; sans réponse, tu gardes ton dernier choix.</li>
+   <li>Après chaque carte, chacun choisit en secret : <b>continuer</b> ou <b>rentrer au camp</b>. <b>Dès que tout le monde a choisi, la carte suivante est révélée.</b> Au plus tard 1 h après la précédente ; sans réponse, tu gardes ton dernier choix. S'il n'y a plus personne dans la jungle, l'expédition attend.</li>
    <li>Un trésor est <b>partagé</b> entre ceux qui sont dans la jungle. Ce qui ne se partage pas reste sur le chemin : ceux qui rentrent le ramassent.</li>
    <li><b>Rentrer seul</b> = tout ce qui traîne sur le chemin pour toi, Idole d'or comprise (<b>1 booster</b>).</li>
    <li>Un <b>1er danger</b> ne fait rien. Si le <b>même danger sort une 2e fois</b>, ceux qui sont encore dans la jungle perdent leur butin et l'expédition s'arrête. Consolation : 1 🍌 par carte passée.</li>
@@ -250,7 +252,7 @@ function build(){
   <div id="exAdm" hidden><h3>Réglages admin</h3><p id="exState"></p>
    <div class="ex-btns"><button type="button" id="exOpen"></button></div>
    <div class="ex-btns"><button type="button" id="exStepNow">Révéler la prochaine carte maintenant</button><button type="button" id="exReset">Nouvelle expédition du jour</button><button type="button" id="exAdd">+50 🍌</button></div>
-   <p>« Nouvelle expédition » efface celle du jour (les bananes déjà gagnées restent) ; la 1re étape est alors à l'heure pile suivante.</p></div>
+   <p>« Nouvelle expédition » efface celle du jour (les bananes déjà gagnées restent) ; elle part 1 minute plus tard. Une expédition encore en route à minuit s'arrête : tout le monde rentre au camp avec son butin.</p></div>
  </aside>
  <div class="ex-toast" role="status"></div>`;
  document.body.appendChild(root);
@@ -293,9 +295,11 @@ async function boot(){
    const run=I.status==="run"&&I.step<+I.steps,me=I.me,nIn=(I.players||[]).filter(p=>p.state==="in").length;
    const nx=I.nextAt?+I.nextAt-nowS():null,tomorrow=I.next?+I.next.startAt-nowS():null;
    if(I.last)return {line:"Résultat de l'expédition à voir !",hot:true};
-   if(run&&!me)return {line:I.step?`En route · étape ${I.step}/${I.steps} · ${nIn} dans la jungle : rejoins-les !`:"Départ à 10 h : rejoins l'expédition, c'est gratuit !",pre:I.step?"Prochaine étape dans ":"Départ dans ",in:nx,hot:true};
+   if(run&&!me){const started=+I.startAt<=nowS();
+    if(!nIn)return {line:I.step?`L'expédition t'attend à l'étape ${I.step+1} : rejoins-la !`:started?"L'expédition attend son 1er explorateur : pars maintenant !":`Départ à ${hh(+I.startAt)} : rejoins l'expédition, c'est gratuit !`,pre:started?"":"Départ dans ",in:started?null:nx,hot:true};
+    return {line:I.step?`En route · étape ${I.step}/${I.steps} · ${nIn} dans la jungle : rejoins-les !`:`Départ à ${hh(+I.startAt)} : rejoins l'expédition, c'est gratuit !`,pre:I.step?"Au plus tard dans ":"Départ dans ",in:nx,hot:true};}
    if(me&&me.state==="in"&&run&&I.step>=1&&!me.ready)return {line:`À toi de choisir pour l'étape ${I.step+1} ! Butin ${me.loot} 🍌`,pre:"Au plus tard dans ",in:nx,hot:true};
-   if(me&&me.state==="in"&&run)return {line:`Butin ${me.loot} 🍌 · ${I.step?`choix confirmé, en attente des autres (${I.readyN}/${I.inN})`:"départ à 10 h"}`,pre:I.step?"Au plus tard dans ":"Départ dans ",in:nx,hot:false};
+   if(me&&me.state==="in"&&run)return {line:`Butin ${me.loot} 🍌 · ${I.step?`choix confirmé, en attente des autres (${I.readyN}/${I.inN})`:`départ à ${hh(+I.startAt)}`}`,pre:I.step?"Au plus tard dans ":"Départ dans ",in:nx,hot:false};
    if(me&&me.state==="home")return {line:`Rentré au camp avec ${me.gain} 🍌${run?` · ${nIn} encore dans la jungle`:""}`,pre:run?"Prochaine étape dans ":"Prochaine expédition dans ",in:run?nx:tomorrow,hot:false};
    if(me&&me.state==="lost")return {line:`Butin perdu à l'étape ${me.out}…`,pre:"Prochaine expédition dans ",in:tomorrow,hot:false};
    if(I.next&&I.next.joined)return {line:"Inscrit pour l'expédition de demain",pre:"Départ dans ",in:tomorrow,hot:false};

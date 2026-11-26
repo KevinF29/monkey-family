@@ -479,3 +479,88 @@ revoke execute on function public._exp_reveal(date), public._exp_step(date), pub
   public._exp_tick(), public._exp_info(uuid) from public, anon, authenticated;
 revoke execute on function public.mf_exp_choose(text, int, boolean) from public, anon;
 grant execute on function public.mf_exp_choose(text, int, boolean) to authenticated;
+
+-- 26/11/2026 vers 23 h 30 : une expédition encore en route à minuit (possible seulement après « Nouvelle expédition » le soir)
+-- s'arrête : tout le monde rentre au camp avec son butin et sa part de ce qui traîne (pas de cartes révélées la nuit).
+create or replace function public._exp_close(p_day date)
+returns void language plpgsql security definer set search_path = public as $$
+declare c public.mf_exp_cfg; d public.mf_exp_days; n int; sh int := 0; rel int := 0; p record;
+begin
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = p_day for update;
+  if d.day is null or d.status <> 'run' then return; end if;
+  select count(*) into n from public.mf_exp_players where day = p_day and state = 'in';
+  if n > 0 then
+    sh := d.path / n; rel := case when n = 1 then d.relic else 0 end;
+    for p in update public.mf_exp_players set state = 'home', out_step = d.step, loot = loot + sh, gain = loot + sh, relic = rel
+        where day = p_day and state = 'in' returning * loop
+      perform public._exp_pay(p.uid, p.gain, p.relic * c.relic_boost);
+      perform public._exp_push(p.uid, p_day, 'L''expédition s''arrête pour la nuit : retour au camp avec +' || p.gain || ' 🍌 !');
+    end loop;
+  end if;
+  update public.mf_exp_days set status = 'done', ended_at = now(), path = path - sh * n, relic = relic - rel where day = p_day;
+end $$;
+
+create or replace function public._exp_tick()
+returns void language plpgsql security definer set search_path = public as $$
+declare r record; guard int := 0;
+begin
+  if not pg_try_advisory_xact_lock(hashtext('mf_exp_tick')) then return; end if;
+  perform public._exp_ensure(public._exp_today());
+  for r in select day from public.mf_exp_days where status = 'run' and day < public._exp_today() loop
+    perform public._exp_close(r.day);
+  end loop;
+  for r in select day from public.mf_exp_days where status = 'run' and day >= public._exp_today() order by day loop
+    while guard < 100 and public._exp_advance(r.day) loop guard := guard + 1; end loop;
+  end loop;
+end $$;
+
+revoke execute on function public._exp_close(date), public._exp_tick() from public, anon, authenticated;
+
+-- 26/11/2026 vers 23 h 40 : sans personne dans la jungle, l'expédition attend (aucune carte n'est révélée, elle ne peut pas
+-- « mourir » toute seule avant que les potes arrivent). L'heure limite est 1 h après la carte précédente (plus de grille fixe).
+-- « Nouvelle expédition » (admin) : départ 1 minute plus tard.
+create or replace function public._exp_due(p_day date) returns timestamptz
+language sql stable security definer set search_path = public as $$
+  select case when d.step = 0 then d.base
+    else coalesce(d.last_at, d.base + make_interval(hours => d.step - 1)) + interval '1 hour' end
+  from public.mf_exp_days d where d.day = p_day $$;
+
+create or replace function public._exp_advance(p_day date) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare d public.mf_exp_days; c public.mf_exp_cfg;
+begin
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = p_day for update;
+  if d.day is null or d.status <> 'run' or d.step >= c.steps then return false; end if;
+  if not exists(select 1 from public.mf_exp_players where day = p_day and state = 'in') then return false; end if;
+  if now() >= public._exp_due(p_day) or (d.step >= 1 and public._exp_allready(p_day)) then
+    perform public._exp_step(p_day);
+    return true;
+  end if;
+  return false;
+end $$;
+
+create or replace function public.mf_exp_admin(p_action text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public._check(); t date := public._exp_today();
+begin
+  if not public.is_admin() then raise exception 'admin only'; end if;
+  if p_action = 'step' then
+    perform public._exp_step(t);
+  elsif p_action = 'reset' then
+    delete from public.mf_exp_players where day = t;
+    delete from public.mf_exp_days where day = t;
+    perform public._exp_ensure(t);
+    update public.mf_exp_days set base = greatest(base, now() + interval '1 minute') where day = t;
+  elsif p_action = 'bananas' then
+    update public.pstate set bananas = bananas + 50 where uid = u;
+  elsif p_action = 'open' then
+    update public.mf_exp_cfg set open = true where id = 1;
+  elsif p_action = 'close' then
+    update public.mf_exp_cfg set open = false where id = 1;
+  end if;
+  return public._exp_info(u);
+end $$;
+
+revoke execute on function public._exp_due(date), public._exp_advance(date) from public, anon, authenticated;
