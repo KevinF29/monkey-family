@@ -6,7 +6,7 @@
 (function(){
 "use strict";
 
-const IMG={logo:"packs/plinko-titre.webp",fond:"packs/plinko-fond.webp",bille:"packs/plinko-bille.webp",plateau:"packs/plinko-plateau.webp"};
+const IMG={logo:"packs/plinko-titre.webp",fond:"packs/plinko-fond.webp",bille:"packs/plinko-bille.webp",plateau:"packs/plinko-plateau.webp",originel:"packs/r-originel-front.webp"};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",pk_limit:"Plus de billes aujourd'hui : reviens demain !",pk_closed:"Le Plinko n'est pas ouvert en ce moment.",not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
@@ -35,13 +35,13 @@ const CSS=`
 .pk-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
 .pk-chip{background:#2a1a0c;border:1px solid #6b4520;border-radius:999px;padding:3px 10px;font-weight:700;font-size:13.5px;white-space:nowrap}
 .pk-chip b{color:#ffd23f}
-.pk-scene{flex:1;min-height:0;width:min(100%,640px);display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 10px max(14px,env(safe-area-inset-bottom))}
+.pk-scene{flex:1;min-height:0;width:min(100%,760px);display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px 6px max(14px,env(safe-area-inset-bottom))}
 .pk-msg{flex:none;min-height:1.4em;font:400 clamp(16px,4.4vw,21px)/1.2 "Titan One",sans-serif;color:#fff;text-shadow:0 2px 0 #3b2410,0 0 10px rgba(0,0,0,.5);text-align:center}
 .pk-msg.win{color:#ffd23f}
 .pk-boardW{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
 .pk-board{position:relative;padding:10px 10px 12px;border-radius:22px;background:linear-gradient(180deg,#6b3f1d,#4a2a10);border:4px solid #d9a514;box-shadow:inset 0 0 0 2px #8a5a00,inset 0 12px 30px rgba(0,0,0,.45),0 12px 28px rgba(0,0,0,.5)}
 .pk-board canvas{display:block}
-.pk-board.img{background:none;box-shadow:none;border-radius:0;padding:0;border-style:solid;border-color:transparent;border-width:calc(var(--sp)*1.15) calc(var(--sp)*1.1);border-image:url(${IMG.plateau}) 230 220 230 220 fill stretch;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))}
+.pk-board.img{background:none;box-shadow:none;border-radius:0;padding:0;border-style:solid;border-color:transparent;border-width:calc(var(--sp)*1.15) calc(var(--sp)*.8);border-image:url(${IMG.plateau}) 230 220 230 220 fill stretch;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))}
 .pk-bins{display:grid;gap:3px;margin-top:2px}
 .pk-bin{height:calc(var(--sp)*.95);min-height:24px;border-radius:7px;display:grid;place-items:center;font:400 calc(var(--sp)*.36)/1 "Titan One",sans-serif;color:#2a1a0c;
  background:linear-gradient(180deg,#ffe27a,#e0a817);box-shadow:0 3px 0 #8a5a00;transition:transform .12s;white-space:nowrap;overflow:hidden}
@@ -61,6 +61,9 @@ const CSS=`
 .pk-mk{position:absolute;inset:0;z-index:50;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(circle at 50% 45%,rgba(255,210,63,.55),rgba(10,20,8,.94) 70%);cursor:pointer;animation:pkFade .25s}
 .pk-mk.og{background:radial-gradient(circle at 50% 45%,rgba(196,91,255,.6),rgba(10,10,20,.95) 70%)}
 .pk-mkE{font-size:clamp(70px,20vw,120px);animation:pkWob .35s infinite alternate ease-in-out}
+.pk-mkB{height:min(42svh,300px);width:auto;filter:drop-shadow(0 0 24px rgba(255,255,255,.55)) drop-shadow(0 12px 20px rgba(0,0,0,.6));animation:pkPack .8s cubic-bezier(.2,1.5,.4,1) both,pkFloat 2.4s .8s ease-in-out infinite alternate}
+@keyframes pkPack{from{transform:scale(.2) rotate(-30deg);opacity:0}}
+@keyframes pkFloat{from{transform:translateY(-6px) rotate(-3deg)}to{transform:translateY(6px) rotate(3deg)}}
 .pk-mkT{font:400 clamp(24px,7.4vw,52px)/1.05 "Titan One",sans-serif;text-align:center;color:#ffd23f;transform:rotate(-4deg);text-shadow:0 4px 0 #6b3f1d,0 0 24px rgba(0,0,0,.6);animation:pkBoom .6s cubic-bezier(.2,1.6,.4,1) both;padding:0 12px}
 .pk-mk.og .pk-mkT{background:linear-gradient(90deg,#ff5b5b,#ffd23f,#5bff8a,#5bc8ff,#c45bff);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 4px 0 #2a1145)}
 .pk-mkS{font-weight:700;font-size:17px;text-shadow:0 1px 3px #000;text-align:center;padding:0 16px}
@@ -93,7 +96,7 @@ const CSS=`
 .pk-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#2c3a1c;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .pk-toast.on{transform:translate(-50%,0);opacity:1}
 @media(max-height:640px){.pk-logo{height:46px}.pk-logoT{font-size:24px}.pk-top{gap:3px}.pk-big{min-height:48px}}
-@media(prefers-reduced-motion:reduce){.pk-rain{display:none}.pk-mkT,.pk-mkE,.pk-bin.rpack{animation:none}.pk-toast,.pk-panel,.pk-bin{transition:none}}
+@media(prefers-reduced-motion:reduce){.pk-rain{display:none}.pk-mkB,.pk-mkT,.pk-mkE,.pk-bin.rpack{animation:none}.pk-toast,.pk-panel,.pk-bin{transition:none}}
 `;
 
 /* ---------- état ---------- */
@@ -116,18 +119,21 @@ const fanfare=()=>{[523,659,784,1047,1319,1568,2093].forEach((f,i)=>beep(f,i*.09
 
 /* ---------- plateau ---------- */
 let cv=null,cx=null,W=0,H=0,SP=0,DPR=1,pegHit={},raf=0,billeImg=null;
-const TOP=()=>SP*1.25,VG=()=>SP*.88;
+let vg=0;const TOP=()=>SP*1.1,VG=()=>vg;
 const rowY=r=>TOP()+r*VG();
 const pegX=(r,j)=>W/2+(j-(r+2)/2)*SP;          // rangée r : r+3 clous
 const onPeg=(r,k)=>({x:W/2+(k-r/2)*SP,y:rowY(r)-SP*.11-SP*.34});   // bille posée sur le clou de la rangée r après k rebonds à droite
 const binX=s=>W/2+(s-ROWS()/2)*SP;
 function layout(){if(!cv)return;const wrap=$(".pk-boardW"),R=ROWS();
  const im=$(".pk-board").classList.contains("img"),aw=Math.max(200,wrap.clientWidth-(im?0:28)),ah=Math.max(200,wrap.clientHeight-(im?0:28));
- // hauteur totale ≈ canvas (TOP + (R-1)·VG + 0,7·SP) + cases (≈1,05·SP)
- SP=Math.floor(Math.min(aw/(R+3+(im?2.2:0)),ah/(1.25+(R-1)*.88+.7+1.15+(im?2.3:0))));SP=Math.max(14,Math.min(SP,58));
- W=SP*(R+3);H=Math.round(TOP()+(R-1)*VG()+SP*.7);DPR=Math.min(2,window.devicePixelRatio||1);
+ // largeur = (R+2)·SP + cadre ; hauteur = TOP (1,1·SP) + (R-1)·écart vertical + 0,7·SP + cases (1,15·SP) + cadre.
+ // On prend toute la largeur possible, puis on étire les rangées vers le haut pour remplir l'écran (écart de 0,88 à 1,7 × SP).
+ const bw=im?1.6:0,bh=im?2.3:0,fix=1.1+.7+1.15+bh;
+ SP=Math.floor(Math.min(aw/(R+2+bw),ah/(fix+(R-1)*.88)));SP=Math.max(14,Math.min(SP,64));
+ vg=Math.max(SP*.88,Math.min(SP*1.7,(ah-fix*SP)/(R-1)));
+ W=SP*(R+2);H=Math.round(TOP()+(R-1)*VG()+SP*.7);DPR=Math.min(2,window.devicePixelRatio||1);
  cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+"px";cv.style.height=H+"px";
- $(".pk-board").style.setProperty("--sp",SP+"px");const bins=$(".pk-bins");bins.style.width=W+"px";bins.style.padding=`0 ${SP-1.5}px`;
+ $(".pk-board").style.setProperty("--sp",SP+"px");const bins=$(".pk-bins");bins.style.width=W+"px";bins.style.padding=`0 ${SP/2-1.5}px`;
  bins.style.gridTemplateColumns=`repeat(${R+1},1fr)`;draw();}
 function bins(){const P=prizes(),n=P.length,b=$(".pk-bins");
  b.innerHTML=P.map((p,i)=>`<div class="pk-bin ${p.t==="ban"?"":p.t}" data-i="${i}" data-k="${Math.min(i,n-1-i)}" title="${esc(lab(p))}" aria-label="Case ${i+1} : ${esc(lab(p))}">${esc(short(p))}</div>`).join("");}
@@ -153,9 +159,10 @@ function draw(){if(!cx)return;const R=ROWS(),now=performance.now();cx.setTransfo
  balls.forEach(b=>monkey(b.x,b.y,SP*.36,b.rot));}
 
 /* trajectoire d'une bille : liste de sauts {de, vers, durée, arc} */
-function plan(path){const R=path.length,hops=[];let k=0,prev={x:W/2+(Math.random()-.5)*SP*.15,y:-SP*.4};
- for(let r=0;r<R;r++){const p=onPeg(r,k);hops.push({a:prev,b:p,d:r?175:260,arc:r?SP*.32:0,r,k});prev=p;k+=path[r];}
- hops.push({a:prev,b:{x:binX(k),y:H+SP*.35},d:230,arc:SP*.2,r:R,k});
+function plan(path){const R=path.length,hops=[],sl=Math.sqrt(Math.max(1,vg/(SP*.88)));   // rangées étirées : sauts un peu plus longs
+ let k=0,prev={x:W/2+(Math.random()-.5)*SP*.15,y:-SP*.4};
+ for(let r=0;r<R;r++){const p=onPeg(r,k);hops.push({a:prev,b:p,d:Math.round((r?290:430)*sl),arc:r?SP*.36:0,r,k});prev=p;k+=path[r];}
+ hops.push({a:prev,b:{x:binX(k),y:H+SP*.35},d:380,arc:SP*.24,r:R,k});
  return {hops,slot:k};}
 function drop(res){const {hops,slot}=plan(res.path);const b={hops,i:0,t0:performance.now(),x:hops[0].a.x,y:hops[0].a.y,rot:0,spin:0,slot,res};balls.push(b);loop();}
 function step(now){let any=false;
@@ -166,7 +173,7 @@ function step(now){let any=false;
    b.t0+=reduce?h.d*.4:h.d;b.i++;h=b.hops[b.i];if(!h){finish(b);break;}t=(now-b.t0)/(reduce?h.d*.4:h.d);}
   if(!h)continue;any=true;
   const e=b.i===0?t*t:t,ex=b.i===0?t:(1-Math.cos(Math.PI*t))/2;
-  b.x=h.a.x+(h.b.x-h.a.x)*ex;b.y=h.a.y+(h.b.y-h.a.y)*e-h.arc*4*t*(1-t);b.rot+=b.spin*16;}
+  b.x=h.a.x+(h.b.x-h.a.x)*ex;b.y=h.a.y+(h.b.y-h.a.y)*e-h.arc*4*t*(1-t);b.rot+=b.spin*10;}
  return any;}
 function loop(){if(raf)return;const f=now=>{raf=0;const any=step(now);draw();
   const glowing=Object.values(pegHit).some(h=>now-h<400);if(any||glowing)raf=requestAnimationFrame(f);};raf=requestAnimationFrame(f);}
@@ -202,13 +209,14 @@ function odds(){const P=prizes(),R=P.length-1,rows={};let ev=0,evB=0;
 function msg(t,w){const m=$(".pk-msg");m.textContent=t;m.classList.toggle("win",!!w);}
 let tt=0;function toast(t){const e=$(".pk-toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),3500);}
 function big(p){const o=$(".pk-mk"),og=p.t==="rpack";o.classList.toggle("og",og);
- $("#pkMkE").textContent=og?"🌈":"🎁";
+ const bo=$("#pkMkB"),hasArt=og&&bo.complete&&bo.naturalWidth>0;bo.hidden=!hasArt;$("#pkMkE").hidden=hasArt;$("#pkMkE").textContent=og?"🌈":"🎁";
+ if(hasArt){bo.style.animation="none";void bo.offsetWidth;bo.style.animation="";}
  $("#pkMkT").textContent=og?`BOOSTER ${String(p.v).toUpperCase()} !`:`${p.v} BOOSTERS !`;
  $("#pkMkS").textContent=og?"Le bord droit ! 1 carte Originel t'attend avec tes boosters 🐒":`Le bord gauche ! +${p.v} boosters à ouvrir 🐒`;
  const R=$(".pk-rain");R.innerHTML="";if(!reduce)for(let i=0;i<30;i++){const d=document.createElement("span");d.className="pk-drop";d.textContent=og?["🌈","✨","💎","🐒"][i%4]:["🍌","🎁","✨","🐒"][i%4];
   d.style.left=(Math.random()*100)+"%";d.style.setProperty("--s",(22+Math.random()*24)+"px");d.style.setProperty("--d",(1.6+Math.random()*1.6)+"s");
   d.style.setProperty("--w",(Math.random()*2)+"s");d.style.setProperty("--x",((Math.random()-.5)*120)+"px");d.style.setProperty("--r",((Math.random()-.5)*720)+"deg");R.appendChild(d);}
- o.hidden=false;const end=()=>{o.hidden=true;o.onclick=null;clearTimeout(t);R.innerHTML="";};const t=setTimeout(end,5500);setTimeout(()=>{o.onclick=end;},800);}
+ o.hidden=false;const end=()=>{o.hidden=true;o.onclick=null;clearTimeout(t);R.innerHTML="";};const t=setTimeout(end,og?7000:5500);setTimeout(()=>{o.onclick=end;},800);}
 
 /* ---------- une bille ---------- */
 async function go(){if(calling||!S||balls.length>=MAXFLY)return;ac();calling=true;render();
@@ -252,7 +260,7 @@ function build(){
    <div class="pk-btns"><button type="button" id="pkReset">Rendre mes billes du jour</button><button type="button" id="pkAdd">+50 🍌</button></div>
   </div>
  </aside>
- <div class="pk-mk" hidden aria-live="assertive"><div class="pk-rain" aria-hidden="true"></div><div class="pk-mkE" id="pkMkE" aria-hidden="true"></div><div class="pk-mkT" id="pkMkT"></div><div class="pk-mkS" id="pkMkS"></div></div>
+ <div class="pk-mk" hidden aria-live="assertive"><div class="pk-rain" aria-hidden="true"></div><img class="pk-mkB" id="pkMkB" src="${IMG.originel}" alt="Booster Originel" hidden><div class="pk-mkE" id="pkMkE" aria-hidden="true"></div><div class="pk-mkT" id="pkMkT"></div><div class="pk-mkS" id="pkMkS"></div></div>
  <div class="pk-toast" role="status"></div>`;
  document.body.appendChild(root);
  $("#pkAdm").hidden=!ADMIN;
