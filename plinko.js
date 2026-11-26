@@ -13,7 +13,7 @@ const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const MAXFLY=5;   // billes en l'air en même temps
-const DEF_PRIZES=[{t:"boost",v:5},{t:"ban",v:20},{t:"ban",v:6},{t:"ban",v:3},{t:"ban",v:2},{t:"ban",v:1},{t:"ban",v:2},{t:"ban",v:3},{t:"ban",v:6},{t:"ban",v:20},{t:"rpack",v:"Originel"}];
+const DEF_PRIZES=[{t:"boost",v:5},{t:"ban",v:20},{t:"ban",v:10},{t:"ban",v:5},{t:"ban",v:3},{t:"ban",v:1},{t:"ban",v:3},{t:"ban",v:5},{t:"ban",v:10},{t:"ban",v:20},{t:"rpack",v:"Originel"}];
 const lab=p=>p.t==="ban"?`${p.v} 🍌`:p.t==="boost"?`${p.v} boosters`:`Booster ${p.v}`;
 const short=p=>p.t==="ban"?String(p.v):p.t==="boost"?`🎁×${p.v}`:"🌈";
 

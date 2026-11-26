@@ -8,9 +8,10 @@
 --  - 10 rangées de clous : à chaque clou la bille part à gauche ou à droite (50/50, tiré par le serveur)
 --    → 11 cases en bas, case n° = nombre de rebonds à droite (0 = bord gauche, 10 = bord droit)
 --  - lots (mf_pk_cfg.prizes, de gauche à droite) :
---    5 boosters · 20 🍌 · 6 🍌 · 3 🍌 · 2 🍌 · 1 🍌 · 2 🍌 · 3 🍌 · 6 🍌 · 20 🍌 · booster Originel
---  - chances (les deux côtés ensemble) : chaque bord 1 sur 1 024 ; 20 🍌 2 % ; 6 🍌 8,8 % ; 3 🍌 23,4 % (bille remboursée) ; 2 🍌 41 % ; 1 🍌 24,6 %
---  - retour en bananes : ~89,6 % (2,69 🍌 pour 3 🍌), plus les deux bords en boosters
+--    5 boosters · 20 🍌 · 10 🍌 · 5 🍌 · 3 🍌 · 1 🍌 · 3 🍌 · 5 🍌 · 10 🍌 · 20 🍌 · booster Originel
+--    (26/11 vers 15 h 55, demande de Kévin : 1-2-3-6 remplacés par 1-3-5-10 ; avant : 20 · 6 · 3 · 2 · 1 · 2 · 3 · 6 · 20)
+--  - chances (les deux côtés ensemble) : chaque bord 1 sur 1 024 ; 20 🍌 2 % ; 10 🍌 8,8 % ; 5 🍌 23,4 % ; 3 🍌 41 % (bille remboursée) ; 1 🍌 24,6 %
+--  - retour en bananes : ~131 % (3,92 🍌 pour 3 🍌) : le joueur gagne en moyenne, plus les deux bords en boosters
 
 create table if not exists public.mf_pk (
   uid uuid primary key,
@@ -28,8 +29,8 @@ create table if not exists public.mf_pk_cfg (
   price int not null default 3,
   balls int not null default 10,
   rows_n int not null default 10,
-  prizes jsonb not null default '[{"t":"boost","v":5},{"t":"ban","v":20},{"t":"ban","v":6},{"t":"ban","v":3},{"t":"ban","v":2},{"t":"ban","v":1},
-    {"t":"ban","v":2},{"t":"ban","v":3},{"t":"ban","v":6},{"t":"ban","v":20},{"t":"rpack","v":"Originel"}]'::jsonb
+  prizes jsonb not null default '[{"t":"boost","v":5},{"t":"ban","v":20},{"t":"ban","v":10},{"t":"ban","v":5},{"t":"ban","v":3},{"t":"ban","v":1},
+    {"t":"ban","v":3},{"t":"ban","v":5},{"t":"ban","v":10},{"t":"ban","v":20},{"t":"rpack","v":"Originel"}]'::jsonb
 );
 alter table public.mf_pk_cfg enable row level security;
 insert into public.mf_pk_cfg(id) values (1) on conflict do nothing;
@@ -143,3 +144,7 @@ end $$;
 revoke execute on function public._pk_lab(jsonb), public._pk_info(uuid), public._pk_log(uuid, text) from public, anon, authenticated;
 revoke execute on function public.mf_pk_open(), public.mf_pk_status(), public.mf_pk_drop(), public.mf_pk_admin(text) from public, anon;
 grant execute on function public.mf_pk_open(), public.mf_pk_status(), public.mf_pk_drop(), public.mf_pk_admin(text) to authenticated;
+
+-- 26/11 vers 15 h 55 (demande de Kévin) : 1-2-3-6 → 1-3-5-10 (appliqué directement dans Supabase)
+update public.mf_pk_cfg set prizes = '[{"t":"boost","v":5},{"t":"ban","v":20},{"t":"ban","v":10},{"t":"ban","v":5},{"t":"ban","v":3},{"t":"ban","v":1},
+  {"t":"ban","v":3},{"t":"ban","v":5},{"t":"ban","v":10},{"t":"ban","v":20},{"t":"rpack","v":"Originel"}]'::jsonb where id = 1;
