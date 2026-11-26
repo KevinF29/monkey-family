@@ -60,7 +60,7 @@ const CSS=`
 .cs-card.off{opacity:.55;border-style:dashed}
 .cs-adm{position:absolute;top:0;left:0;z-index:1;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#ffd23f;font-size:20px;cursor:pointer}
 .cs-adm[hidden]{display:none}
-#mfCasino.admin{overflow-y:auto;overscroll-behavior:contain}#mfCasino.admin .cs-list{flex:none}
+#mfCasino.admin,#mfCasino.many{overflow-y:auto;overscroll-behavior:contain}#mfCasino.admin .cs-list,#mfCasino.many .cs-list{flex:none}
 .cs-panel{position:absolute;inset:0;z-index:5;display:flex;justify-content:center;align-items:flex-start;padding:max(12px,env(safe-area-inset-top)) 16px 16px;background:rgba(10,5,20,.78);overflow-y:auto}
 .cs-panel[hidden]{display:none}
 .cs-pbox{width:min(440px,100%);padding:16px 18px;border-radius:18px;background:#24123f;border:1px solid rgba(255,217,138,.35);box-shadow:0 18px 40px rgba(0,0,0,.5)}
@@ -118,8 +118,10 @@ const inPool=g=>!!(CFG&&CFG.pool&&CFG.pool.includes(g.id));
 const featured=g=>!CFG||!CFG.enabled||!inPool(g)||CFG.featured.includes(g.id);
 function paint(){
   if(!hub)return;const list=hub.querySelector("#csList");
-  hub.classList.toggle("admin",!!ADMIN);hub.querySelector("#csAdm").hidden=!ADMIN;
+  hub.classList.toggle("admin",!!ADMIN);
+  // plus de 6 jeux affichés (rotation coupée) : la salle défile au lieu de tout tasser
   const rot=!!(CFG&&CFG.enabled);
+  hub.classList.toggle("many",GAMES.filter(g=>!rot||!inPool(g)||featured(g)).length>6);hub.querySelector("#csAdm").hidden=!ADMIN;
   // jeux fixes en haut, puis les jeux de la rotation (même quand la rotation est coupée)
   const fixed=GAMES.filter(g=>!inPool(g)),week=GAMES.filter(g=>inPool(g)&&(!rot||featured(g))),out=rot&&ADMIN?GAMES.filter(g=>inPool(g)&&!featured(g)):[];
   let h=fixed.map(g=>card(g)).join("");
@@ -136,7 +138,7 @@ function panel(o){
   const c=CFG||{enabled:false,slots:1,pool:[],featured:[]},nm=id=>(GAMES.find(g=>g.id===id)||{name:id}).name,man=c.manual||[];
   hub.querySelector("#csPbox").innerHTML=`<h3>Jeux de la semaine</h3>
     <p>La Banana Machine, le Monkey Cash et The Monkey Wheel restent toujours là. Les jeux ci-dessous tournent chaque lundi à 0 h.</p>
-    <label class="cs-row"><input type="checkbox" id="csOn"${c.enabled?" checked":""}> Rotation activée</label>
+    <label class="cs-row"><input type="checkbox" id="csOn"${c.enabled?" checked":""}> Rotation activée</label>${!c.enabled&&c.from?`<div class="cs-row" style="color:#8fe3a8">Tous les jeux sont ouverts ; la rotation reprend toute seule le ${esc(new Date(c.from).toLocaleString("fr-FR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}))}.</div>`:""}
     <label class="cs-row">Jeux par semaine<select id="csSlots">${c.pool.map((_,i)=>`<option${i+1===c.slots?" selected":""}>${i+1}</option>`).join("")}</select></label>
     <div class="cs-row">Cette semaine : ${c.enabled?esc(c.featured.map(nm).join(", ")||"aucun"):"tous (rotation coupée)"}</div>
     <div class="cs-row">Choisir les jeux (sinon rotation automatique)</div>

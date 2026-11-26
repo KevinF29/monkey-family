@@ -1,5 +1,5 @@
 /* Monkey Family : fonctionnement hors ligne de l'appli (les images sont mises en cache par la page elle-même) */
-const VERSION="mf-1795713922";
+const VERSION="mf-1795713923";
 const SHELL=["./","index.html","config.js","cloud.js","admin.js","pop.js","casino.js","slot.js","race.js","scratch.js","cocotier.js","wheel.js","blackjack.js","bonneteau.js","poker.js","plinko.js","flying.js","lib/gsap.min.js","lib/three.min.js","lib/supabase.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(SHELL.map(u=>new Request(u,{cache:"reload"})))).then(()=>self.skipWaiting()));});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith("mf-")&&k!==VERSION&&k!=="mf-media-v1").map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
