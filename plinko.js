@@ -43,7 +43,7 @@ const CSS=`
 .pk-board canvas{display:block}
 .pk-board.img{background:none;box-shadow:none;border-radius:0;padding:0;border-style:solid;border-color:transparent;border-width:calc(var(--sp)*1.15) calc(var(--sp)*.8);border-image:url(${IMG.plateau}) 230 220 230 220 fill stretch;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))}
 .pk-bins{display:grid;gap:2px;margin-top:2px}
-.pk-bin{height:calc(var(--sp)*1.6);min-height:34px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:400 calc(var(--sp)*.5)/1 "Titan One",sans-serif;color:#2a1a0c;
+.pk-bin{height:calc(var(--sp)*1.6);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:400 calc(var(--sp)*.5)/1 "Titan One",sans-serif;color:#2a1a0c;
  background:linear-gradient(180deg,#ffe27a,#e0a817);box-shadow:0 3px 0 #8a5a00;transition:transform .12s;white-space:nowrap;overflow:hidden}
 .pk-bin[data-k="1"]{background:linear-gradient(180deg,#9be36b,#2f8a18);box-shadow:0 3px 0 #1f5a10;color:#fff;text-shadow:0 1px 2px #0a3a00}
 .pk-bin[data-k="2"]{background:linear-gradient(180deg,#d4f06b,#8cbf1c);box-shadow:0 3px 0 #4a6a00;color:#1f3a00}
@@ -297,7 +297,7 @@ async function open(){
  if(!root)build();
  if(!root.hidden)return;
  root.hidden=false;opener=document.activeElement;prevOverflow=document.body.style.overflow;document.body.style.overflow="hidden";
- $("#pkClose").focus({preventScroll:true});layout();render();
+ $("#pkClose").focus({preventScroll:true});msg("");layout();render();
  try{const r=await rpc("mf_pk_status");if(r.now)skew=+r.now-Date.now();take(r);bins();layout();render();}catch(e){msg(errText(e));}
 }
 function close(){
