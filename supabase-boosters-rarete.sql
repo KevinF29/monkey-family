@@ -62,6 +62,12 @@ alter table public.mf_vp_cfg add column if not exists boosters jsonb not null
   default '{"8":"Légendaire","9":"Mythique","10":"Secret","11":"Originel"}'::jsonb;
 update public.mf_vp_cfg set pays = '[0,1,1,2,3,5,7,20,1,1,1,1]'::jsonb where id = 1;
 
+-- 26/11 vers 13 h 15 (demande de Kévin) : table adoucie (quinte ×4, couleur ×6, full ×8 → ~94 % rendu),
+-- poker ouvert et ajouté à la rotation ; ordre du pool choisi pour garder lundi 30/11 = Bananateau + MonkeyJack 21
+-- (calendrier : 30/11 bon+bj · 07/12 race+vp · 14/12 coco+bon · 21/12 bj+race · 28/12 vp+coco)
+update public.mf_vp_cfg set pays = '[0,1,1,2,4,6,8,20,1,1,1,1]'::jsonb, open = true where id = 1;
+update public.mf_casino_cfg set pool = array['bj','race','vp','coco','bon'] where id = 1;
+
 create or replace function public._vp_info(p_uid uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare c public.mf_vp_cfg; t public.mf_vp; d date := (now() at time zone 'Europe/Paris')::date; h jsonb;
