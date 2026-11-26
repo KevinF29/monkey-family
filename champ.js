@@ -32,7 +32,7 @@ const OPEN=`<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="56
 /* ---------- style ---------- */
 const CSS=`
 #mfCC{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;align-items:center;overflow:hidden;overscroll-behavior:none;color:#f1edf9;font:16px/1.45 Quicksand,system-ui,sans-serif;
- background:#10231a;background-image:linear-gradient(rgba(8,24,16,.55),rgba(8,20,14,.85)),url(${IMG.fond}),url(${IMG.fondB});background-size:cover;background-position:center}
+ background:#10231a;background-image:linear-gradient(rgba(8,24,16,.25),rgba(8,20,14,.55)),url(${IMG.fond}),url(${IMG.fondB});background-size:cover;background-position:center}
 #mfCC[hidden]{display:none}
 #mfCC *{box-sizing:border-box;min-width:0}
 #mfCC [hidden]{display:none!important}
@@ -49,14 +49,14 @@ const CSS=`
 .cc-main{flex:1;min-height:0;width:min(100%,560px);display:flex;flex-direction:column;align-items:center;padding:4px 12px max(14px,env(safe-area-inset-bottom))}
 .cc-meter{flex:none;width:100%;display:flex;align-items:stretch;gap:8px;margin:2px 0 8px}
 .cc-m{flex:1;border-radius:14px;padding:5px 8px;text-align:center;background:rgba(18,34,26,.88);border:1px solid #2f5a42}
-.cc-m small{display:block;font-size:11.5px;font-weight:700;color:#a9c9b4;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-m small{display:block;font-size:11.5px;font-weight:700;color:#a9c9b4;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc-m b{display:block;font:400 clamp(18px,5vw,24px)/1.15 "Titan One",sans-serif;color:#fff}
 .cc-m.now b{color:#ffd23f}
 .cc-m.now.pulse{animation:ccPulse .45s ease-out}
 @keyframes ccPulse{40%{transform:scale(1.08);box-shadow:0 0 18px rgba(255,210,63,.7)}}
 .cc-wrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;container-type:size}
 .cc-grid{--S:min(100cqw,100cqh);width:var(--S);height:var(--S);display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:calc(var(--S)*.022);padding:calc(var(--S)*.03);
- border-radius:22px;background:radial-gradient(ellipse at 50% 35%,#3f8a4c,#25653a 60%,#174a29);border:6px solid #6b3f1d;box-shadow:inset 0 0 0 2px #a0682f,inset 0 10px 30px rgba(0,0,0,.4),0 10px 24px rgba(0,0,0,.45)}
+ border-radius:22px;background:radial-gradient(ellipse at 50% 35%,rgba(63,138,76,.82),rgba(37,101,58,.86) 60%,rgba(23,74,41,.92));border:6px solid #6b3f1d;box-shadow:inset 0 0 0 2px #a0682f,inset 0 10px 30px rgba(0,0,0,.4),0 10px 24px rgba(0,0,0,.45)}
 .cc-c{position:relative;padding:0;border:0;border-radius:50%;background:none;cursor:default;display:grid;place-items:center;transition:transform .12s}
 .cc-c svg,.cc-c img{display:block;width:92%;height:92%;object-fit:contain;filter:drop-shadow(0 4px 4px rgba(0,0,0,.4));pointer-events:none}
 .cc-c .e{font-size:calc(var(--S)*.12);line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));pointer-events:none}
@@ -249,8 +249,8 @@ function build(){
  <div class="cc-main">
   <div class="cc-meter" aria-live="polite">
    <div class="cc-m now"><small>Gain</small><b id="ccNow">×1</b></div>
-   <div class="cc-m"><small>Prochaine</small><b id="ccNext">—</b></div>
-   <div class="cc-m"><small>Sans serpent</small><b id="ccOdds">—</b></div>
+   <div class="cc-m"><small>Suivante</small><b id="ccNext">—</b></div>
+   <div class="cc-m"><small>Chance</small><b id="ccOdds">—</b></div>
    <div class="cc-m"><small>Serpents</small><b id="ccSnk">3 🐍</b></div>
   </div>
   <div class="cc-wrap"><div class="cc-grid" role="grid" aria-label="Champ de 25 noix de coco">${Array.from({length:25},(_,i)=>`<button type="button" class="cc-c hid" data-i="${i}" disabled></button>`).join("")}</div></div>
