@@ -121,3 +121,7 @@ begin
   return jsonb_build_object('done', true, 'c', v_cards, 'cat', k, 'name', public._vp_name(k), 'bet', bet, 'mult', mult,
     'pay', pay, 'net', pay - bet, 'booster', v_boost, 'info', public._vp_info(u));
 end $$;
+
+-- 26/11 vers 19 h 20 (demande de Kévin) : mise fixe 5 🍌 ; gains fixes double paire 10, brelan 20, quinte 30, couleur 40, full 50
+-- (paire de Rois = mise rendue 5, carré ×20 = 100, grosses mains = boosters de rareté + mise rendue) → ~139 % rendu
+update public.mf_vp_cfg set min_bet = 5, max_bet = 5, pays = '[0,1,2,4,6,8,10,20,1,1,1,1]'::jsonb where id = 1;

@@ -1,5 +1,5 @@
 /* Monkey Family — Poker Monkey (vidéo poker 5 cartes du Casino, avec le Joker singe)
-   10 mains par jour, mise de 1 à 20 🍌. 5 cartes, on garde celles qu'on veut, on échange les autres une fois.
+   10 mains par jour, mise réglée dans mf_vp_cfg (fixe à 5 🍌 depuis le 26/11 ; boutons de mise cachés quand min = max). 5 cartes, on garde celles qu'on veut, on échange les autres une fois.
    Paire de Rois ou mieux. Le Joker singe (53e carte) remplace n'importe quelle carte.
    Le paquet est mélangé et gardé par le serveur (mf_vp_*, supabase-poker.sql) : la page ne voit que ses 5 cartes.
    Visible par l'admin seulement tant que le jeu n'est pas ouvert (réglages admin → « Ouvrir à tous »). */
@@ -11,7 +11,7 @@ const IMG={logo:"packs/vp-titre.webp",croupier:"packs/vp-croupier.webp",table:"p
 const ART={0:"as",10:"valet",11:"dame",12:"roi"};
 const RK=["A","2","3","4","5","6","7","8","9","10","V","D","R"],SU=["♠","♥","♦","♣"];
 const NAMES=["Rien","Paire de Rois ou d'As","Double paire","Brelan","Quinte","Couleur","Full","Carré","Quinte flush","Quinte flush royale (Joker)","Cinq identiques","Quinte flush royale"];
-const SHORT=["","Rois ou mieux","Double paire","Brelan","Quinte","Couleur","Full","Carré","Quinte flush","Royale (Joker)","Cinq identiques","Royale"];
+const SHORT=["","Rois ou mieux","Double paire","Brelan","Quinte","Couleur","Full","Carré","Quinte flush","Royale Joker","5 identiques","Royale"];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",vp_limit:"Plus de mains aujourd'hui : reviens demain !",vp_closed:"Le poker n'est pas ouvert en ce moment.",
  vp_in_hand:"Une main est déjà en cours.",vp_no_hand:"Pas de main en cours.",vp_bet:"Mise impossible.",not_member:"Ton accès est en pause."};
@@ -51,11 +51,13 @@ const CSS=`
 .vp-scene>.vp-tbl{position:absolute;inset:0;z-index:0;pointer-events:none;background:#0f5a30;border-style:solid;border-color:transparent;border-width:70px 55px 78px;border-image:url(${IMG.table}) 290 230 320 230 fill stretch}
 @media(min-width:500px){.vp-scene>.vp-tbl{border-width:93px 74px 103px}}
 @media(min-width:660px){.vp-scene{margin-top:4px}}
-.vp-pay{flex:none;width:100%;max-width:520px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(6,auto);grid-auto-flow:column;gap:2px 8px;background:rgba(10,30,18,.72);border:2px solid #d9a514;border-radius:12px;padding:6px 8px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.vp-pay{flex:none;width:100%;max-width:520px;display:grid;grid-template-columns:1.3fr 1fr;grid-template-rows:repeat(6,auto);grid-auto-flow:column;gap:2px 8px;background:rgba(10,30,18,.72);border:2px solid #d9a514;border-radius:12px;padding:6px 8px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .vp-pr{display:flex;justify-content:space-between;gap:6px;padding:1px 6px;border-radius:6px;font-size:12.5px;line-height:1.35;font-weight:700;color:#e6f5ea;white-space:nowrap}
 .vp-pr span{overflow:hidden;text-overflow:ellipsis}
 .vp-pr b{color:#ffd23f;font-weight:700}
-.vp-pr.bo b{color:#ff9ce0}
+.vp-pr.bo b{color:#ff9ce0;font-size:.92em}
+.vp-pr .gift{font-style:normal}
+@media(max-width:380px){.vp-pr .gift{display:none}}
 .vp-pr.now{background:rgba(255,210,63,.22);outline:1px solid rgba(255,210,63,.6)}
 .vp-pr.won{background:#ffd23f;color:#2a1145;animation:vpBlink .45s 4 alternate}
 .vp-pr.won b{color:#2a1145}
@@ -193,12 +195,14 @@ function clampBet(){if(!S)return;bet=Math.max(+S.min||1,Math.min(+S.maxBet||20,b
 function payRows(){if(!S)return;const p=S.pays||[0,1,1,2,3,5,7,20,50,100,200,250],b=phase==="bet"?bet:(S.hand?+S.hand.bet:bet);
  const order=[11,10,9,8,7,6,5,4,3,2,1];   // du plus gros au plus petit, en 2 colonnes
  const bo=S.boosters||{};
- $(".vp-pay").innerHTML=order.map(k=>`<div class="vp-pr${bo[k]?" bo":""}" data-k="${k}"><span>${SHORT[k]}</span><b>${bo[k]?"🎁 "+esc(bo[k]):(p[k]*b).toLocaleString("fr-FR")}</b></div>`).join("");}
+ $(".vp-pay").innerHTML=order.map(k=>`<div class="vp-pr${bo[k]?" bo":""}" data-k="${k}"><span>${SHORT[k]}</span><b>${bo[k]?"<i class=\"gift\">🎁 </i>"+esc(bo[k]):(p[k]*b).toLocaleString("fr-FR")}</b></div>`).join("");}
 function mark(k,cls){root.querySelectorAll(".vp-pr").forEach(r=>{r.classList.remove("now","won");if(k>0&&+r.dataset.k===k)r.classList.add(cls);});}
 function render(){if(!root)return;
  const st=S&&S.state;$("#vpBan").textContent=st?st.bananas:"…";$("#vpBoo").textContent=st?st.stock:"…";
  if(!S)return;clampBet();const ban=st?+st.bananas:0;
- $("#vpBetBox").hidden=phase==="hold";$("#vpPlay").hidden=phase!=="hold";
+ $("#vpBetBox").hidden=phase==="hold";
+ const fixed=+S.min===+S.maxBet;$(".vp-mise").hidden=fixed;$(".vp-quick").hidden=fixed;   // mise fixe : rien à choisir
+ $("#vpRuleBet").textContent=`${S.max} mains par jour, `+(fixed?`mise fixe de ${S.min} 🍌.`:`mise de ${S.min} à ${S.maxBet} 🍌.`);$("#vpPlay").hidden=phase!=="hold";
  $("#vpAmt").textContent=`${bet} 🍌`;
  $("#vpMinus").disabled=busy||bet<=+S.min;$("#vpPlus").disabled=busy||bet>=+S.maxBet;
  root.querySelectorAll(".vp-q").forEach(q=>{const v=+q.dataset.v;q.disabled=busy||v>+S.maxBet;q.classList.toggle("on",v===bet);});
@@ -291,10 +295,10 @@ function build(){
    <li>Tu reçois 5 cartes. Touche celles que tu veux <b>garder</b>, puis <b>échange</b> les autres : une seule fois.</li>
    <li>Ta main finale est payée selon la table : il faut au moins une <b>paire de Rois ou d'As</b>.</li>
    <li>🐒 Le <b>Joker singe</b> remplace n'importe quelle carte pour faire la meilleure main.</li>
-   <li>Les chiffres de la table sont ce que tu récupères pour ta mise (mise comprise). Paire de Rois et double paire : ta mise revient.</li>
+   <li>Les chiffres de la table sont les bananes que tu récupères (mise comprise). Paire de Rois ou d'As : ta mise revient.</li>
    <li>🎁 Les plus grosses mains donnent un <b>booster de rareté</b> (1 carte de cette rareté) et te rendent ta mise : quinte flush → Légendaire, royale avec le Joker → Mythique, cinq identiques → Secret, royale sans Joker → Originel. Il t'attend avec tes boosters.</li>
    <li>Cinq identiques : quatre cartes pareilles + le Joker.</li>
-   <li>10 mains par jour, mise de 1 à 20 🍌.</li>
+   <li id="vpRuleBet">10 mains par jour.</li>
   </ul>
   <h3>Dernières mains</h3><ul class="vp-hist" id="vpHist"></ul>
   <div class="vp-adm" id="vpAdm" hidden>
@@ -360,7 +364,7 @@ async function boot(){
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="6" height="10" rx="1.2"/><rect x="9" y="5" width="6" height="10" rx="1.2"/><rect x="16" y="7" width="6" height="10" rx="1.2"/><path d="M12 8.5l1 1.8-1 1.8-1-1.8z"/></svg>`,
   status:async()=>{if(!(root&&!root.hidden)){const r=await rpc("mf_vp_status");if(r.now)skew=+r.now-Date.now();take(r);}const I=S;if(!I)return null;
    if(I.hand)return {line:"Une main t'attend : choisis tes cartes !",hot:true};
-   if(+I.left>0)return {line:`Encore ${I.left} main${+I.left>1?"s":""} aujourd'hui · mise jusqu'à ${I.maxBet} 🍌`,hot:false};
+   if(+I.left>0)return {line:`Encore ${I.left} main${+I.left>1?"s":""} aujourd'hui · ${+I.min===+I.maxBet?I.min+" 🍌 la main":"mise jusqu'à "+I.maxBet+" 🍌"}`,hot:false};
    return {line:"Plus de mains aujourd'hui",pre:"Nouvelles mains dans ",in:+I.nextDay-(Date.now()+skew),hot:false};}});
 }
 window.MF_VP={open};
