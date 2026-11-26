@@ -5,10 +5,10 @@
 -- (bouton « Ouvrir à tous » dans les réglages admin du jeu).
 --
 -- Règles (réglables dans mf_tour_cfg) :
---  - 5 montées par jour (heure de Paris), mise de 1 à 10 🍌
+--  - 5 montées par jour (heure de Paris), mise de 2 à 10 🍌
 --  - à chaque étage, 3 portes dont 1 piégée : le serveur tire la porte piégée AU MOMENT où le joueur choisit
 --    (rien à lire à l'avance dans le réseau)
---  - après chaque étage passé, le joueur peut redescendre avec mise × mults[étage] (arrondi en dessous)
+--  - après chaque étage passé, le joueur peut redescendre avec mise × mults[étage] (arrondi au plus proche)
 --  - 8 étages : ×1 ×1,3 ×2 ×3 ×4,5 ×6,5 ×10 ×15 ; au sommet, l'idole encaisse toute seule
 --  - trappe au 1er étage : la mise est rendue
 --  - chances d'arriver à l'étage k : (2/3)^k ; avec le remboursement, le jeu rend 90 à 93 % (100 % en s'arrêtant au 1er étage)
@@ -26,7 +26,7 @@ alter table public.mf_tour enable row level security;   -- aucune politique : on
 create table if not exists public.mf_tour_cfg (
   id int primary key default 1 check (id = 1),
   open boolean not null default false,
-  min_bet int not null default 1,
+  min_bet int not null default 2,   -- 2 au minimum : avec 1 🍌, le 2e étage (×1,3) ne rapporterait rien
   max_bet int not null default 10,
   games int not null default 5,
   mults jsonb not null default '[1, 1.3, 2, 3, 4.5, 6.5, 10, 15]'::jsonb   -- gain après l'étage 1, 2, … ; la longueur = nombre d'étages
@@ -36,7 +36,7 @@ insert into public.mf_tour_cfg(id) values (1) on conflict do nothing;
 
 create or replace function public._tour_pay(p_bet int, p_fl int)
 returns int language sql stable security definer set search_path = public as $$
-  select case when p_fl < 1 then 0 else floor(p_bet * coalesce(((select mults from public.mf_tour_cfg where id = 1)->>(p_fl - 1))::numeric, 0))::int end $$;
+  select case when p_fl < 1 then 0 else round(p_bet * coalesce(((select mults from public.mf_tour_cfg where id = 1)->>(p_fl - 1))::numeric, 0))::int end $$;   -- arrondi au plus proche (depuis le 26/11 : avec l'arrondi en dessous, ×1,3 ne rapportait rien aux petites mises)
 
 create or replace function public._tour_info(p_uid uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$

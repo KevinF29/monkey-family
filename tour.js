@@ -183,7 +183,7 @@ function take(info){if(!info)return;S=info;try{if(window.MF_APPLY&&info.state)wi
 try{const b=+localStorage.getItem("mf_tour_bet");if(b>0)bet=b;}catch(e){}
 const M=()=>(S&&Array.isArray(S.mults)&&S.mults.length?S.mults:[1,1.3,2,3,4.5,6.5,10,15]).map(Number);
 const TOP=()=>M().length;
-const payOf=(b,fl)=>fl<1?0:Math.floor(b*M()[fl-1]+1e-9);
+const payOf=(b,fl)=>fl<1?0:Math.floor(b*M()[fl-1]+.5+1e-9);   // arrondi au plus proche, comme le serveur
 const G=()=>S&&S.game?{bet:+S.game.bet,fl:+S.game.fl}:null;
 
 /* ---------- sons ---------- */
@@ -305,7 +305,7 @@ async function cash(){const g=G();if(busy||!g||g.fl<1)return;ac();busy=true;rend
  let r;try{r=await rpc("mf_tour_cash");}catch(e){return err(e);}
  take(r.info);cashS();
  monkAt("base","walk");await wait(560);busy=false;render();
- show(`+${r.net} 🍌`,`Redescendu du ${ord(+r.fl)} étage avec ${r.pay} 🍌 (ta mise de ${r.bet} 🍌 ${fx(M()[+r.fl-1])}).`);
+ show(+r.net>0?`+${r.net} 🍌`:"Mise récupérée",`Redescendu du ${ord(+r.fl)} étage avec ${r.pay} 🍌 (ta mise de ${r.bet} 🍌 ${fx(M()[+r.fl-1])}).`);
  setTimeout(()=>{if(!busy&&!G())idle();},2600);}
 
 /* ---------- admin ---------- */
@@ -336,7 +336,7 @@ function build(){
  <div class="tt-act">
   <div id="ttBetBox">
    <div class="tt-mise"><button type="button" class="tt-pm" id="ttMinus" aria-label="Miser moins">−</button><span class="tt-amt" id="ttAmt" aria-live="polite"></span><button type="button" class="tt-pm" id="ttPlus" aria-label="Miser plus">+</button>
-    <span class="tt-row"><button type="button" class="tt-q" data-v="1">1</button><button type="button" class="tt-q" data-v="5">5</button><button type="button" class="tt-q" data-v="10">10</button></span></div>
+    <span class="tt-row"><button type="button" class="tt-q" data-v="2">2</button><button type="button" class="tt-q" data-v="5">5</button><button type="button" class="tt-q" data-v="10">10</button></span></div>
    <button type="button" class="tt-big" id="ttGo"></button>
   </div>
   <div id="ttPlay" hidden><button type="button" class="tt-big cash" id="ttCash"></button></div>
@@ -347,10 +347,10 @@ function build(){
   <ul class="r">
    <li>Mise, puis monte le temple étage par étage. À chaque étage, <b>3 portes dont une piégée</b>.</li>
    <li>Bonne porte : tu montes et ton butin grossit. Mauvaise porte : une trappe s'ouvre sous le singe, tu perds ta mise.</li>
-   <li>Après chaque étage passé, tu peux <b>redescendre avec ton butin</b> : ta mise × le gain de l'étage (arrondi en dessous).</li>
+   <li>Après chaque étage passé, tu peux <b>redescendre avec ton butin</b> : ta mise × le gain de l'étage (arrondi au plus proche).</li>
    <li>Trappe au <b>1er étage</b> : ta mise t'est rendue.</li>
    <li id="ttTop">Au sommet (8e étage), le singe prend l'idole : ×15 !</li>
-   <li id="ttLim">5 montées par jour, mise de 1 à 10 🍌.</li>
+   <li id="ttLim">5 montées par jour, mise de 2 à 10 🍌.</li>
   </ul>
   <table class="tt-tab" id="ttTab"></table>
   <h3>Dernières montées</h3><ul class="tt-hist" id="ttHist"></ul>
