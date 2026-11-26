@@ -126,6 +126,9 @@ const CSS=`
 .bn-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#2c2148;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .bn-toast.on{transform:translate(-50%,0);opacity:1}
 @media(max-height:700px){.bn-quick{display:none}.bn-s{min-height:42px}.bn-mise{margin-bottom:6px}.bn-logo{height:54px}.bn-logoT{font-size:26px}.bn-top{gap:3px}}
+@media(max-height:480px){.bn-top{flex-direction:row;justify-content:center;gap:10px;padding-top:max(4px,env(safe-area-inset-top))}.bn-btn{top:max(4px,env(safe-area-inset-top))}
+ .bn-logo{height:40px}.bn-logoT{font-size:22px}.bn-dealer{--mh:56px;position:absolute;left:4px;top:auto;bottom:max(10px,env(safe-area-inset-bottom));width:auto;z-index:5}.bn-say{display:none}
+ .bn-mat{margin-top:0}.bn-act{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px}#bnBetBox{display:flex;align-items:center;gap:8px}.bn-spd{margin:0}.bn-s{min-height:38px;padding:2px 8px;white-space:nowrap;max-width:none}.bn-s b{display:inline;margin-left:4px;font-size:14px}.bn-big{min-height:40px;padding:6px 16px;font-size:16px}.bn-sub{margin:0}}
 @media(prefers-reduced-motion:reduce){.bn-monk.wob,.bn-monkE.wob,.bn-res,.bn-flash,.bn-box.pick .bn-cup,.bn-ban.gl,.bn-stamp,`;
 
 /* ---------- état ---------- */
@@ -153,10 +156,13 @@ const cupAt=s=>cups()[slot.indexOf(s)];
 function sp(){const b=$(".bn-box"),c=cups()[0];return Math.min(b.clientWidth/3,c.offsetWidth*1.3);}
 const X=s=>(s-1)*sp();
 const liftH=()=>cups()[0].offsetHeight*.72;
-function place(i,lift){const e=cups()[i];e.style.transform=`translate(${X(slot[i])}px,${lift?-liftH():0}px)`;}
-function placeAll(){cups().forEach((e,i)=>{e.style.transition="none";place(i,false);void e.offsetWidth;e.style.transition="";});}
+const up=[false,false,false];let banSlot=1;
+function place(i,lift){up[i]=!!lift;const e=cups()[i];e.style.transform=`translate(${X(slot[i])}px,${lift?-liftH():0}px)`;}
+function placeAll(){cups().forEach((e,i)=>{e.style.transition="none";place(i,up[i]);void e.offsetWidth;e.style.transition="";});}
 function lift(s,up){const i=slot.indexOf(s);place(i,up);if(up)swish();else knock();}
-function banAt(s,show){const b=$(".bn-ban");b.style.transform=`translateX(${X(s)}px)`;b.classList.toggle("no",!show);b.classList.remove("gl");}
+function banAt(s,show){banSlot=s;const b=$(".bn-ban");b.style.transform=`translateX(${X(s)}px)`;b.classList.toggle("no",!show);b.classList.remove("gl");}
+// tout replacer (taille de l'écran ou de la table changée) sans rien changer au jeu en cours
+function relayout(){placeAll();const b=$(".bn-ban");b.style.transform=`translateX(${X(banSlot)}px)`;}
 function swap(a,b,dur){
  const ia=slot.indexOf(a),ib=slot.indexOf(b),ea=cups()[ia],eb=cups()[ib],xa=X(a),xb=X(b),h=cups()[0].offsetHeight;
  slot[ia]=b;slot[ib]=a;
@@ -200,7 +206,7 @@ let tt=0;function toast(t){const e=$(".bn-toast");e.textContent=t;e.classList.ad
 function setPick(on){picking=on;$(".bn-box").classList.toggle("pick",on);cups().forEach((e,i)=>{e.disabled=!on;e.setAttribute("aria-label",`Noix de coco ${SIDE[slot[i]]}`);});
  if(on)ask("Où est la banane ? Touche une noix de coco.");render();}
 function reset(){root.querySelectorAll(".bn-stamp").forEach(e=>e.remove());cups().forEach(e=>e.classList.remove("sel"));$(".bn-hand").classList.remove("on");
- slot[0]=0;slot[1]=1;slot[2]=2;placeAll();banAt(1,false);ask("");}
+ slot[0]=0;slot[1]=1;slot[2]=2;up.fill(false);placeAll();banAt(1,false);ask("");}
 const err=e=>{busy=false;show("Oups",errText(e),"lose");rpc("mf_bon_status").then(r=>{take(r);if(r.game)setPick(true);else{setPick(false);reset();}render();},()=>{render();});};
 const takeForce=()=>{if(!ADMIN)return null;const el=$("#bnF"),v=el.value;el.value="";return v||null;};
 
@@ -215,6 +221,7 @@ async function go(){if(busy||picking||!S||S.game)return;ac();busy=true;$("#bnRes
  // … puis le vrai mélange, échange par échange, tel que le serveur l'a tiré
  if(speed==="turbo"){say("Turbo ! Hop hop hop ! ⚡",1600);wob();}
  for(const p of seq){await swap(+p[0],+p[1],ms);}
+ relayout();   // au cas où l'écran ou la table ont changé de taille pendant le mélange
  await new Promise(z=>setTimeout(z,200));knock();
  busy=false;setPick(true);
  say(pick(["Alors… laquelle ? 🥥","Prends ton temps, hé hé.","Je parie que tu te trompes."]));}
@@ -298,7 +305,7 @@ function build(){
  mk.onerror=()=>{if(mk.dataset.base){mk.src=mk.dataset.base;return;}tries++;if(tries===1){mk.src=IMG.singeB;return;}mk.hidden=true;$(".bn-monkE").hidden=false;};
  mk.src=IMG.singe;
  const tri=new Image();tri.onload=()=>{triche=true;};tri.src=IMG.triche;
- const tb=new Image();tb.onload=()=>{$(".bn-mat").classList.add("img");const t=$(".bn-tbl");t.style.backgroundImage=`url(${IMG.table})`;t.appendChild($(".bn-box"));if(!root.hidden&&!busy&&!picking)reset();};tb.src=IMG.table;
+ const tb=new Image();tb.onload=()=>{$(".bn-mat").classList.add("img");const t=$(".bn-tbl");t.style.backgroundImage=`url(${IMG.table})`;t.appendChild($(".bn-box"));if(!root.hidden&&!busy)relayout();};tb.src=IMG.table;
  const bn=new Image();bn.onload=()=>{$(".bn-ban").innerHTML=`<img src="${IMG.banane}" alt="">`;$(".bn-hand").innerHTML=`<img src="${IMG.banane}" alt="">`;};bn.src=IMG.banane;
  const nx=new Image();nx.onload=()=>{cups().forEach(c=>{c.innerHTML=`<img src="${IMG.noix}" alt="">`;});};nx.src=IMG.noix;
  $("#bnClose").addEventListener("click",close);
@@ -315,7 +322,7 @@ function build(){
  $("#bnReset").addEventListener("click",()=>adm("reset","Tes parties du jour sont rendues."));
  $("#bnAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if($("#bnPanel").classList.contains("open"))panel(false);else close();});
- addEventListener("resize",()=>{if(root.hidden||busy)return;placeAll();const b=$(".bn-ban");if(b.classList.contains("no"))banAt(1,false);});
+ addEventListener("resize",()=>{if(root.hidden||busy)return;relayout();});
  setInterval(()=>{if(!root.hidden&&!busy)render();},30000);
 }
 function panel(o){$("#bnPanel").classList.toggle("open",o);$("#bnTog").setAttribute("aria-expanded",String(o));}
