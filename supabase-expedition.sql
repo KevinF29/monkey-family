@@ -9,7 +9,7 @@
 --  - chaque jour, une expédition commune : le serveur mélange un paquet secret de 31 cartes
 --    (20 trésors de 2 à 22 🍌, 5 dangers en 2 exemplaires, 1 Idole d'or) ;
 --  - gratuit, une expédition par jour ; on peut rejoindre tant que l'expédition est en route ;
---  - une étape par heure, de 10 h à 22 h (13 étapes, heure de Paris) ;
+--  - 13 étapes à partir de 10 h : une carte dès que tous les explorateurs ont choisi, au plus tard 1 h après la précédente (voir en bas) ;
 --  - avant chaque étape, chaque joueur encore dedans a un choix secret : continuer ou rentrer au camp
 --    (le choix reste tant qu'on ne le change pas ; option « rentrer tout seul dès que mon butin atteint N ») ;
 --  - un trésor est partagé à parts égales entre ceux qui sont dedans, le reste reste sur le chemin ;
@@ -342,3 +342,140 @@ grant execute on function public.mf_exp_open(), public.mf_exp_status(), public.m
 
 -- révélation automatique : chaque minute, comme la Monkey Run (mf-course) et le Flying Monkey (mf-flying)
 select cron.schedule('mf-expedition', '* * * * *', 'select public._exp_tick()');
+
+-- 26/11/2026 vers 23 h 15 (choix de Kévin) : la carte suivante est révélée DÈS QUE tous les explorateurs encore dans la jungle
+-- ont confirmé leur choix pour l'étape (ou ont atteint leur seuil de retour automatique), et au plus tard 1 h après la précédente
+-- (sans réponse, on garde son dernier choix). La 1re carte reste à 10 h. Relance « il ne manque plus que toi » au dernier qui n'a pas choisi.
+alter table public.mf_exp_players add column if not exists ready boolean not null default false;   -- choix confirmé pour la prochaine étape
+alter table public.mf_exp_players add column if not exists nudged int;                              -- étape pour laquelle on l'a relancé
+alter table public.mf_exp_days add column if not exists last_at timestamptz;                        -- heure de la dernière carte révélée
+
+-- l'ancienne fonction de révélation garde son code ; _exp_step l'entoure (heure de la carte, choix à reconfirmer)
+alter function public._exp_step(date) rename to _exp_reveal;
+
+create or replace function public._exp_step(p_day date)
+returns void language plpgsql security definer set search_path = public as $$
+declare s0 int; s1 int;
+begin
+  select step into s0 from public.mf_exp_days where day = p_day for update;
+  perform public._exp_reveal(p_day);
+  select step into s1 from public.mf_exp_days where day = p_day;
+  if s1 > s0 then
+    update public.mf_exp_days set last_at = now() where day = p_day;
+    update public.mf_exp_players set ready = false where day = p_day and state = 'in';
+  end if;
+end $$;
+
+-- heure limite de la prochaine carte : 10 h pour la 1re, puis 1 h après la précédente (sans dépasser la grille de 10 h à 22 h)
+create or replace function public._exp_due(p_day date) returns timestamptz
+language sql stable security definer set search_path = public as $$
+  select case when d.step = 0 then d.base
+    else least(coalesce(d.last_at, d.base + make_interval(hours => d.step - 1)) + interval '1 hour', d.base + make_interval(hours => d.step)) end
+  from public.mf_exp_days d where d.day = p_day $$;
+
+-- tous ceux qui sont dans la jungle ont-ils choisi ? (au moins un explorateur)
+create or replace function public._exp_allready(p_day date) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists(select 1 from public.mf_exp_players where day = p_day and state = 'in')
+    and not exists(select 1 from public.mf_exp_players where day = p_day and state = 'in' and not (ready or (auto > 0 and loot >= auto))) $$;
+
+-- révèle la prochaine carte si c'est le moment (heure limite atteinte, ou tout le monde a choisi après 10 h) ; verrouille le jour
+create or replace function public._exp_advance(p_day date) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare d public.mf_exp_days; c public.mf_exp_cfg;
+begin
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = p_day for update;
+  if d.day is null or d.status <> 'run' or d.step >= c.steps then return false; end if;
+  if now() >= public._exp_due(p_day) or (d.step >= 1 and public._exp_allready(p_day)) then
+    perform public._exp_step(p_day);
+    return true;
+  end if;
+  return false;
+end $$;
+
+create or replace function public._exp_tick()
+returns void language plpgsql security definer set search_path = public as $$
+declare r record; guard int := 0;
+begin
+  if not pg_try_advisory_xact_lock(hashtext('mf_exp_tick')) then return; end if;
+  perform public._exp_ensure(public._exp_today());
+  for r in select day from public.mf_exp_days where status = 'run' order by day loop
+    while guard < 100 and public._exp_advance(r.day) loop guard := guard + 1; end loop;
+  end loop;
+end $$;
+
+-- choix pour la prochaine étape : p_choice 'go' / 'home' ; p_auto = seuil de retour automatique (null = inchangé) ;
+-- p_ready = confirmer le choix (null = inchangé). Si c'était le dernier à choisir, la carte est révélée tout de suite.
+drop function if exists public.mf_exp_choose(text, int);
+create or replace function public.mf_exp_choose(p_choice text, p_auto int default null, p_ready boolean default true)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public._check(); n int; t date := public._exp_today(); d public.mf_exp_days; p record;
+begin
+  if p_choice not in ('go', 'home') then raise exception 'exp_bad'; end if;
+  update public.mf_exp_players set choice = p_choice, auto = coalesce(least(greatest(p_auto, 0), 999), auto), ready = coalesce(p_ready, ready)
+    where uid = u and state = 'in' and day in (t, t + 1);
+  get diagnostics n = row_count;
+  if n = 0 then raise exception 'exp_not_in'; end if;
+  if not public._exp_advance(t) then
+    -- un seul explorateur n'a pas encore choisi : on le relance (une fois par étape)
+    select * into d from public.mf_exp_days where day = t;
+    if d.status = 'run' and d.step >= 1 and (select count(*) from public.mf_exp_players where day = t and state = 'in') > 1 then
+      for p in select * from public.mf_exp_players where day = t and state = 'in' and not (ready or (auto > 0 and loot >= auto)) and coalesce(nudged, -1) <> d.step loop
+        if (select count(*) from public.mf_exp_players where day = t and state = 'in' and not (ready or (auto > 0 and loot >= auto))) = 1 then
+          update public.mf_exp_players set nudged = d.step where day = t and uid = p.uid;
+          perform public._exp_push(p.uid, t, 'Tout le monde a choisi pour l''étape ' || (d.step + 1) || ', il ne manque plus que toi ! Continuer ou rentrer au camp ?');
+        end if;
+      end loop;
+    end if;
+  end if;
+  return public._exp_info(u);
+end $$;
+
+create or replace function public._exp_info(p_uid uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare c public.mf_exp_cfg; t date := public._exp_today(); d public.mf_exp_days; me public.mf_exp_players; tg date := public._exp_target();
+  nx public.mf_exp_players; last public.mf_exp_players; ld public.mf_exp_days;
+begin
+  perform public._exp_ensure(t);
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = t;
+  select * into me from public.mf_exp_players where day = t and uid = p_uid;
+  select * into nx from public.mf_exp_players where day = t + 1 and uid = p_uid;
+  select pl.* into last from public.mf_exp_players pl join public.mf_exp_days dd on dd.day = pl.day
+    where pl.uid = p_uid and pl.state <> 'in' and not pl.seen and dd.status <> 'run' order by pl.day desc limit 1;
+  if last.day is not null then select * into ld from public.mf_exp_days where day = last.day; end if;
+  return jsonb_build_object(
+    'open', coalesce(c.open, false), 'steps', c.steps, 'firstHour', c.first_hour, 'consol', c.consol, 'relicBoost', c.relic_boost,
+    'dangers', c.dangers, 'copies', c.copies,
+    'day', t, 'status', d.status, 'step', d.step, 'path', d.path, 'relic', d.relic, 'seen', to_jsonb(d.seen), 'cards', d.cards,
+    'startAt', (extract(epoch from d.base) * 1000)::bigint,
+    'nextAt', case when d.status = 'run' and d.step < c.steps then (extract(epoch from public._exp_due(t)) * 1000)::bigint end,
+    'inN', (select count(*) from public.mf_exp_players where day = t and state = 'in'),
+    'readyN', (select count(*) from public.mf_exp_players where day = t and state = 'in' and (ready or (auto > 0 and loot >= auto))),
+    'players', (select coalesce(jsonb_agg(jsonb_build_object('uid', pl.uid, 'name', coalesce(ps.pseudo, '?'), 'state', pl.state,
+        'loot', pl.loot, 'gain', pl.gain, 'relic', pl.relic, 'out', pl.out_step, 'joined', pl.joined,
+        'ready', pl.ready or (pl.auto > 0 and pl.loot >= pl.auto))
+        order by (pl.state = 'in') desc, pl.gain desc, pl.loot desc, pl.at), '[]'::jsonb)
+      from public.mf_exp_players pl left join public.pstate ps on ps.uid = pl.uid where pl.day = t),
+    'me', case when me.uid is null then null else jsonb_build_object('state', me.state, 'choice', me.choice, 'auto', me.auto, 'loot', me.loot,
+      'gain', me.gain, 'relic', me.relic, 'out', me.out_step, 'joined', me.joined, 'canLeave', me.state = 'in' and me.joined < d.step,
+      'ready', me.ready or (me.auto > 0 and me.loot >= me.auto)) end,
+    'target', tg,
+    'next', jsonb_build_object('day', t + 1, 'joined', nx.uid is not null, 'choice', nx.choice, 'auto', nx.auto,
+      'n', (select count(*) from public.mf_exp_players where day = t + 1),
+      'startAt', (extract(epoch from (((t + 1)::timestamp + make_interval(hours => c.first_hour)) at time zone 'Europe/Paris')) * 1000)::bigint),
+    'last', case when last.day is null then null else jsonb_build_object('day', last.day, 'state', last.state, 'gain', last.gain, 'loot', last.loot,
+      'relic', last.relic, 'out', last.out_step, 'status', ld.status, 'steps', ld.step,
+      'danger', case when ld.status = 'dead' then (ld.cards -> -1 ->> 'd')::int end) end,
+    'hist', (select coalesce(jsonb_agg(jsonb_build_object('day', h.day, 'state', h.state, 'gain', h.gain, 'relic', h.relic, 'out', h.out_step) order by h.day desc), '[]'::jsonb)
+      from (select * from public.mf_exp_players where uid = p_uid and state <> 'in' order by day desc limit 7) h),
+    'me_uid', p_uid,
+    'now', (extract(epoch from now()) * 1000)::bigint,
+    'state', public._state(p_uid));
+end $$;
+
+revoke execute on function public._exp_reveal(date), public._exp_step(date), public._exp_due(date), public._exp_allready(date), public._exp_advance(date),
+  public._exp_tick(), public._exp_info(uuid) from public, anon, authenticated;
+revoke execute on function public.mf_exp_choose(text, int, boolean) from public, anon;
+grant execute on function public.mf_exp_choose(text, int, boolean) to authenticated;

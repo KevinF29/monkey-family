@@ -1,6 +1,6 @@
 /* Monkey Family — L'Expédition (jeu de « greed » entre potes, façon Diamant)
-   Chaque jour, une expédition commune dans la jungle : une carte révélée par heure, de 10 h à 22 h.
-   Avant chaque étape, chaque joueur choisit en secret de continuer ou de rentrer au camp.
+   Chaque jour, une expédition commune dans la jungle, départ à 10 h. Après chaque carte, chaque joueur choisit en secret de continuer
+   ou de rentrer au camp ; la carte suivante est révélée dès que tout le monde a choisi (au plus tard 1 h après la précédente).
    Trésors partagés entre ceux qui sont dedans ; le 2e danger du même type fait perdre le butin à ceux qui restent.
    Tout se passe sur le serveur (mf_exp_*, supabase-expedition.sql) ; jeu fixe du Casino.
    Visuels de Kévin (packs/exp-*.webp) ; le fond reste un dégradé.
@@ -82,6 +82,7 @@ const CSS=`
 .ex-ch small{font:700 12px Quicksand,sans-serif;opacity:.85}
 .ex-ch.on.go{background:#2e8a4a;border-color:#8fe3a8;box-shadow:0 0 0 3px rgba(143,227,168,.35)}
 .ex-ch.on.home{background:#b86a1a;border-color:#ffd23f;box-shadow:0 0 0 3px rgba(255,210,63,.35)}
+.ex-ch.last{border-style:dashed;border-color:rgba(255,210,63,.7)}
 .ex-ch:disabled{opacity:.45;cursor:default}
 .ex-big{min-height:56px;padding:8px 24px;border-radius:16px;border:0;background:#ffd23f;color:#3b2410;font:400 19px "Titan One",sans-serif;cursor:pointer;box-shadow:0 4px 0 #b8901a}
 .ex-big:active{transform:translateY(2px);box-shadow:0 2px 0 #b8901a}
@@ -141,11 +142,13 @@ function trailHTML(){const cards=S.cards||[],n=+S.steps,old=shownStep();let h=ca
  for(let i=cards.length+(S.status==="run"?2:1);i<=n;i++)h+=`<div class="ex-cw off" role="listitem" aria-label="Étape ${i}${S.status==="run"?"":" (non jouée)"}"><div class="ex-c" style="background-image:url(${IMG.dos})"></div><span class="ex-h">${i} · ${esc(hh(stepAt(i)))}</span></div>`;
  return h;}
 function bannerHTML(){const me=S.me,next=S.nextAt?+S.nextAt-nowS():0;
- if(S.status==="run"&&S.step===0)return `<div class="ex-ban"><span class="big">Départ à ${esc(hh(+S.startAt))}</span>dans ${esc(dur(+S.startAt-nowS()))} · une étape par heure jusqu'à ${esc(hh(+S.startAt+(+S.steps-1)*3600000))}</div>`;
- if(S.status==="run")return `<div class="ex-ban"><span class="big">Étape ${S.step+1} à ${esc(hh(+S.nextAt))}</span>dans ${esc(dur(next))}${me&&me.state==="in"?" · ton choix reste secret jusque-là":""}</div>`;
+ if(S.status==="run"&&S.step===0)return `<div class="ex-ban"><span class="big">Départ à ${esc(hh(+S.startAt))}</span>dans ${esc(dur(+S.startAt-nowS()))} · ensuite, une carte dès que tout le monde a choisi (au plus tard 1 h après la précédente)</div>`;
+ if(S.status==="run"){const inN=+S.inN||0,rd=+S.readyN||0;
+  if(!inN)return `<div class="ex-ban"><span class="big">Étape ${S.step+1} à ${esc(hh(+S.nextAt))}</span>dans ${esc(dur(next))} · plus personne dans la jungle</div>`;
+  return `<div class="ex-ban"><span class="big">Étape ${S.step+1} dès que tout le monde a choisi</span>${rd}/${inN} explorateur${inN>1?"s ont":" a"} choisi · au plus tard à ${esc(hh(+S.nextAt))} (dans ${esc(dur(next))})</div>`;}
  const last=(S.cards||[])[S.cards.length-1]||{};
  if(S.status==="dead")return `<div class="ex-ban bad"><span class="big">${esc(DANGER[last.d]?DANGER[last.d].e+" "+DANGER[last.d].n:"Danger")} !</span>Le même danger est sorti deux fois : l'expédition s'est arrêtée à l'étape ${esc(last.s)}.</div>`;
- return `<div class="ex-ban good"><span class="big">Expédition terminée</span>Tous ceux qui restaient sont rentrés au camp à ${esc(hh(+S.startAt+(+S.steps-1)*3600000))}.</div>`;}
+ return `<div class="ex-ban good"><span class="big">Expédition terminée</span>Tous ceux qui restaient sont rentrés au camp${last.at?` à ${esc(hh(+last.at))}`:""}.</div>`;}
 function dangersHTML(){const seen=S.seen||[];
  return `<div class="ex-dang">${DANGER.slice(0,+S.dangers||5).map((d,i)=>`<div class="ex-dg${seen.includes(i)?" on":""}" title="${esc(d.n)}"><img src="${d.i}" alt="">${seen.includes(i)?"déjà sorti":"pas encore"}</div>`).join("")}</div>`;}
 function meHTML(){const me=S.me,run=S.status==="run"&&S.step<+S.steps;
@@ -155,21 +158,23 @@ function meHTML(){const me=S.me,run=S.status==="run"&&S.step<+S.steps;
   const nx=S.next||{};
   if(nx.joined)return `<p><b>Tu es inscrit pour l'expédition de demain</b> (départ ${esc(hh(+nx.startAt))}).</p>${autoHTML(nx.auto)}<p class="ex-sub">${+nx.n} explorateur${+nx.n>1?"s":""} inscrit${+nx.n>1?"s":""} pour l'instant.</p>`;
   return `<p class="ex-sub">Tu n'as pas participé à l'expédition d'aujourd'hui.</p><button type="button" class="ex-big" id="exJoin"${busy?" disabled":""}>${busy?"…":"Je pars demain"}</button>`;}
- if(me.state==="in"){const can=me.canLeave;
+ if(me.state==="in"){const can=me.canLeave,live=S.status==="run"&&S.step<+S.steps,first=S.step===0,rd=!!me.ready,wait=Math.max(0,(+S.inN||0)-(+S.readyN||0));
+  const on=c=>me.choice===c?(rd||first?" on":" last"):"";
+  const msg=first?"Le départ est à 10 h : tout le monde passe la 1re carte. Tu pourras choisir ensuite."
+   :rd?`<b>✅ Choix confirmé : ${me.choice==="home"?"tu rentres au camp":"tu continues"}.</b> ${wait?`En attente de ${wait} explorateur${wait>1?"s":""}… (au plus tard ${esc(hh(+S.nextAt))})`:"La carte arrive !"}<br>Tu peux encore changer d'avis.`
+   :`<b>À toi de choisir pour l'étape ${S.step+1} !</b> Dès que tout le monde a choisi, la carte est révélée. Sans réponse à ${esc(hh(+S.nextAt))}, tu ${me.choice==="home"?"rentres":"continues"} (ton dernier choix).`;
   return `<img class="ex-hero" src="${IMG.singe}" alt=""><div class="ex-sub">Ton butin</div><div class="ex-loot">${esc(me.loot)} 🍌</div>
-   ${S.status==="run"&&S.step<+S.steps?`<div class="ex-two" role="group" aria-label="Ton choix pour la prochaine étape">
-    <button type="button" class="ex-ch go${me.choice==="go"?" on":""}" data-c="go" aria-pressed="${me.choice==="go"}"${busy?" disabled":""}>🧗 Continuer<small>je tente la suite</small></button>
-    <button type="button" class="ex-ch home${me.choice==="home"?" on":""}" data-c="home" aria-pressed="${me.choice==="home"}"${busy||!can?" disabled":""}>🏕️ Rentrer<small>${can?"je garde mon butin":"après ta 1re carte"}</small></button></div>
-   <p class="ex-sub">${!can?"Tu pourras rentrer au camp une fois que tu auras passé au moins une carte."
-     :me.choice==="home"?`À ${esc(hh(+S.nextAt))}, tu rentres au camp avec ton butin et ta part de ce qui traîne sur le chemin.`
-     :"Ton choix reste valable pour les étapes suivantes tant que tu ne le changes pas."}</p>${autoHTML(me.auto)}`:""}`;}
+   ${live?`<div class="ex-two" role="group" aria-label="Ton choix pour la prochaine étape">
+    <button type="button" class="ex-ch go${on("go")}" data-c="go" aria-pressed="${me.choice==="go"&&rd}"${busy||first?" disabled":""}>🧗 Continuer<small>je tente la suite</small></button>
+    <button type="button" class="ex-ch home${on("home")}" data-c="home" aria-pressed="${me.choice==="home"&&rd}"${busy||!can||first?" disabled":""}>🏕️ Rentrer<small>${can?"je garde mon butin":"après ta 1re carte"}</small></button></div>
+   <p class="ex-sub">${msg}</p>${autoHTML(me.auto)}`:""}`;}
  if(me.state==="home")return `<img class="ex-hero" src="${IMG.camp}" alt=""><div class="ex-sub">Rentré au camp${me.out?` après l'étape ${esc(me.out)}`:""}</div><div class="ex-loot">+${esc(me.gain)} 🍌</div>${+me.relic?`<p><b>🗿 Et l'Idole d'or : +${esc(+me.relic*(+S.relicBoost||1))} booster !</b></p>`:""}`;
  return `<img class="ex-hero" src="${IMG.perdu}" alt=""><div class="ex-sub">Butin perdu à l'étape ${esc(me.out)}…</div><div class="ex-loot" style="color:#ff8f7a">${esc(me.loot)} 🍌</div><p class="ex-sub">Consolation : +${esc(me.gain)} 🍌 (${esc(S.consol)} par carte passée).</p>`;}
 function autoHTML(v){v=+v||0;const opts=AUTO.includes(v)?AUTO:AUTO.concat(v).sort((a,b)=>a-b);
  return `<label class="ex-auto">Rentrer tout seul dès que j'ai <select id="exAuto">${opts.map(x=>`<option value="${x}"${x===v?" selected":""}>${x?x+" 🍌":"non, je décide"}</option>`).join("")}</select></label>`;}
-function playersHTML(){const L=S.players||[],me=S.me_uid;if(!L.length)return `<p class="ex-empty">Personne n'est encore parti. Sois le premier !</p>`;
+function playersHTML(){const L=S.players||[],me=S.me_uid,live=S.status==="run"&&S.step>=1&&S.step<+S.steps;if(!L.length)return `<p class="ex-empty">Personne n'est encore parti. Sois le premier !</p>`;
  return `<ul class="ex-pl">${L.map(p=>{const ic=p.state==="in"?"🧗":p.state==="home"?"🏕️":"💀",
-  v=p.state==="in"?`${p.loot} 🍌 en poche`:p.state==="home"?`+${p.gain} 🍌${+p.relic?" 🗿":""} · étape ${p.out}`:`perdu ${p.loot} 🍌 · étape ${p.out}`;
+  v=p.state==="in"?`${live?(p.ready?"✅ ":"⏳ "):""}${p.loot} 🍌 en poche`:p.state==="home"?`+${p.gain} 🍌${+p.relic?" 🗿":""} · étape ${p.out}`:`perdu ${p.loot} 🍌 · étape ${p.out}`;
   return `<li class="${p.uid===me?"me":""} ${p.state}"><span aria-hidden="true">${ic}</span><span class="nm">${esc(p.name)}${p.uid===me?" (toi)":""}</span><span class="v">${esc(v)}</span></li>`;}).join("")}</ul>`;}
 
 function render(){if(!root||!S)return;const st=S.state;
@@ -206,16 +211,16 @@ function showLast(){const L=S.last;if(!L)return;
 async function refresh(){try{take(await rpc("mf_exp_status"));render();}catch(e){toast(errText(e));}schedule();}
 function schedule(){clearTimeout(poll);if(!root||root.hidden)return;
  // toutes les 30 s, et juste après la prochaine étape (le serveur la révèle dans la minute)
- let w=30000;if(S&&S.nextAt){const t=+S.nextAt-nowS()+65000;if(t>0&&t<w)w=t;}poll=setTimeout(refresh,w);}
+ let w=S&&S.me&&S.me.state==="in"&&S.status==="run"&&S.step>=1?15000:30000;if(S&&S.nextAt){const t=+S.nextAt-nowS()+65000;if(t>0&&t<w)w=t;}poll=setTimeout(refresh,w);}
 async function join(){if(busy)return;busy=true;render();
  try{take(await rpc("mf_exp_join"));toast(S.me?"Tu fais partie de l'expédition ! 🌴":"Inscrit pour l'expédition de demain !");}catch(e){toast(errText(e));}
  busy=false;render();}
 async function choose(c,auto){if(busy)return;const me=S.me||(S.next&&S.next.joined?{choice:S.next.choice||"go"}:null);if(!me)return;
- busy=true;render();
- try{take(await rpc("mf_exp_choose",{p_choice:c||me.choice||"go",p_auto:auto==null?null:auto}));
-  toast(c==="home"?`Tu rentreras au camp à ${hh(+S.nextAt)}.`:c==="go"?"Tu continues l'aventure !":auto?`Tu rentreras tout seul dès ${auto} 🍌.`:"Retour automatique coupé.");}
+ busy=true;render();const st0=S.step;
+ try{take(await rpc("mf_exp_choose",{p_choice:c||me.choice||"go",p_auto:auto==null?null:auto,p_ready:c?true:null}));
+  toast(S.step>st0?"Tout le monde a choisi : nouvelle carte !":c==="home"?"Choix confirmé : tu rentres au camp.":c==="go"?"Choix confirmé : tu continues l'aventure !":auto?`Tu rentreras tout seul dès ${auto} 🍌.`:"Retour automatique coupé.");}
  catch(e){toast(errText(e));}
- busy=false;render();}
+ busy=false;render();schedule();}
 let tt=0;function toast(m){const e=$(".ex-toast");e.textContent=m;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),3500);}
 function panel(o){$("#exPanel").classList.toggle("open",o);$("#exTog").setAttribute("aria-expanded",String(o));}
 async function adm(a,m){try{take(await rpc("mf_exp_admin",{p_action:a}));render();if(m)toast(m);}catch(e){toast(errText(e));}}
@@ -233,13 +238,13 @@ function build(){
   <div class="ex-ph"><h3>Règles</h3><button type="button" class="ex-btn" style="position:static" id="exPanelX" aria-label="Fermer les règles">✕</button></div>
   <ul class="r">
    <li>Chaque jour, une <b>expédition commune</b> part dans la jungle. C'est <b>gratuit</b>.</li>
-   <li>Une carte est révélée <b>toutes les heures, de 10 h à 22 h</b> (13 étapes) : un <b>trésor</b> 🍌, un <b>danger</b> ou l'<b>Idole d'or</b> 🗿.</li>
-   <li>Avant chaque étape, tu choisis en secret : <b>continuer</b> ou <b>rentrer au camp</b>. Ton choix reste valable tant que tu ne le changes pas.</li>
+   <li>Départ à <b>10 h</b>, 13 cartes en tout : un <b>trésor</b> 🍌, un <b>danger</b> ou l'<b>Idole d'or</b> 🗿.</li>
+   <li>Après chaque carte, chacun choisit en secret : <b>continuer</b> ou <b>rentrer au camp</b>. <b>Dès que tout le monde a choisi, la carte suivante est révélée.</b> Au plus tard 1 h après la précédente ; sans réponse, tu gardes ton dernier choix.</li>
    <li>Un trésor est <b>partagé</b> entre ceux qui sont dans la jungle. Ce qui ne se partage pas reste sur le chemin : ceux qui rentrent le ramassent.</li>
    <li><b>Rentrer seul</b> = tout ce qui traîne sur le chemin pour toi, Idole d'or comprise (<b>1 booster</b>).</li>
    <li>Un <b>1er danger</b> ne fait rien. Si le <b>même danger sort une 2e fois</b>, ceux qui sont encore dans la jungle perdent leur butin et l'expédition s'arrête. Consolation : 1 🍌 par carte passée.</li>
    <li>Tu ne perds jamais les bananes de ta réserve. Tu peux rejoindre une expédition déjà en route, mais il faut passer au moins une carte avant de pouvoir rentrer.</li>
-   <li>Une notification à chaque étape tant que tu es dans la jungle (réglage « enchères » des notifications).</li>
+   <li>Une notification à chaque carte tant que tu es dans la jungle, et une quand tout le monde n'attend plus que toi (réglage « enchères » des notifications).</li>
   </ul>
   <h3>Mes dernières expéditions</h3><ul class="ex-hist" id="exHist"></ul>
   <div id="exAdm" hidden><h3>Réglages admin</h3><p id="exState"></p>
@@ -289,7 +294,8 @@ async function boot(){
    const nx=I.nextAt?+I.nextAt-nowS():null,tomorrow=I.next?+I.next.startAt-nowS():null;
    if(I.last)return {line:"Résultat de l'expédition à voir !",hot:true};
    if(run&&!me)return {line:I.step?`En route · étape ${I.step}/${I.steps} · ${nIn} dans la jungle : rejoins-les !`:"Départ à 10 h : rejoins l'expédition, c'est gratuit !",pre:I.step?"Prochaine étape dans ":"Départ dans ",in:nx,hot:true};
-   if(me&&me.state==="in"&&run)return {line:`Butin ${me.loot} 🍌 · tu ${me.choice==="home"?"rentres au camp":"continues"} à la prochaine étape`,pre:"Prochaine étape dans ",in:nx,hot:false};
+   if(me&&me.state==="in"&&run&&I.step>=1&&!me.ready)return {line:`À toi de choisir pour l'étape ${I.step+1} ! Butin ${me.loot} 🍌`,pre:"Au plus tard dans ",in:nx,hot:true};
+   if(me&&me.state==="in"&&run)return {line:`Butin ${me.loot} 🍌 · ${I.step?`choix confirmé, en attente des autres (${I.readyN}/${I.inN})`:"départ à 10 h"}`,pre:I.step?"Au plus tard dans ":"Départ dans ",in:nx,hot:false};
    if(me&&me.state==="home")return {line:`Rentré au camp avec ${me.gain} 🍌${run?` · ${nIn} encore dans la jungle`:""}`,pre:run?"Prochaine étape dans ":"Prochaine expédition dans ",in:run?nx:tomorrow,hot:false};
    if(me&&me.state==="lost")return {line:`Butin perdu à l'étape ${me.out}…`,pre:"Prochaine expédition dans ",in:tomorrow,hot:false};
    if(I.next&&I.next.joined)return {line:"Inscrit pour l'expédition de demain",pre:"Départ dans ",in:tomorrow,hot:false};
