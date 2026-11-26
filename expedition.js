@@ -52,8 +52,9 @@ const CSS=`
 .ex-c{width:92px;height:126px;position:relative;background:center/100% 100% no-repeat;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));color:#4a2a10}
 .ex-c b{position:absolute;left:12%;right:12%;top:70%;bottom:9%;display:flex;align-items:center;justify-content:center;gap:2px;text-align:center;
  font:400 12.5px/1 "Titan One",sans-serif;letter-spacing:.2px;white-space:nowrap;overflow:hidden;color:#5a2a12;text-shadow:0 1px 0 rgba(255,240,200,.7)}
-.ex-c b.n{font-size:20px;color:#6b3f00}
-.ex-c b.n em{font-style:normal;font-size:13px;margin-left:1px}
+.ex-c b.n{top:72%;bottom:7%;font-size:22px;color:#6b3f00}
+.ex-c b.n span{position:relative}
+.ex-c b.n em{position:absolute;left:100%;top:50%;transform:translateY(-55%);font-style:normal;font-size:12px;margin-left:2px}
 .ex-c b.i{flex-direction:column;gap:1px;font-size:12.5px;color:#6b4a00}
 .ex-c b.i small{font:700 9.5px/1 Quicksand,sans-serif;color:#4a3410}
 .ex-c b.d{color:#7a1a10}
@@ -132,7 +133,7 @@ const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}};
 /* ---------- morceaux d'écran ---------- */
 const stepAt=n=>+S.startAt+(n-1)*3600000;
 function cardHTML(c,isNew){const D=DANGER[c.d]||{},img=c.k==="t"?IMG.tresor:c.k==="r"?IMG.idole:D.i;
- const lab=c.k==="t"?`<b class="n">${esc(c.v)}<em>🍌</em></b>`:c.k==="r"?`<b class="i">Idole d'or<small>1 booster</small></b>`:`<b class="d">${esc(D.s||D.n||"Danger")}</b>`;
+ const lab=c.k==="t"?`<b class="n"><span>${esc(c.v)}<em>🍌</em></span></b>`:c.k==="r"?`<b class="i">Idole d'or<small>1 booster</small></b>`:`<b class="d">${esc(D.s||D.n||"Danger")}</b>`;
  const t=c.k==="t"?`Étape ${c.s} : trésor de ${c.v} bananes`:c.k==="r"?`Étape ${c.s} : Idole d'or`:`Étape ${c.s} : ${D.n||"danger"}${c.fatal?", deuxième : fin de l'expédition":""}`;
  return `<div class="ex-cw" role="listitem" aria-label="${esc(t)}"><div class="ex-c${c.fatal?" fatal":""}${isNew?" new":""}" style="background-image:url(${img})">${lab}${c.fatal?`<span class="stamp">2e !</span>`:""}</div><span class="ex-h">${c.s} · ${esc(hh(stepAt(c.s)))}</span></div>`;}
 function trailHTML(){const cards=S.cards||[],n=+S.steps,old=shownStep();let h=cards.map(c=>cardHTML(c,+c.s>old)).join("");
