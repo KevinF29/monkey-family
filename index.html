@@ -876,6 +876,7 @@ td.n{text-align:right}
 <script src="wheel.js"></script>
 <script src="blackjack.js"></script>
 <script src="bonneteau.js"></script>
+<script src="poker.js"></script>
 <script>
 (function(){
   const W=750,H=1050;
@@ -3950,12 +3951,14 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Monkey Run : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="wheel"){const v=+x.v||0,what=x.r==="jackpot"?`le <b>JACKPOT</b> : ${fmt(v)} 🍌`:x.r==="boost"?`${v} boosters`:x.r==="time"?`${v/60} h d'attente en moins`:x.r==="relance"?`${v} relance${v>1?"s":""}`:`${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎡</span><p>${who} a gagné ${what}${x.d||x.r==="double"?" en doublant sa mise":""} à The Monkey Wheel<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
-      if(x.kind==="casino_week"){const N={race:"la Monkey Run",coco:"le Crash Cocotier",wheel:"The Monkey Wheel",slot:"la Banana Machine",scratch:"le Monkey Cash",bj:"MonkeyJack 21",bon:"le Bananateau"},g=(Array.isArray(x.games)?x.games:[]).map(k=>`<b>${esc(N[k]||k)}</b>`);
+      if(x.kind==="casino_week"){const N={race:"la Monkey Run",coco:"le Crash Cocotier",wheel:"The Monkey Wheel",slot:"la Banana Machine",scratch:"le Monkey Cash",bj:"MonkeyJack 21",vp:"le Poker Monkey",bon:"le Bananateau"},g=(Array.isArray(x.games)?x.games:[]).map(k=>`<b>${esc(N[k]||k)}</b>`);
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>Nouveaux jeux de la semaine au Casino : ${g.length>1?g.slice(0,-1).join(", ")+" et "+g[g.length-1]:g[0]||"surprise"} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bj"){const v=+x.v||0,t=x.r==="monkey"?`${who} a sorti un <b>MONKEY BLACKJACK</b> à MonkeyJack 21 : +${fmt(v)} 🍌 !`:x.r==="bj"?`${who} a fait <b>blackjack</b> à MonkeyJack 21 : +${fmt(v)} 🍌`:`${who} a battu le singe croupier${x.dbl?" en doublant sa mise":""} : +${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🃏</span><p>${t}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bj_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait arnaquer par le singe croupier : une carte sortie de sa manche 🃏🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="bon")return `<div class="fitem"><span class="fi" aria-hidden="true">🥥</span><p>${who} a trouvé la banane au Bananateau${x.sp==="turbo"?" en <b>turbo</b>":x.sp==="fast"?" en rapide":x.sp==="slow"?" en lent":""} : +${fmt(+x.v||0)} 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="vp"){const VN=["","une paire de Rois","une double paire","un brelan","une quinte","une couleur","un full","un <b>carré</b>","une <b>quinte flush</b>","une <b>quinte flush royale</b> avec le Joker","<b>cinq cartes identiques</b>","une <b>QUINTE FLUSH ROYALE</b>"];
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🃏</span><p>${who} a sorti ${VN[+x.r]||"une belle main"} au Poker Monkey${x.j&&+x.r<9?" avec le Joker 🐒":""} : +${fmt(+x.v||0)} 🍌 !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bon_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} avait trouvé la bonne noix de coco… mais le singe avait déjà la banane dans la main 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="wheel_scam")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait scam, dommage 🐒🙊<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="scratch"){const v=+x.v||0,what=x.k==="singe"?`le <b>JACKPOT</b> : ${v} boosters`:x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;
