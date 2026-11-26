@@ -13,9 +13,13 @@ const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const MAXFLY=5;   // billes en l'air en même temps
-const DEF_PRIZES=[{t:"boost",v:5},{t:"ban",v:20},{t:"ban",v:10},{t:"ban",v:5},{t:"ban",v:3},{t:"ban",v:1},{t:"ban",v:3},{t:"ban",v:5},{t:"ban",v:10},{t:"ban",v:20},{t:"rpack",v:"Originel"}];
-const lab=p=>p.t==="ban"?`${p.v} 🍌`:p.t==="boost"?`${p.v} boosters`:`Booster ${p.v}`;
-const short=p=>p.t==="ban"?`<b>${esc(p.v)}</b><i>🍌</i>`:p.t==="boost"?`<i>🎁</i><b>×${esc(p.v)}</b>`:`<img src="${IMG.originel}" alt=""><b class="o">🌈</b>`;
+const DEF_PRIZES=[{t:"boost",v:5},{t:"ban",v:20},{t:"ban",v:10},{t:"ban",v:5},{t:"ban",v:3},{t:"ban",v:1},{t:"ban",v:3},{t:"ban",v:5},{t:"ban",v:10},{t:"ban",v:20},{t:"rwheel",v:["Légendaire","Mythique","Secret","Originel"]}];
+// boosters de rareté : image, couleur de la roulette, classe du titre
+const RAR={"Légendaire":{s:"legendaire",c:"#ffc21a",k:"leg"},"Mythique":{s:"mythique",c:"#e8352b",k:"myt"},"Secret":{s:"secret",c:"#ff8a1f",k:"sec"},"Originel":{s:"originel",c:"#a55bff",k:"og"}};
+const rimg=r=>`packs/r-${(RAR[r]||RAR.Originel).s}-front.webp`;
+const wheelBg=v=>"conic-gradient("+v.map((r,i)=>`${(RAR[r]||{c:"#888"}).c} ${i*100/v.length}% ${(i+1)*100/v.length}%`).join(",")+")";
+const lab=p=>p.t==="ban"?`${p.v} 🍌`:p.t==="boost"?`${p.v} boosters`:p.t==="rwheel"?"Roulette des boosters de rareté":`Booster ${p.v}`;
+const short=p=>p.t==="ban"?`<b>${esc(p.v)}</b><i>🍌</i>`:p.t==="boost"?`<i>🎁</i><b>×${esc(p.v)}</b>`:p.t==="rwheel"?`<span class="pk-mini" style="background:${wheelBg(p.v)}"></span>`:`<img src="${IMG.originel}" alt=""><b class="o">🌈</b>`;
 
 /* ---------- style ---------- */
 const CSS=`
@@ -55,6 +59,19 @@ const CSS=`
 .pk-bin.boost i{font-size:calc(var(--sp)*.5)}
 .pk-bin.rpack img{height:92%;width:auto;max-width:96%;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
 .pk-bin.rpack .o{display:none}
+.pk-bin.rwheel{background:linear-gradient(135deg,#ff5b5b,#ffd23f,#5bff8a,#5bc8ff,#c45bff);background-size:300% 300%;animation:pkRain 4s linear infinite;box-shadow:0 3px 0 #5a2a8a}
+.pk-mini{display:block;width:calc(var(--sp)*.82);height:calc(var(--sp)*.82);border-radius:50%;border:2px solid #fff6c2;box-shadow:0 2px 4px rgba(0,0,0,.5);animation:pkSpin 3s linear infinite}
+@keyframes pkSpin{to{transform:rotate(360deg)}}
+.pk-wh{position:relative;width:min(80vw,46svh,340px);aspect-ratio:1;flex:none}
+.pk-whD{position:absolute;inset:0;border-radius:50%;border:6px solid #ffd23f;box-shadow:0 0 0 4px #8a5a00,0 0 40px rgba(255,210,63,.55),inset 0 0 30px rgba(0,0,0,.35)}
+.pk-whD img{position:absolute;left:50%;top:50%;height:34%;width:auto;filter:drop-shadow(0 3px 4px rgba(0,0,0,.6))}
+.pk-whD::after{content:"";position:absolute;left:50%;top:50%;width:18%;height:18%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff6c2,#ffd23f 50%,#a86f00);box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.pk-whP{position:absolute;left:50%;top:-14px;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid #fff;filter:drop-shadow(0 3px 3px rgba(0,0,0,.6));z-index:2}
+.pk-mk.leg .pk-mkT{color:#ffd23f}
+.pk-mk.myt .pk-mkT{color:#ff5b4b;text-shadow:0 4px 0 #5a0d08,0 0 24px rgba(0,0,0,.6)}
+.pk-mk.sec .pk-mkT{color:#ff9a1f;text-shadow:0 4px 0 #5a2a00,0 0 24px rgba(0,0,0,.6)}
+.pk-mk.myt{background:radial-gradient(circle at 50% 45%,rgba(232,53,43,.55),rgba(20,8,8,.95) 70%)}
+.pk-mk.sec{background:radial-gradient(circle at 50% 45%,rgba(255,138,31,.55),rgba(20,12,6,.95) 70%)}
 .pk-bin.rpack.noimg .o{display:block}
 .pk-bin.rpack.noimg img{display:none}
 .pk-bin.rpack{background:linear-gradient(135deg,#ff5b5b,#ffd23f,#5bff8a,#5bc8ff,#c45bff);background-size:300% 300%;animation:pkRain 4s linear infinite;box-shadow:0 3px 0 #5a2a8a;color:#fff;text-shadow:0 1px 2px #000;font-size:calc(var(--sp)*.42)}
@@ -103,7 +120,7 @@ const CSS=`
 .pk-toast{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:40;transform:translate(-50%,12px);background:#2c3a1c;border:1px solid #ffd23f;border-radius:14px;padding:9px 14px;font-weight:700;font-size:14px;max-width:92%;transition:transform .3s,opacity .3s;pointer-events:none;opacity:0}
 .pk-toast.on{transform:translate(-50%,0);opacity:1}
 @media(max-height:640px){.pk-logo{height:46px}.pk-logoT{font-size:24px}.pk-top{gap:3px}.pk-big{min-height:48px}}
-@media(prefers-reduced-motion:reduce){.pk-rain{display:none}.pk-mkB,.pk-mkT,.pk-mkE,.pk-bin.rpack{animation:none}.pk-toast,.pk-panel,.pk-bin{transition:none}}
+@media(prefers-reduced-motion:reduce){.pk-rain{display:none}.pk-mkB,.pk-mkT,.pk-mkE,.pk-bin.rpack,.pk-bin.rwheel,.pk-mini{animation:none}.pk-toast,.pk-panel,.pk-bin{transition:none}}
 `;
 
 /* ---------- état ---------- */
@@ -190,6 +207,7 @@ function finish(b){balls=balls.filter(x=>x!==b);const p=b.res.prize||{},slot=b.s
  pend.ban-=p.t==="ban"?+p.v:0;pend.boost-=p.t==="boost"?+p.v:0;
  const pr=+b.res.price||3;
  if(p.t==="ban"){land(+p.v);msg(+p.v>pr?`+${p.v} 🍌 ! (+${p.v-pr})`:+p.v===pr?`${p.v} 🍌 : bille remboursée`:`${p.v} 🍌…`,+p.v>pr);}
+ else if(p.t==="rwheel"){fanfare();msg("La roulette des boosters !",true);roulette(p.v,b.res.rarity);}
  else{fanfare();big(p);msg(p.t==="rpack"?`BOOSTER ${String(p.v).toUpperCase()} !`:`${p.v} BOOSTERS !`,true);}
  if(!balls.length)applyState();render();}
 let pend={ban:0,boost:0};
@@ -206,7 +224,8 @@ function render(){if(!root)return;const st=S&&S.state;
  odds();
  if(ADMIN){const o=$("#pkOpen");o.textContent=S.open?"Cacher aux joueurs":"Ouvrir à tous les joueurs";o.classList.toggle("on",!S.open);
   $("#pkState").textContent=S.open?"Le Plinko est ouvert aux joueurs (s'il est dans les jeux de la semaine).":"Le Plinko est visible par toi seulement.";
-  const f=$("#pkF");if(document.activeElement!==f)f.value=S.force==null?"":String(S.force);}}
+  const f=$("#pkF");if(document.activeElement!==f)f.value=S.force==null?"":String(S.force);
+  const fr=$("#pkFR");if(document.activeElement!==fr)fr.value=S.forceR||"";}}
 function binom(n,k){let c=1;for(let i=1;i<=k;i++)c=c*(n-k+i)/i;return c;}
 function odds(){const P=prizes(),R=P.length-1,rows={};let ev=0,evB=0;
  P.forEach((p,i)=>{const q=binom(R,i)/2**R,key=lab(p);rows[key]=(rows[key]||0)+q;if(p.t==="ban")ev+=q*p.v;});
@@ -216,7 +235,7 @@ function odds(){const P=prizes(),R=P.length-1,rows={};let ev=0,evB=0;
  $("#pkEv").textContent=`En moyenne, une bille rapporte ${ev.toLocaleString("fr-FR",{maximumFractionDigits:2})} 🍌 pour ${+S.price||3} 🍌 (sans compter les boosters des bords).`;}
 function msg(t,w){const m=$(".pk-msg");m.textContent=t;m.classList.toggle("win",!!w);}
 let tt=0;function toast(t){const e=$(".pk-toast");e.textContent=t;e.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>e.classList.remove("on"),3500);}
-function big(p){const o=$(".pk-mk"),og=p.t==="rpack";o.classList.toggle("og",og);
+function big(p){const o=$(".pk-mk"),og=p.t==="rpack";o.className="pk-mk"+(og?" og":"");$(".pk-wh").hidden=true;$("#pkMkT").hidden=$("#pkMkS").hidden=false;if(og)$("#pkMkB").src=IMG.originel;
  const bo=$("#pkMkB"),hasArt=og&&bo.complete&&bo.naturalWidth>0;bo.hidden=!hasArt;$("#pkMkE").hidden=hasArt;$("#pkMkE").textContent=og?"🌈":"🎁";
  if(hasArt){bo.style.animation="none";void bo.offsetWidth;bo.style.animation="";}
  $("#pkMkT").textContent=og?`BOOSTER ${String(p.v).toUpperCase()} !`:`${p.v} BOOSTERS !`;
@@ -225,6 +244,33 @@ function big(p){const o=$(".pk-mk"),og=p.t==="rpack";o.classList.toggle("og",og)
   d.style.left=(Math.random()*100)+"%";d.style.setProperty("--s",(22+Math.random()*24)+"px");d.style.setProperty("--d",(1.6+Math.random()*1.6)+"s");
   d.style.setProperty("--w",(Math.random()*2)+"s");d.style.setProperty("--x",((Math.random()-.5)*120)+"px");d.style.setProperty("--r",((Math.random()-.5)*720)+"deg");R.appendChild(d);}
  o.hidden=false;const end=()=>{o.hidden=true;o.onclick=null;clearTimeout(t);R.innerHTML="";};const t=setTimeout(end,og?7000:5500);setTimeout(()=>{o.onclick=end;},800);}
+
+/* roulette des boosters (bord droit) : la rareté vient du serveur, la roue tourne puis s'arrête dessus */
+let wheelOn=false;
+function roulette(list,rar){list=Array.isArray(list)&&list.length?list:Object.keys(RAR);if(list.indexOf(rar)<0)rar=list[0];
+ const o=$(".pk-mk"),wh=$(".pk-wh"),D=$(".pk-whD"),n=list.length,R=$(".pk-rain");
+ wheelOn=true;o.className="pk-mk";o.onclick=null;R.innerHTML="";
+ $("#pkMkB").hidden=true;$("#pkMkE").hidden=true;$("#pkMkS").hidden=true;
+ const T=$("#pkMkT");T.hidden=false;T.textContent="ROULETTE DES BOOSTERS !";T.style.animation="none";void T.offsetWidth;T.style.animation="";
+ D.style.background=wheelBg(list);
+ D.innerHTML=list.map((r,i)=>{const a=(i+.5)*360/n;return `<img src="${rimg(r)}" alt="${esc(r)}" style="transform:translate(-50%,-50%) rotate(${a}deg) translateY(-118%)">`;}).join("");
+ D.style.transform="rotate(0deg)";wh.hidden=false;o.hidden=false;
+ const k=list.indexOf(rar),seg=360/n,end=360*5+(360-(k+.5)*seg)+(Math.random()-.5)*seg*.6,dur=reduce?900:4600,t0=performance.now();let last=0;
+ const f=now=>{const t=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-t,3.2),a=end*e;D.style.transform=`rotate(${a}deg)`;
+  const c=Math.floor((a+seg/2)/seg);if(c!==last){last=c;beep(900,0,.03,.03,"square");}
+  if(t<1)requestAnimationFrame(f);else setTimeout(()=>reveal(rar),500);};
+ requestAnimationFrame(f);}
+function reveal(rar){const o=$(".pk-mk"),info=RAR[rar]||RAR.Originel,R=$(".pk-rain");
+ $(".pk-wh").hidden=true;o.className="pk-mk "+info.k;
+ const bo=$("#pkMkB"),show=()=>{bo.hidden=false;$("#pkMkE").hidden=true;bo.style.animation="none";void bo.offsetWidth;bo.style.animation="";};
+ bo.alt="Booster "+rar;bo.onload=null;bo.src=rimg(rar);if(bo.complete&&bo.naturalWidth)show();else{bo.hidden=true;$("#pkMkE").hidden=false;$("#pkMkE").textContent="🎁";bo.onload=show;}
+ const T=$("#pkMkT");T.textContent=`BOOSTER ${rar.toUpperCase()} !`;T.style.animation="none";void T.offsetWidth;T.style.animation="";
+ const S2=$("#pkMkS");S2.hidden=false;S2.textContent=`La roulette a parlé ! 1 carte ${rar} t'attend avec tes boosters 🐒`;
+ msg(`BOOSTER ${rar.toUpperCase()} !`,true);[784,1047,1319,1568,2093].forEach((f,i)=>beep(f,i*.1,.25,.06,"triangle"));vib([60,40,200]);
+ R.innerHTML="";if(!reduce)for(let i=0;i<30;i++){const d=document.createElement("span");d.className="pk-drop";d.textContent=["✨","🎁","💎","🐒"][i%4];
+  d.style.left=(Math.random()*100)+"%";d.style.setProperty("--s",(22+Math.random()*24)+"px");d.style.setProperty("--d",(1.6+Math.random()*1.6)+"s");
+  d.style.setProperty("--w",(Math.random()*1.5)+"s");d.style.setProperty("--x",((Math.random()-.5)*120)+"px");d.style.setProperty("--r",((Math.random()-.5)*720)+"deg");R.appendChild(d);}
+ wheelOn=false;const end=()=>{o.hidden=true;o.onclick=null;clearTimeout(t);R.innerHTML="";};const t=setTimeout(end,7000);setTimeout(()=>{o.onclick=end;},900);}
 
 /* ---------- une bille ---------- */
 async function go(){if(calling||!S||balls.length>=MAXFLY)return;ac();calling=true;render();
@@ -254,7 +300,7 @@ function build(){
   <ul class="r">
    <li>Chaque bille coûte <b>3 🍌</b>. La tête de singe tombe entre les clous et rebondit au hasard à gauche ou à droite.</li>
    <li>Tu gagnes ce qui est écrit sous la case où elle atterrit. Au milieu, on perd un peu ; plus on va vers les bords, plus c'est gros.</li>
-   <li>🎁 <b>Bord gauche</b> : 5 boosters. 🌈 <b>Bord droit</b> : un booster <b>Originel</b> (1 carte Originel). Ils t'attendent avec tes boosters.</li>
+   <li>🎁 <b>Bord gauche</b> : 5 boosters. 🎡 <b>Bord droit</b> : la <b>roulette des boosters</b> ! 4 cases, même chance pour chacune : booster <b>Légendaire</b>, <b>Mythique</b>, <b>Secret</b> ou <b>Originel</b> (1 carte de cette rareté). Les boosters gagnés t'attendent avec tes boosters.</li>
    <li>10 billes par jour. Tu peux en lâcher plusieurs à la suite.</li>
   </ul>
   <h3>Chances</h3><table class="pk-odds"><tbody id="pkOdds"></tbody></table><p id="pkEv"></p>
@@ -264,11 +310,13 @@ function build(){
    <p id="pkState"></p>
    <div class="pk-btns"><button type="button" id="pkOpen"></button></div>
    <label for="pkF">Prochaine bille</label>
-   <select id="pkF"><option value="">Au hasard</option><option value="0">Bord gauche (5 boosters)</option><option value="10">Bord droit (booster Originel)</option><option value="1">20 🍌 (à gauche)</option><option value="5">Milieu (1 🍌)</option></select>
+   <select id="pkF"><option value="">Au hasard</option><option value="0">Bord gauche (5 boosters)</option><option value="10">Bord droit (roulette)</option><option value="1">20 🍌 (à gauche)</option><option value="5">Milieu (1 🍌)</option></select>
+   <label for="pkFR">Prochaine roulette</label>
+   <select id="pkFR"><option value="">Au hasard</option><option>Légendaire</option><option>Mythique</option><option>Secret</option><option>Originel</option></select>
    <div class="pk-btns"><button type="button" id="pkReset">Rendre mes billes du jour</button><button type="button" id="pkAdd">+50 🍌</button></div>
   </div>
  </aside>
- <div class="pk-mk" hidden aria-live="assertive"><div class="pk-rain" aria-hidden="true"></div><img class="pk-mkB" id="pkMkB" src="${IMG.originel}" alt="Booster Originel" hidden><div class="pk-mkE" id="pkMkE" aria-hidden="true"></div><div class="pk-mkT" id="pkMkT"></div><div class="pk-mkS" id="pkMkS"></div></div>
+ <div class="pk-mk" hidden aria-live="assertive"><div class="pk-rain" aria-hidden="true"></div><div class="pk-wh" hidden aria-hidden="true"><div class="pk-whP"></div><div class="pk-whD"></div></div><img class="pk-mkB" id="pkMkB" src="${IMG.originel}" alt="Booster Originel" hidden><div class="pk-mkE" id="pkMkE" aria-hidden="true"></div><div class="pk-mkT" id="pkMkT"></div><div class="pk-mkS" id="pkMkS"></div></div>
  <div class="pk-toast" role="status"></div>`;
  document.body.appendChild(root);
  $("#pkAdm").hidden=!ADMIN;
@@ -284,6 +332,7 @@ function build(){
  $("#pkPanelX").addEventListener("click",()=>{panel(false);$("#pkTog").focus({preventScroll:true});});
  $("#pkOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le Plinko est de nouveau caché.":"Plinko Banana est ouvert (selon la rotation du Casino)."));
  $("#pkF").addEventListener("change",e=>adm("force:"+e.target.value,e.target.value===""?"Prochaine bille au hasard.":"Prochaine bille imposée."));
+ $("#pkFR").addEventListener("change",e=>adm("forcer:"+e.target.value,e.target.value===""?"Prochaine roulette au hasard.":`Prochaine roulette : ${e.target.value}.`));
  $("#pkReset").addEventListener("click",()=>adm("reset","Tes billes du jour sont rendues."));
  $("#pkAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$(".pk-mk").hidden){$(".pk-mk").click();return;}if($("#pkPanel").classList.contains("open"))panel(false);else close();});
@@ -302,6 +351,7 @@ async function open(){
 }
 function close(){
  if(balls.length||calling){toast("La bille tombe encore…");return;}
+ if(wheelOn){toast("La roulette tourne encore…");return;}
  panel(false);root.hidden=true;document.body.style.overflow=prevOverflow;if(opener&&opener.focus)opener.focus();
 }
 
@@ -313,7 +363,7 @@ async function boot(){
  try{ADMIN=!!(await USER.isOwner());}catch(e){}
  let ok=ADMIN;if(!ok){try{ok=!!(await rpc("mf_pk_open"));}catch(e){}}
  if(!ok||!window.MF_CASINO)return;
- Object.values(IMG).forEach(u=>{const i=new Image();i.src=u;});
+ Object.values(IMG).concat(Object.keys(RAR).map(rimg)).forEach(u=>{const i=new Image();i.src=u;});
  window.MF_CASINO.add({id:"pk",name:"Plinko Banana",order:9,root:"mfPK",open,
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4" r="2"/><circle cx="8" cy="10" r=".6" fill="currentColor"/><circle cx="16" cy="10" r=".6" fill="currentColor"/><circle cx="5" cy="15" r=".6" fill="currentColor"/><circle cx="12" cy="15" r=".6" fill="currentColor"/><circle cx="19" cy="15" r=".6" fill="currentColor"/><path d="M3 20h18M7 20v-2M12 20v-2M17 20v-2"/></svg>`,
   status:async()=>{if(!(root&&!root.hidden)){const r=await rpc("mf_pk_status");if(r.now)skew=+r.now-Date.now();take(r);}const I=S;if(!I)return null;
