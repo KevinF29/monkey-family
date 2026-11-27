@@ -196,7 +196,7 @@ function update(dt){t+=dt;flash=Math.max(0,flash-dt*1.5);shake=Math.max(0,shake-
  if(y>0||vy>0){vy-=20*dt;y+=vy*dt;if(y<=0){y=0;vy=0;for(let i=0;i<5;i++)parts.push({x:W/2+(Math.random()-.5)*40,y:H-118,vx:(Math.random()-.5)*120,vy:-Math.random()*60,l:.4,c:"#d8c79a"});}}
  slideT=Math.max(0,slideT-dt);
  if(queued&&s>=cur.L-tw())turn(queued);
- if(s>=cur.L+HW-.55){s=cur.L+HW-.55;die("wall");return;}
+ if(s>=cur.L+HW-.55){s=cur.L+HW-1.3;speed=0;die("wall");return;}   // on recule un peu le singe pour qu'il reste visible devant le mur
  const lo=Math.min(s0,s)-.3,hi=s+.3;
  for(const o of cur.obs){if(hi<o.s0||lo>o.s1)continue;
   if(o.k==="low"&&y<.5){die("low");return;}
@@ -372,7 +372,9 @@ function monkey(){const pw=playerW(),c=toCam(pw),g=toCam([pw[0],0,pw[2]]);if(c[2
  cx.restore();if(mode==="dead")stars(p,u);}
 function rr(x,yy,w,h,r){cx.beginPath();cx.moveTo(x+r,yy);cx.arcTo(x+w,yy,x+w,yy+h,r);cx.arcTo(x+w,yy+h,x,yy+h,r);cx.arcTo(x,yy+h,x,yy,r);cx.arcTo(x,yy,x+w,yy,r);cx.closePath();}
 function stars(p,u){const q=t-deadAt;if(q<.25)return;cx.fillStyle="#ffe36e";for(let i=0;i<4;i++){const a=t*4+i*1.57;cx.font=`${Math.round(3*u)}px sans-serif`;cx.textAlign="center";cx.fillText("★",p[0]+Math.cos(a)*5*u,p[1]-20*u+Math.sin(a)*1.5*u);}}
-function draw(){cx.setTransform(1,0,0,1,0,0);const kk=cv.width/W;cx.setTransform(kk,0,0,kk,0,0);
+function draw(){cx.setTransform(1,0,0,1,0,0);const kk=cv.width/W;
+ if(GL&&glDraw()){cx.clearRect(0,0,cv.width,cv.height);cx.setTransform(kk,0,0,kk,0,0);cx.save();overlay();cx.restore();return;}
+ cx.setTransform(kk,0,0,kk,0,0);
  CS=Math.cos(cam.th);SN=Math.sin(cam.th);
  cx.save();if(shake>0&&!reduce)cx.translate((Math.random()-.5)*shake*26,(Math.random()-.5)*shake*26);
  sky();Q=[];
@@ -381,19 +383,133 @@ function draw(){cx.setTransform(1,0,0,1,0,0);const kk=cv.width/W;cx.setTransform
  // herbe d'abord, puis le chemin, puis les objets du plus loin au plus près
  const L0=Q.filter(q=>q.layer===0).sort((a,b)=>b.z-a.z),L1=Q.filter(q=>q.layer===1).sort((a,b)=>b.z-a.z),L2=Q.filter(q=>q.layer>=2).sort((a,b)=>b.z-a.z);
  for(const q of L0)drawQ(q);for(const q of L1)drawQ(q);for(const q of L2)drawQ(q);
+ overlay();cx.restore();}
+// par-dessus la scène (2D ou 3D) : particules, éclair rouge, lignes de vitesse, score
+function overlay(){
  for(const p of parts){cx.globalAlpha=Math.max(0,p.l*1.8);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,3,0,7);cx.fill();}cx.globalAlpha=1;
  if(flash>0){cx.fillStyle=`rgba(255,80,40,${flash*.5})`;cx.fillRect(0,0,W,H);}
  if(mode==="play"&&speed>15&&!reduce){cx.strokeStyle="rgba(255,255,255,.22)";cx.lineWidth=2;for(let i=0;i<6;i++){const a=(i*1.7+t*3)%1,x=i%2?W*.06+i*6:W*.94-i*6,yy=HZ+40+a*(H-HZ);cx.beginPath();cx.moveTo(x,yy);cx.lineTo(x+(i%2?-6:6),yy+30);cx.stroke();}}
  if(mode==="play"||(mode==="dead"&&view===null)){cx.textAlign="center";cx.lineJoin="round";cx.font='48px "Titan One",sans-serif';cx.lineWidth=6;cx.strokeStyle="#2a2410";cx.strokeText(score(),W/2,70);cx.fillStyle="#fff";cx.fillText(score(),W/2,70);
   cx.font='700 15px Quicksand,sans-serif';cx.lineWidth=4;const tx=`${Math.floor(dist)} m · ${nb} 🍌`;cx.strokeText(tx,W/2,94);cx.fillStyle="#ffe7a8";cx.fillText(tx,W/2,94);
   if(mode==="play"&&hintT<5&&turns===0){cx.globalAlpha=clamp(5-hintT,0,1);cx.font='700 14px Quicksand,sans-serif';const ln=["Glisse ← → : changer de couloir ou tourner","↑ sauter · ↓ glisser"];
-   ln.forEach((l,i)=>{cx.strokeText(l,W/2,H-60+i*20);cx.fillStyle="#fff";cx.fillText(l,W/2,H-60+i*20);});cx.globalAlpha=1;}}
- cx.restore();}
+   ln.forEach((l,i)=>{cx.strokeText(l,W/2,H-60+i*20);cx.fillStyle="#fff";cx.fillText(l,W/2,H-60+i*20);});cx.globalAlpha=1;}}}
+/* =====================================================================
+   Rendu 3D (three.js, déjà chargé par l'appli) : vrai chemin, vrais volumes, lumière et brume ;
+   le singe, les arbres, les piliers, les torches et les buissons restent les images de Kévin posées debout (sprites).
+   Même monde et mêmes règles que le rendu 2D, qui reste en secours si WebGL n'est pas disponible.
+   Repère : monde du jeu (x, y, z) → three.js (x, y, −z) ; dans un tronçon : (couloir, hauteur, −distance).
+   ===================================================================== */
+let GL=null;
+const ASP={root:1000/230,beam:1000/413,block:420/515,wall:1000/504,tree:515/900,pillar:220/900,torch:169/600,bush:600/290,bg:1535/600,
+ monkey:262/360,jump:362/400,slide:511/260,fall:423/420,banana:1};
+const asp=k=>ok(k)?IM[k].naturalWidth/IM[k].naturalHeight/(k==="monkey"?4:1):ASP[k];
+const has=k=>IM[k]&&!(IM[k].complete&&!IM[k].naturalWidth);       // image présente (ou en cours de chargement)
+function glInit(canvas){
+ const T=window.THREE;if(!T)return null;
+ let R;try{R=new T.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});}catch(e){return null;}
+ if(!R||!R.getContext())return null;
+ const G={T,R,scene:new T.Scene(),cam:new T.PerspectiveCamera(64,W/H,.3,500),built:new Map(),stubFor:null,stub:null,tx:{},mat:{}};
+ const sc=G.scene;sc.fog=new T.Fog(new T.Color(FOG[0]/255,FOG[1]/255,FOG[2]/255),22,FAR);sc.background=sc.fog.color;
+ sc.add(new T.AmbientLight(0xffffff,.72));const sun=new T.DirectionalLight(0xfff0d6,.5);sun.position.set(.5,1,.35);sc.add(sun);
+ const tex=k=>{if(G.tx[k]!==undefined)return G.tx[k];if(!has(k))return G.tx[k]=null;const t=new T.Texture(IM[k]);
+  const up=()=>{t.needsUpdate=true;};if(IM[k].complete&&IM[k].naturalWidth)up();else IM[k].addEventListener("load",up);
+  t.anisotropy=Math.min(4,R.capabilities.getMaxAnisotropy());return G.tx[k]=t;};
+ G.tex=tex;
+ const rep=k=>{const t=tex(k);if(t){t.wrapS=t.wrapT=T.RepeatWrapping;}return t;};
+ const lam=(k,col,o)=>{const t=k?tex(k):null;return new T.MeshLambertMaterial(Object.assign(t?{map:t,alphaTest:.45}:{color:col},o||{}));};
+ const M=G.mat;
+ M.path=rep("path")?new T.MeshLambertMaterial({map:G.tx.path}):new T.MeshLambertMaterial({color:0xb9a47a});
+ M.grass=rep("grass")?new T.MeshLambertMaterial({map:G.tx.grass,polygonOffset:true,polygonOffsetFactor:2,polygonOffsetUnits:2}):new T.MeshLambertMaterial({color:0x3e7034});
+ M.curb=new T.MeshLambertMaterial({color:0x6e5a3e});M.stone=new T.MeshLambertMaterial({color:0xb08a5a});M.bark=new T.MeshLambertMaterial({color:0x6b4423});
+ M.root=lam("root",0x6b4423,{side:T.DoubleSide});M.beam=lam("beam",0x9a8a6a,{side:T.DoubleSide});M.beamBack=lam("beam",0x9a8a6a,{color:0x9a8c78,side:T.DoubleSide});
+ M.block=lam("block",0x9a8a6a);M.wall=lam("wall",0x8a7650);
+ M.banana=new T.MeshBasicMaterial(tex("banana")?{map:G.tx.banana,alphaTest:.45,side:T.DoubleSide}:{color:0xffd23f,side:T.DoubleSide});
+ // flèche jaune du virage (dessinée une fois)
+ const ac=document.createElement("canvas");ac.width=256;ac.height=200;const a2=ac.getContext("2d");a2.fillStyle="#ffd23f";a2.strokeStyle="#5a3c14";a2.lineWidth=12;a2.lineJoin="round";
+ a2.beginPath();a2.moveTo(20,70);a2.lineTo(130,70);a2.lineTo(130,20);a2.lineTo(236,100);a2.lineTo(130,180);a2.lineTo(130,130);a2.lineTo(20,130);a2.closePath();a2.fill();a2.stroke();
+ M.arrow=new T.MeshBasicMaterial({map:new T.CanvasTexture(ac),transparent:true,depthWrite:false});
+ // ombre ronde sous le singe
+ const scv=document.createElement("canvas");scv.width=scv.height=64;const s2=scv.getContext("2d"),rg=s2.createRadialGradient(32,32,2,32,32,32);rg.addColorStop(0,"rgba(0,0,0,.45)");rg.addColorStop(1,"rgba(0,0,0,0)");
+ s2.fillStyle=rg;s2.fillRect(0,0,64,64);M.shadow=new T.MeshBasicMaterial({map:new T.CanvasTexture(scv),transparent:true,depthWrite:false});
+ // panorama : cylindre autour de la caméra (6 répétitions, pour voir le ciel en entier), sans brume
+ if(tex("bg")){const t=G.tx.bg;t.wrapS=T.RepeatWrapping;t.repeat.set(-6,1);const r=200,h=2*Math.PI*r/6/ASP.bg;
+  G.sky=new T.Mesh(new T.CylinderGeometry(r,r,h,72,1,true),new T.MeshBasicMaterial({map:t,side:T.BackSide,fog:false,depthWrite:false}));G.sky.renderOrder=-1;G.skyH=h;sc.add(G.sky);}
+ // le singe (une image à la fois : course, saut, glissade, chute)
+ G.run=tex("monkey");if(G.run){G.run.repeat.set(.25,1);}
+ G.pm=new T.SpriteMaterial({map:G.run||null,color:G.run?0xffffff:0x7a4a26,alphaTest:.4,fog:true});G.player=new T.Sprite(G.pm);G.player.center.set(.5,0);sc.add(G.player);
+ G.shadow=new T.Mesh(new T.PlaneGeometry(1.6,.9).rotateX(-Math.PI/2),M.shadow);G.shadow.renderOrder=1;sc.add(G.shadow);
+ canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();GL=null;canvas.style.display="none";},false);
+ return G;}
+const V3=(x,y,z)=>new GL.T.Vector3(x,y,-z);
+function segGroup(sx,sz,dir){const T=GL.T,g=new T.Group(),f=fw(dir);g.position.set(sx,0,-sz);g.rotation.y=Math.atan2(-f[0],f[1]);return g;}
+function plane(w,l,mat,uw,ul){const T=GL.T,geo=new T.PlaneGeometry(w,l).rotateX(-Math.PI/2);const uv=geo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*uw,uv.getY(i)*ul);return new T.Mesh(geo,mat);}
+function put(o,ss,ll,yy){o.position.set(ll,yy||0,-ss);return o;}
+function floor3(grp,a,b,openL,openR,cut,ext){const M=GL.mat,T=GL.T,len=b-a;
+ grp.add(put(plane(2*HW,len,M.path,1,len/4),(a+b)/2,0,.012));
+ const gb=b+(ext||0),gl=gb-a;for(const sd of[-1,1])grp.add(put(plane(14,gl,M.grass,14/4,gl/4),(a+gb)/2,sd*(HW+CURB+7),0));
+ for(const sd of[-1,1]){const open=sd<0?openL:openR,e=open?cut:b;if(e<=a)continue;
+  grp.add(put(new T.Mesh(new T.BoxGeometry(CURB,.18,e-a),M.curb),(a+e)/2,sd*(HW+CURB/2),.09));}}
+function sprite(k,hM,ss,ll,flip){const T=GL.T,t=GL.tex(k);if(!t)return null;const key=(flip?"spf_":"sp_")+k;
+ let m=GL.mat[key];if(!m){let mt=t;if(flip){mt=t.clone();mt.wrapS=T.RepeatWrapping;mt.repeat.x=-1;mt.offset.x=1;const up=()=>{mt.needsUpdate=true;};if(IM[k].complete&&IM[k].naturalWidth)up();else IM[k].addEventListener("load",up);}
+  m=GL.mat[key]=new T.SpriteMaterial({map:mt,alphaTest:.4,fog:true});}
+ const sp=new T.Sprite(m);sp.center.set(.5,0);sp.scale.set(hM*asp(k),hM,1);sp.userData.k=k;sp.userData.h=hM;sp.userData.flip=flip;return put(sp,ss,ll,0);}
+function buildSeg(g){const T=GL.T,M=GL.mat,grp=segGroup(g.sx,g.sz,g.dir);
+ const a=g===segs[0]&&turns===0?-14:HW,b=g.L+HW,oL=g.turn==="L"||g.turn==="T",oR=g.turn==="R"||g.turn==="T";
+ floor3(grp,a,b,oL,oR,g.L-HW,22);
+ // mur du bout, avec ses flèches
+ const e=g.L+HW,ww=2*(HW+CURB)+.6,wh=ww/asp("wall");
+ grp.add(put(new T.Mesh(new T.BoxGeometry(ww-.4,wh*.82,1),M.stone),e+.55,0,wh*.41));
+ grp.add(put(new T.Mesh(new T.PlaneGeometry(ww,wh),M.wall),e,0,wh/2));
+ for(const a2 of g.turn==="T"?["L","R"]:[g.turn]){const sd=a2==="R"?1:-1,ar=new T.Mesh(new T.PlaneGeometry(1.1,.86),M.arrow);ar.scale.x=sd;grp.add(put(ar,e-.04,sd*1.15,1.35));}
+ // obstacles : de vrais volumes, l'image de Kévin en façade
+ for(const o of g.obs){
+  if(o.k==="low"){grp.add(put(new T.Mesh(new T.PlaneGeometry(2*HW+.6,.8),M.root),o.s0,0,.4));
+   const lg=new T.Mesh(new T.CylinderGeometry(.26,.3,2*HW+.2,12),M.bark);lg.rotation.z=Math.PI/2;grp.add(put(lg,o.s0+.32,0,.27));}
+  else if(o.k==="high"){const w=2*HW+1.1;grp.add(put(new T.Mesh(new T.PlaneGeometry(w,2.1),M.beam),o.s0,0,1.05));
+   grp.add(put(new T.Mesh(new T.PlaneGeometry(w,2.1),M.beamBack),o.s0+.6,0,1.05));
+   grp.add(put(new T.Mesh(new T.BoxGeometry(w-.5,.5,.58),M.stone),o.s0+.3,0,1.62));}
+  else{const bw=1.24,bh=bw/asp("block");grp.add(put(new T.Mesh(new T.BoxGeometry(bw-.14,bh-.16,.85),M.stone),o.s0+.46,o.lat,(bh-.16)/2));
+   grp.add(put(new T.Mesh(new T.PlaneGeometry(bw,bh),M.block),o.s0,o.lat,bh/2));}}
+ // bananes qui tournent
+ grp.userData.ban=g.ban.map(bn=>{const m=new T.Mesh(new T.PlaneGeometry(.62,.62),M.banana);put(m,bn.s,bn.lat,bn.y);m.position.y-=.31;m.position.y+=.31;grp.add(m);return m;});
+ // décor
+ for(const d of g.deco){const flip=d.k!=="torch"&&(d.c===1||d.lat>0),hM=d.k==="tree"?d.h+1.5:d.k==="pillar"?d.h*.75:d.k==="torch"?1.7:1.3,sp=sprite(d.k,hM,d.s,d.lat,flip);if(sp)grp.add(sp);}
+ return grp;}
+function buildStub(g){const grp=new GL.T.Group(),E=endPt(g);
+ for(const a of g.turn==="T"?["L","R"]:[g.turn]){const nd=(g.dir+(a==="R"?1:3))%4,sg=segGroup(E[0],E[1],nd);floor3(sg,HW,HW+48,false,false,0,0);grp.add(sg);}return grp;}
+function dispose(o){o.traverse(x=>{if(x.geometry)x.geometry.dispose();});}
+function glSync(){const sc=GL.scene,B=GL.built;
+ for(const [g,grp] of B)if(!segs.includes(g)){sc.remove(grp);dispose(grp);B.delete(g);}
+ for(const g of segs)if(!B.has(g)){const grp=buildSeg(g);B.set(g,grp);sc.add(grp);}
+ if(GL.stubFor!==cur){if(GL.stub){sc.remove(GL.stub);dispose(GL.stub);}GL.stub=buildStub(cur);GL.stubFor=cur;sc.add(GL.stub);}}
+function glDraw(){if(!GL)return false;const T=GL.T,G=GL;
+ try{
+ glSync();
+ const fc=G.scene.fog.color;fc.setRGB(FOG[0]/255,FOG[1]/255,FOG[2]/255);
+ // bananes
+ for(const g of segs){const ms=G.built.get(g).userData.ban;g.ban.forEach((b,i)=>{const m=ms[i];m.visible=!b.got;if(m.visible){m.rotation.y=t*3+b.s;m.position.y=b.y+Math.sin(t*5+b.s)*.06;}});}
+ // caméra : derrière le singe, légèrement plongeante (horizon au même endroit que le rendu 2D)
+ const h=[Math.sin(cam.th),Math.cos(cam.th)],sk=shake>0&&!reduce?shake*.25:0,c=G.cam;
+ c.position.copy(V3(cam.x+(Math.random()-.5)*sk,CAMH+(Math.random()-.5)*sk,cam.z));
+ const pitch=Math.atan((H/2-HZ)/F);c.lookAt(V3(cam.x+h[0]*10,CAMH-10*Math.tan(pitch),cam.z+h[1]*10));
+ if(G.sky){G.sky.position.set(cam.x,CAMH-4+G.skyH/2,-cam.z);}
+ // le singe
+ const pw=playerW(),P=G.player,pm=G.pm,sl=slideT>0,run=mode==="play";let k="monkey",hM=2.2;
+ if(mode==="dead"&&has("fall")){k="fall";hM=2.1*(.6+.4*clamp((t-deadAt)*4,0,1));}else if(sl&&has("slide")){k="slide";hM=1.3;}else if(run&&y>0&&has("jump")){k="jump";}
+ const tx=k==="monkey"?G.run:G.tex(k);if(pm.map!==tx){pm.map=tx;pm.needsUpdate=true;}
+ if(k==="monkey"&&G.run)G.run.offset.x=(run?Math.floor(dist*1.7/1.57)&3:0)*.25;
+ pm.opacity=k==="fall"?clamp((t-deadAt)*4,0,1):1;pm.transparent=k==="fall";
+ const bob=run&&y<=0&&k==="monkey"?Math.abs(Math.cos(dist*1.7))*.07:0;
+ P.scale.set(hM*asp(k),hM,1);P.position.copy(V3(pw[0],pw[1]+bob,pw[2]));
+ G.shadow.position.copy(V3(pw[0],.03,pw[2]));G.shadow.rotation.y=-cam.th;G.shadow.scale.setScalar(Math.max(.45,1-y*.4));
+ G.R.render(G.scene,c);return true;
+ }catch(e){console.warn("Monkey Rush 3D",e);GL=null;try{root.querySelector("canvas.gl").style.display="none";}catch(_){}return false;}}
+function glSize(w,h){if(!GL)return;GL.R.setPixelRatio(dpr);GL.R.setSize(w,h,false);GL.cam.aspect=w/h;GL.cam.updateProjectionMatrix();}
 function fit(){const m=$(".ru-main"),c=$(".ru-cab");if(!m||!c)return;const cs=getComputedStyle(m);
  const aw=m.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-16,ah=m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-16;
  let h=Math.max(120,ah),w=h*W/H;if(w>aw){w=Math.max(80,aw);h=w*H/W;}c.style.width=Math.floor(w+16)+"px";c.style.height=Math.floor(h+16)+"px";}
 function size(){if(!cv)return;fit();const r=cv.getBoundingClientRect();if(!r.width)return;dpr=Math.min(2,window.devicePixelRatio||1);
- const w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}draw();}
+ const w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}glSize(r.width,r.height);draw();}
 function loop(n){raf=0;if(!root||root.hidden)return;const dt=Math.min((n-last)/1000,1/30);last=n;update(dt);draw();raf=requestAnimationFrame(loop);}
 function run(){if(!raf){last=performance.now();raf=requestAnimationFrame(loop);}}
 
@@ -464,7 +580,7 @@ function build(){
   <div class="ru-chips"><span class="ru-chip">🍌 <b id="ruBan">…</b></span><span class="ru-chip">Courses <b id="ruLeft">…</b></span></div>
   <button type="button" class="ru-btn r" id="ruClose" aria-label="Fermer">✕</button></div>
  <div class="ru-main"><div class="ru-cab"><div class="ru-scr" id="ruScr" aria-label="Zone de jeu : glisse le doigt pour diriger le singe">
-  <canvas></canvas><div class="ru-ov" aria-live="polite"></div></div></div></div>
+  <canvas class="gl"></canvas><canvas class="hud"></canvas><div class="ru-ov" aria-live="polite"></div></div></div></div>
  <aside class="ru-panel" id="ruPanel" aria-label="Règles et réglages">
   <div class="ru-ph"><h3>Règles</h3><button type="button" class="ru-btn" style="position:static" id="ruPanelX" aria-label="Fermer les règles">✕</button></div>
   <ul class="r">
@@ -485,9 +601,10 @@ function build(){
  <div class="ru-toast" role="status"></div>`;
  document.body.appendChild(root);
  $("#ruAdm").hidden=!ADMIN;
- cv=$("canvas");cx=cv.getContext("2d");
+ cv=$("canvas.hud");cx=cv.getContext("2d");
  const lg=$(".ru-logo"),noLogo=()=>{lg.hidden=true;$(".ru-logoT").hidden=false;};lg.onerror=noLogo;if(lg.complete&&!lg.naturalWidth)noLogo();
  Object.entries(IMG).forEach(([k,u])=>{if(k==="logo")return;const i=new Image();i.src=u;IM[k]=i;});
+ try{GL=glInit($("canvas.gl"));}catch(e){GL=null;}if(!GL)$("canvas.gl").style.display="none";
  // la brume du lointain prend la couleur du bas du panorama, pour que l'horizon se fonde
  IM.bg.addEventListener("load",()=>{try{const c=document.createElement("canvas");c.width=c.height=1;const x=c.getContext("2d"),im=IM.bg;
   x.drawImage(im,0,im.naturalHeight*.8,im.naturalWidth,im.naturalHeight*.2,0,0,1,1);const d=x.getImageData(0,0,1,1).data;FOG[0]=d[0];FOG[1]=d[1];FOG[2]=d[2];}catch(e){}});
