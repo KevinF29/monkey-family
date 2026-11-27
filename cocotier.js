@@ -202,6 +202,7 @@ function build(){
   $("#coForce").addEventListener("change",e=>{force=e.target.value;});
   $("#coVib").addEventListener("change",e=>{buzz=e.target.checked;});
   $("#coAdd").addEventListener("click",async e=>{e.target.disabled=true;try{const st=await rpc("mf_admin_bananas",{p_n:50});if(INFO)INFO.state=st;applyState(st);say("+50 bananes sur ton compte.");}catch(x){say(errText(x),"bad");}e.target.disabled=false;render();});
+  if(window.MF_MYSTERY)$("#coReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("coco"));
   $("#coReset").addEventListener("click",async e=>{e.target.disabled=true;try{take(await rpc("mf_coco_admin",{p_action:"reset"}));say("Tes parties du jour sont rendues.");}catch(x){say(errText(x),"bad");}e.target.disabled=false;render();});
   $("#coOpen").addEventListener("click",openToAll);
   $("#coJp").addEventListener("click",closeJp);
@@ -282,7 +283,9 @@ async function start(){
   const f=force;force="";const fs=$("#coForce");if(fs)fs.value="";
   say("…");render();
   try{const r=await rpc("mf_coco_start",{p_bet:bet,p_force:f?+f:null});take(r);applyState(r.state);
-    if(r.round)begin(r.round);else say(idleText());}
+    if(r.round){begin(r.round);
+      if(r.mys&&window.MF_MYSTERY)window.MF_MYSTERY.show(r.mys,{ms:Math.max(1500,+r.round.start-now()-500)}).then(()=>{if(R&&mode==="wait")say("🔮 Il tiendra au moins jusqu'à ×5 !");});}
+    else say(idleText());}
   catch(e){say(errText(e),"bad");}
   busy=false;render();
 }

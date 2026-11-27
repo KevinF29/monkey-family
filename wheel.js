@@ -213,6 +213,7 @@ const takeScam=()=>{if(!ADMIN)return false;const el=$("#whFScam"),v=el.checked;e
 async function go(v){if(busy)return;const a=action();if(!a){render();return;}
  ac();busy=true;$("#whRes").hidden=true;render();roll(v);
  let r;try{r=await rpc("mf_wheel_spin",{p_kind:a.kind,p_force:takeForce("#whFMain"),p_scam:takeScam()});}catch(e){return err(e);}
+ if(r.mys&&window.MF_MYSTERY)await window.MF_MYSTERY.show(r.mys);
  if(r.wheel!==cur){cur=r.wheel;lastIdx=-1;}
  segs(r.info);await land(r.idx);if(r.scam)await scam(PZ[r.key].k==="jackpot"?"le jackpot":PZ[r.key].lab);busy=false;take(r.info);outcome(r);render();}
 function outcome(r){const p=PZ[r.key];
@@ -283,6 +284,7 @@ function build(){
  $("#whTog").addEventListener("click",()=>side(!$("#whSide").classList.contains("open")));
  $("#whSideX").addEventListener("click",()=>{side(false);$("#whTog").focus({preventScroll:true});});
  $("#whOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"La roue est de nouveau cachée.":"The Monkey Wheel est ouverte à tous les joueurs !"));
+ if(window.MF_MYSTERY)$("#whReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("wheel"));
  $("#whReset").addEventListener("click",()=>adm("reset","Tes tours du jour sont rendus."));
  $("#whAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  $("#whPotAdd").addEventListener("click",()=>adm("pot","Cagnotte +50 🍌."));

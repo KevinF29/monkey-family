@@ -240,6 +240,7 @@ function toggle(i){if(busy||phase!=="hold")return;ac();held[i]=!held[i];tick();r
 async function draw(){if(busy||phase!=="hold")return;ac();busy=true;render();
  const keep=held.map((h,i)=>h?i:-1).filter(i=>i>=0);
  let r;try{r=await rpc("mf_vp_draw",{p_hold:keep});}catch(e){return err(e);}
+ if(r.mys&&window.MF_MYSTERY){await window.MF_MYSTERY.show(r.mys);for(let i=0;i<5;i++)if(held[i]&&C[i]!==r.c[i])held[i]=false;}
  for(let i=0;i<5;i++)if(!held[i])hide(i);
  await wait(380);
  for(let i=0;i<5;i++)if(!held[i]){await reveal(i,r.c[i]);await wait(160);}
@@ -328,6 +329,7 @@ function build(){
  $("#vpTog").addEventListener("click",()=>panel(!$("#vpPanel").classList.contains("open")));
  $("#vpPanelX").addEventListener("click",()=>{panel(false);$("#vpTog").focus({preventScroll:true});});
  $("#vpOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le poker est de nouveau caché.":"Poker Monkey est ouvert (selon la rotation du Casino)."));
+ if(window.MF_MYSTERY)$("#vpReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("vp"));
  $("#vpReset").addEventListener("click",()=>adm("reset","Tes mains du jour sont rendues."));
  $("#vpAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$(".vp-mk").hidden){$(".vp-mk").click();return;}if($("#vpPanel").classList.contains("open"))panel(false);else close();});

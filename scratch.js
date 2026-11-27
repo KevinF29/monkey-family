@@ -207,6 +207,7 @@ function build(){
   setSound(sound);
   $("#scVib").addEventListener("change",e=>{buzz=e.target.checked;});
   $("#scAdd").addEventListener("click",async e=>{e.target.disabled=true;try{const st=await rpc("mf_admin_bananas",{p_n:50});if(INFO)INFO.state=st;applyState(st);say("+50 bananes sur ton compte.");}catch(x){say(errText(x),"bad");}e.target.disabled=false;render();});
+  if(window.MF_MYSTERY)$("#scReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("scratch"));
   $("#scReset").addEventListener("click",async e=>{e.target.disabled=true;try{take(await rpc("mf_scratch_admin",{p_action:"reset"}));T=null;phase="none";paintGrid();foil.reset();say("Ton ticket gratuit et tes tickets payants du jour sont rendus.");}catch(x){say(errText(x),"bad");}e.target.disabled=false;render();});
   $("#scOpen").addEventListener("click",openToAll);
   $("#scJp").addEventListener("click",e=>{if(e.target.id==="scJp"||e.target.id==="scJpOk"||e.target.closest(".sc-jpin"))closeJp();});
@@ -269,6 +270,7 @@ async function buy(paid){
   busy=true;render();audio();
   const f=force;force="";const fs=$("#scForce");if(fs)fs.value="";
   try{const r=await rpc("mf_scratch_buy",{p_paid:!!paid,p_force:f||null});take(r);
+    if(r.pending&&r.pending.mys&&window.MF_MYSTERY)await window.MF_MYSTERY.show(r.pending.mys);
     if(r.pending)show(r.pending,true);else say(idleText());applyState(hidden());}
   catch(e){say(errText(e),"bad");try{take(await rpc("mf_scratch_status"));}catch(x){}}
   busy=false;render();

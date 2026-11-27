@@ -220,6 +220,7 @@ async function go(){if(busy||picking||!S||S.game)return;ac();busy=true;$("#bnRes
  try{localStorage.setItem("mf_bon_bet",String(bet));localStorage.setItem("mf_bon_speed",speed);}catch(e){}
  let r;try{r=await rpc("mf_bon_start",{p_bet:bet,p_speed:speed,p_force:takeForce()});}catch(e){return err(e);}
  take(r.info);render();const seq=Array.isArray(r.seq)?r.seq:[],ms=Math.max(90,+r.ms||300);
+ if(r.mys&&window.MF_MYSTERY)await window.MF_MYSTERY.show(r.mys);
  // la banane sous la noix du milieu…
  banAt(1,true);say(pick(["Regarde bien la banane… 🍌","Facile, hein ? Hé hé.","Ne la quitte pas des yeux !"]),2400);
  lift(1,true);await new Promise(z=>setTimeout(z,1100));lift(1,false);await new Promise(z=>setTimeout(z,450));banAt(1,false);
@@ -242,7 +243,7 @@ async function choose(i){if(busy||!picking)return;ac();const s=slot[i];busy=true
  setTimeout(()=>{if(!busy&&!picking&&!S.game){[0,1,2].forEach(x=>lift(x,false));setTimeout(()=>{if(!busy&&!picking)banAt(1,false);},350);}},3200);}
 
 function outcome(r,s){const n=+r.net,b=+r.bet;
- if(r.out==="win"){win(n>=20);show(`Trouvée ! +${n} 🍌`,`La banane était sous la noix ${SIDE[s]} : ta mise de ${b} 🍌 ${fx(X_(r.speed))} (${SPN[r.speed]||""}).`);wob();
+ if(r.out==="win"){win(n>=20);show(`Trouvée ! +${n} 🍌`,`La banane était sous la noix ${SIDE[s]} : ta mise de ${b} 🍌 ${fx(X_(r.speed))} (${SPN[r.speed]||""})`+(r.mys?", doublé par le Singe Mystère 🔮":"")+".");wob();
   say(pick(["Quoi ?! Tu avais vu ?","Pfff… chance du débutant.","Rends-moi ma banane ! 🍌"]));return;}
  sad();wob();
  if(r.out==="cheat"){
@@ -324,6 +325,7 @@ function build(){
  $("#bnTog").addEventListener("click",()=>panel(!$("#bnPanel").classList.contains("open")));
  $("#bnPanelX").addEventListener("click",()=>{panel(false);$("#bnTog").focus({preventScroll:true});});
  $("#bnOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le bonneteau est de nouveau caché.":`${NAME} est ouvert à tous les joueurs !`));
+ if(window.MF_MYSTERY)$("#bnReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("bon"));
  $("#bnReset").addEventListener("click",()=>adm("reset","Tes parties du jour sont rendues."));
  $("#bnAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if($("#bnPanel").classList.contains("open"))panel(false);else close();});

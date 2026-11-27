@@ -210,7 +210,10 @@ async function go(){if(busy||!S||S.game)return;ac();busy=true;$("#ccRes").hidden
  const gr=$(".cc-grid");gr.classList.remove("dead","won");render();
  try{localStorage.setItem("mf_mine_bet",String(bet));localStorage.setItem("mf_mine_snakes",String(snakes));}catch(e){}
  let r;try{r=await rpc("mf_mine_start",{p_bet:bet,p_snakes:snakes,p_force:takeForce()});}catch(e){return err(e);}
- take(r);knock();busy=false;render();toast(pick(["À toi : choisis une coco ! 🥥",`${snakes} serpents se cachent… 🐍`,"Prends ton temps, rien ne presse."]));}
+ take(r);knock();busy=false;render();MYP=0;
+ if(r.mys&&window.MF_MYSTERY){busy=true;render();await window.MF_MYSTERY.show(r.mys);busy=false;MYP=5;render();toast("🔮 Tes 5 prochaines cocos sont protégées !");return;}
+ toast(pick(["À toi : choisis une coco ! 🥥",`${snakes} serpents se cachent… 🐍`,"Prends ton temps, rien ne presse."]));}
+let MYP=0;   // cocos encore protégées par le Singe Mystère
 
 async function open1(i){if(busy||!S||!S.game)return;const e=cells()[i];if(!e.classList.contains("hid"))return;ac();
  busy=true;e.classList.add("wait");render();e.classList.add("wait");
@@ -219,7 +222,9 @@ async function open1(i){if(busy||!S||!S.game)return;const e=cells()[i];if(!e.cla
  e.classList.remove("wait");
  if(r.safe){const k=(r.open||(r.info&&r.info.game&&r.info.game.open)||[]).length;crack(k);setCell(i,"safe","safe");
   if(r.out){busy=false;return finish(r);}
-  take(r.info);busy=false;render();pulse();return;}
+  take(r.info);busy=false;render();pulse();
+  if(MYP>0){MYP=+r.prot||0;toast(MYP?`🔮 Encore ${MYP} coco${MYP>1?"s":""} protégée${MYP>1?"s":""}`:"🔮 Fin de la protection du Singe Mystère : prudence !");}
+  return;}
  busy=false;finish(r);}
 
 async function cash(){if(busy||!S||!S.game||!(S.game.open||[]).length)return;ac();busy=true;render();
@@ -305,6 +310,7 @@ function build(){
  $("#ccTog").addEventListener("click",()=>panel(!$("#ccPanel").classList.contains("open")));
  $("#ccPanelX").addEventListener("click",()=>{panel(false);$("#ccTog").focus({preventScroll:true});});
  $("#ccOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le Champ de Cocos est de nouveau caché.":`${NAME} est ouvert à tous les joueurs !`));
+ if(window.MF_MYSTERY)$("#ccReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("mine"));
  $("#ccReset").addEventListener("click",()=>adm("reset","Tes parties du jour sont rendues."));
  $("#ccAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||root.hidden)return;if($("#ccPanel").classList.contains("open"))panel(false);else close();});

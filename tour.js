@@ -261,8 +261,12 @@ async function go(){if(busy||!S||S.game)return;ac();busy=true;$("#ttRes").hidden
  // le singe arrive par l'escalier
  monkAt("base");monkImg(false);await wait(60);monkAt("land","walk");for(let i=0;i<4;i++){step();await wait(140);}
  $(".tt-monk").classList.remove("walk");
+ MYP=0;
+ if(r.mys&&window.MF_MYSTERY){await window.MF_MYSTERY.show(r.mys);MYP=3;}
  busy=false;setPick(true);render();
+ if(MYP){say("🔮 Aucune porte piégée sur les 3 prochains étages !",3600);return;}
  say(pick(["Allez, on grimpe ! 🐒","Trois portes… une seule mauvaise.","J'ai un bon pressentiment !"]));}
+let MYP=0;   // étages encore protégés par le Singe Mystère
 
 async function choose(i){const g=G();if(busy||!g)return;ac();busy=true;setPick(false);render();
  doors()[i].classList.add("sel");
@@ -298,6 +302,7 @@ async function choose(i){const g=G();if(busy||!g)return;ac();busy=true;setPick(f
  if(f.animate&&!reduce){await f.animate([{transform:"translateY(-60%)",opacity:0},{transform:"none",opacity:1}],{duration:420,easing:"ease-out"}).finished;}
  $(".tt-monk").classList.remove("in");await wait(250);
  busy=false;setPick(true);render();
+ if(MYP>0){MYP=+r.prot||0;say(MYP?`🔮 Encore ${MYP} étage${MYP>1?"s":""} protégé${MYP>1?"s":""} !`:"🔮 Fin de la protection : à partir d'ici, méfiance !",3000);return;}
  const fl=+r.fl;
  say(fl>=6?pick(["Ça devient haut… 😰","Redescendre ? Jamais ! …ou peut-être ?","Je vois l'idole d'ici !"]):fl>=3?pick(["On continue ? 🐒","Le butin grossit…","Encore une porte ?"]):pick(["Facile ! 🐒","Étage suivant !","Hé hé, trop fort."]));}
 
@@ -389,6 +394,7 @@ function build(){
  $("#ttTog").addEventListener("click",()=>panel(!$("#ttPanel").classList.contains("open")));
  $("#ttPanelX").addEventListener("click",()=>{panel(false);$("#ttTog").focus({preventScroll:true});});
  $("#ttOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"The Monkey Tower est de nouveau cachée.":`${NAME} est ouverte à tous les joueurs !`));
+ if(window.MF_MYSTERY)$("#ttReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("tour"));
  $("#ttReset").addEventListener("click",()=>adm("reset","Tes montées du jour sont rendues."));
  $("#ttAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!root||root.hidden)return;if($("#ttPanel").classList.contains("open"))panel(false);else close();});

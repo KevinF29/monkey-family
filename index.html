@@ -869,6 +869,7 @@ td.n{text-align:right}
 <script src="admin.js"></script>
 <script src="pop.js"></script>
 <script src="casino.js"></script>
+<script src="mystere.js"></script>
 <script src="slot.js"></script>
 <script src="race.js"></script>
 <script src="scratch.js"></script>
@@ -3997,6 +3998,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="exp_lost"){const D=[["🐍","un 2e serpent"],["🕷️","une 2e araignée"],["🏜️","de nouveaux sables mouvants"],["🐆","une 2e panthère"],["🪨","un 2e éboulement"]][+x.d||0]||["⚠️","un danger"];
         const us=(Array.isArray(x.us)?x.us:[]).map(u=>`<b>${esc(nameOf(u))}</b>`),list=us.length>1?us.slice(0,-1).join(", ")+" et "+us[us.length-1]:us[0]||"Personne";
         return `<div class="fitem"><span class="fi" aria-hidden="true">${D[0]}</span><p>L'Expédition : ${D[1]} à l'étape ${fmt(+x.s||0)} ! ${list} ${us.length>1?"perdent":"perd"} ${fmt(+x.v||0)} 🍌 de butin 🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="mys"){const N={slot:"à la Banana Machine",scratch:"au Monkey Cash",wheel:"à The Monkey Wheel",mine:"au Champ de Cocos",tour:"à The Monkey Tower",vp:"au Poker Monkey",coco:"au Crash Cocotier",pk:"au Plinko Banana",bon:"au Bananateau",bj:"à MonkeyJack 21"},w=N[x.g]||"au Casino";
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🔮</span><p>Le Singe Mystère est apparu ${esc(w)} pour ${who}… et lui a donné un sacré coup de pouce !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bon_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} avait trouvé la bonne noix de coco… mais le singe avait déjà la banane dans la main 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="wheel_scam")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait scam, dommage 🐒🙊<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="scratch"){const v=+x.v||0,what=x.k==="singe"?`le <b>JACKPOT</b> : ${v} boosters`:x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;

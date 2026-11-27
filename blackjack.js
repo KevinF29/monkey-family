@@ -215,6 +215,7 @@ const takeCheat=()=>{if(!ADMIN)return false;const el=$("#bjFC"),v=el.checked;el.
 async function deal(){if(busy||!S||S.hand)return;ac();busy=true;$("#bjRes").hidden=true;clearTable();render();
  try{localStorage.setItem("mf_bj_bet",String(bet));}catch(e){}
  let r;try{r=await rpc("mf_bj_deal",{p_bet:bet,p_force:takeForce(),p_cheat:takeCheat()});}catch(e){return err(e);}
+ if(r.mys&&window.MF_MYSTERY)await window.MF_MYSTERY.show(r.mys);
  const p=r.done?r.p:r.info.hand.p,d0=r.done?r.d[0]:r.info.hand.d[0];
  $("#bjBetT").innerHTML=`Mise : <b>${bet} 🍌</b>`;
  P=[p[0]];addCard("#bjP",p[0]);setTot("#bjPT",P);await wait(330);
@@ -330,6 +331,7 @@ function build(){
  $("#bjTog").addEventListener("click",()=>panel(!$("#bjPanel").classList.contains("open")));
  $("#bjPanelX").addEventListener("click",()=>{panel(false);$("#bjTog").focus({preventScroll:true});});
  $("#bjOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le blackjack est de nouveau caché.":"MonkeyJack 21 est ouvert à tous les joueurs !"));
+ if(window.MF_MYSTERY)$("#bjReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("bj"));
  $("#bjReset").addEventListener("click",()=>adm("reset","Tes mains du jour sont rendues."));
  $("#bjAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$(".bj-mk").hidden){$(".bj-mk").click();return;}if($("#bjPanel").classList.contains("open"))panel(false);else close();});

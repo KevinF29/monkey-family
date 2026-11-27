@@ -277,7 +277,8 @@ async function go(){if(calling||!S||balls.length>=MAXFLY)return;ac();calling=tru
  let r;try{r=await rpc("mf_pk_drop");}catch(e){calling=false;toast(errText(e));msg(errText(e));render();
   rpc("mf_pk_status").then(x=>{take(x);render();},()=>{});return;}
  const p=r.prize||{};pend.ban+=p.t==="ban"?+p.v:0;pend.boost+=p.t==="boost"?+p.v:0;
- calling=false;drop(r);take(r.info);msg("");render();}
+ if(r.mys&&window.MF_MYSTERY)await window.MF_MYSTERY.show(r.mys);
+ calling=false;drop(r);take(r.info);msg(r.mys?"🔮 Le Singe Mystère guide ta bille…":"");render();}
 
 /* ---------- admin ---------- */
 async function adm(x,m){try{const r=await rpc("mf_pk_admin",{p_action:x});take(r);render();if(m)toast(m);}catch(e){toast(errText(e));}}
@@ -333,6 +334,7 @@ function build(){
  $("#pkOpen").addEventListener("click",()=>adm(S&&S.open?"close":"open",S&&S.open?"Le Plinko est de nouveau caché.":"Plinko Banana est ouvert (selon la rotation du Casino)."));
  $("#pkF").addEventListener("change",e=>adm("force:"+e.target.value,e.target.value===""?"Prochaine bille au hasard.":"Prochaine bille imposée."));
  $("#pkFR").addEventListener("change",e=>adm("forcer:"+e.target.value,e.target.value===""?"Prochaine roulette au hasard.":`Prochaine roulette : ${e.target.value}.`));
+ if(window.MF_MYSTERY)$("#pkReset").parentNode.appendChild(window.MF_MYSTERY.adminButton("pk"));
  $("#pkReset").addEventListener("click",()=>adm("reset","Tes billes du jour sont rendues."));
  $("#pkAdd").addEventListener("click",()=>adm("bananas","+50 🍌 sur ton compte."));
  root.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$(".pk-mk").hidden){$(".pk-mk").click();return;}if($("#pkPanel").classList.contains("open"))panel(false);else close();});

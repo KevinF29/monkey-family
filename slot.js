@@ -20,7 +20,7 @@ const NAME=Object.fromEntries(SYM.map(s=>[s.e,s.n]));
 const TRI={singe:{t:"boost",v:7},booster:{t:"boost",v:3},sablier:{t:"time",v:360},maman:{t:"ban",v:40},camera:{t:"ban",v:25},remboursement:{t:"ban",v:15},rage:{t:"ban",v:10},banane:{t:"ban",v:5}};
 const PAIR=[["booster",{t:"boost",v:1}],["sablier",{t:"time",v:120}],["banane",{t:"ban",v:3}]];
 const ORDER=["3:singe","3:booster","3:sablier","3:maman","3:camera","3:remboursement","3:rage","3:banane","2:booster","2:sablier","2:banane","1:banane"];
-const COST=1,TURNS=10,PITY=10;
+const COST=1,TURNS=10;
 
 function pay(s){
   const [a,b,c]=s;
@@ -251,6 +251,7 @@ function build(){
   $("#slClose").addEventListener("click",close);
   $("#slGo").addEventListener("click",spin);
   $("#slAdd").addEventListener("click",async e=>{e.target.disabled=true;try{applyState(await rpc("mf_admin_bananas",{p_n:50}));say("+50 bananes sur ton compte.");}catch(x){say(errText(x));}e.target.disabled=false;render();});
+  if(window.MF_MYSTERY)$("#slDay").parentNode.appendChild(window.MF_MYSTERY.adminButton("slot"));
   $("#slDay").addEventListener("click",async e=>{e.target.disabled=true;try{const r=await rpc("mf_slot_admin_reset");S.left=+r.left;applyState(r.state);say("Tes 10 tours sont rendus.");}catch(x){say(errText(x));}e.target.disabled=false;render();});
   $("#slForce").addEventListener("change",e=>{force=e.target.value;});
   $("#slSnd").addEventListener("change",e=>{sound=e.target.checked;});
@@ -330,7 +331,7 @@ function spin(){
   if(ac&&ac.state==="suspended")ac.resume().catch(()=>{});
   const f=force;force="";const fs=$("#slForce");if(fs)fs.value="";
   let res=null,err=null;
-  rpc("mf_slot_spin",{p_force:f||null}).then(r=>{res=r;},e=>{err=e;});
+  rpc("mf_slot_spin",{p_force:f||null}).then(r=>{if(r&&r.mys&&window.MF_MYSTERY)window.MF_MYSTERY.show(r.mys).then(()=>{res=r;});else res=r;},e=>{err=e;});
   S.bal-=COST;render();
   REELS.forEach(R=>R.el.classList.remove("win"));hit(null);$("#slM").classList.add("spin");say("…");
   // en cas d'erreur, les rouleaux s'arrêtent sur des symboles qui ne gagnent rien
@@ -350,7 +351,6 @@ function spin(){
         if(r.k==="3:booster"||r.k==="3:maman")celebrate(r.k.slice(2));
         if(r.k==="3:sablier")celebrate("sablier",kept?"d'attente, gardées pour ton prochain booster":"d'attente en moins sur ton prochain booster");}
     }else say("Perdu. La banane est partie.");
-    if(res.pity){post(`🐒 ${ME} a tout perdu à la machine… Le singe a eu pitié : +${PITY} bananes.`,"pity");say(`Tu as tout perdu… Le singe a pitié de toi : +${PITY} bananes.`);}
     busy=false;render();
   });
 }
