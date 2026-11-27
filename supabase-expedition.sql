@@ -564,3 +564,222 @@ begin
 end $$;
 
 revoke execute on function public._exp_due(date), public._exp_advance(date) from public, anon, authenticated;
+
+-- 27/11/2026 vers 10 h 10 (demande de Kévin) : l'admin ne compte pas dans l'expédition.
+-- Il peut jouer, mais c'est un « fantôme » : il n'apparaît pas dans la liste des autres, n'est pas compté dans « x/y ont choisi »,
+-- ne bloque jamais la carte suivante, ne fait pas partir l'expédition à lui seul, ne réduit pas les parts des potes
+-- (sa part est calculée comme s'il était un joueur de plus, sans rien prendre aux autres), ne compte pas pour « rentrer seul »
+-- et ne ramasse jamais l'Idole. Il perd son butin au 2e danger comme tout le monde, sans être cité dans le fil d'actu.
+create or replace function public._exp_adm(p_uid uuid) returns boolean
+language sql stable security definer set search_path = public as $$ select exists(select 1 from public.admins where uid = p_uid) $$;
+
+create or replace function public._exp_reveal(p_day date)
+returns void language plpgsql security definer set search_path = public as $$
+declare c public.mf_exp_cfg; d public.mf_exp_days; s int; card jsonb; k text; v int := 0; dt int;
+  nl int; sh int; sha int; rel int; outs jsonb := '[]'::jsonb; n int; fatal boolean := false; p record; ev jsonb; tot int; p0 int;
+begin
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = p_day for update;
+  if d.day is null or d.status <> 'run' or d.step >= c.steps then return; end if;
+  s := d.step + 1;
+  -- 1) retours au camp avant la carte (l'admin ne compte pas dans le partage)
+  select count(*) filter (where not public._exp_adm(uid)) into nl from public.mf_exp_players
+    where day = p_day and state = 'in' and joined < s - 1 and (choice = 'home' or (auto > 0 and loot >= auto));
+  p0 := d.path; sh := case when nl > 0 then p0 / nl else 0 end; sha := p0 / (nl + 1);
+  rel := case when nl = 1 then d.relic else 0 end;
+  for p in update public.mf_exp_players x set state = 'home', out_step = s - 1,
+        gain = x.loot + case when public._exp_adm(x.uid) then sha else sh end,
+        loot = x.loot + case when public._exp_adm(x.uid) then sha else sh end,
+        relic = case when public._exp_adm(x.uid) then 0 else rel end
+      where day = p_day and state = 'in' and joined < s - 1 and (choice = 'home' or (auto > 0 and loot >= auto)) returning * loop
+    perform public._exp_pay(p.uid, p.gain, p.relic * c.relic_boost);
+    outs := outs || jsonb_build_object('uid', p.uid, 'v', p.gain, 'sh', case when public._exp_adm(p.uid) then sha else sh end, 'r', p.relic);
+    if c.open and (p.gain >= 10 or p.relic > 0) then
+      perform public._feed(jsonb_build_object('kind', 'exp_home', 'uid', p.uid, 'v', p.gain, 's', s - 1, 'r', p.relic * c.relic_boost));
+    end if;
+  end loop;
+  d.path := p0 - sh * nl; d.relic := d.relic - rel;
+  -- 2) la carte
+  card := d.deck -> (s - 1); k := card->>'k';
+  select count(*) into n from public.mf_exp_players where day = p_day and state = 'in' and not public._exp_adm(uid);
+  sh := 0;
+  if k = 't' then
+    v := (card->>'v')::int;
+    if n > 0 then sh := v / n; end if;
+    sha := v / (n + 1);
+    update public.mf_exp_players x set loot = x.loot + case when public._exp_adm(x.uid) then sha else sh end where day = p_day and state = 'in';
+    d.path := d.path + v - sh * n;
+  elsif k = 'r' then
+    d.relic := d.relic + 1;
+  else
+    dt := (card->>'d')::int;
+    if dt = any(d.seen) then fatal := true; else d.seen := d.seen || dt; end if;
+  end if;
+  ev := jsonb_build_object('s', s, 'k', k, 'n', n, 'sh', sh, 'out', (select coalesce(jsonb_agg(o), '[]'::jsonb) from jsonb_array_elements(outs) o where not public._exp_adm((o->>'uid')::uuid)),
+      'at', (extract(epoch from now()) * 1000)::bigint)
+    || case when k = 't' then jsonb_build_object('v', v) when k = 'd' then jsonb_build_object('d', dt, 'fatal', fatal) else '{}'::jsonb end;
+  d.step := s;
+  if fatal then
+    for p in update public.mf_exp_players set state = 'lost', out_step = s, gain = greatest(0, s - 1 - joined) * c.consol
+        where day = p_day and state = 'in' returning * loop
+      perform public._exp_pay(p.uid, p.gain, 0);
+      perform public._exp_push(p.uid, p_day, public._exp_dname(dt) || ' ! Encore un… L''expédition s''arrête à l''étape ' || s
+        || ' : tu perds ton butin de ' || p.loot || ' 🍌' || case when p.gain > 0 then ' (consolation : +' || p.gain || ' 🍌).' else '.' end);
+    end loop;
+    select coalesce(sum(loot), 0) into tot from public.mf_exp_players where day = p_day and state = 'lost' and out_step = s and not public._exp_adm(uid);
+    ev := ev || jsonb_build_object('lost', (select coalesce(jsonb_agg(jsonb_build_object('uid', uid, 'v', loot)), '[]'::jsonb) from public.mf_exp_players
+      where day = p_day and state = 'lost' and out_step = s and not public._exp_adm(uid)));
+    d.status := 'dead'; d.ended_at := now();
+    if c.open and n > 0 then
+      perform public._feed(jsonb_build_object('kind', 'exp_lost', 'us', (select jsonb_agg(uid) from public.mf_exp_players
+        where day = p_day and state = 'lost' and out_step = s and not public._exp_adm(uid)), 'd', dt, 's', s, 'v', tot));
+    end if;
+  else
+    for p in select * from public.mf_exp_players where day = p_day and state = 'in' loop
+      perform public._exp_push(p.uid, p_day, 'Étape ' || s || '/' || c.steps || ' : ' ||
+        case when k = 't' then 'trésor de ' || v || ' 🍌 (+' || case when public._exp_adm(p.uid) then sha else sh end || ' pour toi).'
+             when k = 'r' then '🗿 une Idole d''or ! Seul celui qui rentre SEUL la ramasse.'
+             else public._exp_dname(dt) || ' ! Si un 2e sort, tu perds tout.' end
+        || ' Ton butin : ' || p.loot || ' 🍌.' || case when s < c.steps then ' Tu continues ?' else '' end);
+    end loop;
+    -- 3) dernière carte : tout le monde rentre
+    if s >= c.steps then
+      select count(*) into n from public.mf_exp_players where day = p_day and state = 'in' and not public._exp_adm(uid);
+      p0 := d.path; sh := case when n > 0 then p0 / n else 0 end; sha := p0 / (n + 1);
+      rel := case when n = 1 then d.relic else 0 end;
+      outs := '[]'::jsonb;
+      for p in update public.mf_exp_players x set state = 'home', out_step = s,
+            loot = x.loot + case when public._exp_adm(x.uid) then sha else sh end,
+            gain = x.loot + case when public._exp_adm(x.uid) then sha else sh end,
+            relic = case when public._exp_adm(x.uid) then 0 else rel end
+          where day = p_day and state = 'in' returning * loop
+        perform public._exp_pay(p.uid, p.gain, p.relic * c.relic_boost);
+        if not public._exp_adm(p.uid) then outs := outs || jsonb_build_object('uid', p.uid, 'v', p.gain, 'sh', sh, 'r', p.relic); end if;
+        perform public._exp_push(p.uid, p_day, 'Fin de l''expédition, retour au camp : +' || p.gain || ' 🍌' || case when p.relic > 0 then ' et l''Idole d''or !' else ' !' end);
+        if c.open and (p.gain >= 10 or p.relic > 0) then
+          perform public._feed(jsonb_build_object('kind', 'exp_home', 'uid', p.uid, 'v', p.gain, 's', s, 'r', p.relic * c.relic_boost, 'end', true));
+        end if;
+      end loop;
+      d.path := p0 - sh * n; d.relic := d.relic - rel;
+      ev := ev || jsonb_build_object('end', outs);
+      d.status := 'done'; d.ended_at := now();
+    end if;
+  end if;
+  update public.mf_exp_days set step = d.step, path = d.path, relic = d.relic, seen = d.seen, status = d.status, ended_at = d.ended_at,
+    cards = cards || jsonb_build_array(ev) where day = p_day;
+end $$;
+
+create or replace function public._exp_close(p_day date)
+returns void language plpgsql security definer set search_path = public as $$
+declare c public.mf_exp_cfg; d public.mf_exp_days; n int; sh int := 0; sha int; rel int := 0; p record;
+begin
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = p_day for update;
+  if d.day is null or d.status <> 'run' then return; end if;
+  select count(*) into n from public.mf_exp_players where day = p_day and state = 'in' and not public._exp_adm(uid);
+  if n > 0 then sh := d.path / n; end if; sha := d.path / (n + 1);
+  rel := case when n = 1 then d.relic else 0 end;
+  for p in update public.mf_exp_players x set state = 'home', out_step = d.step,
+        loot = x.loot + case when public._exp_adm(x.uid) then sha else sh end,
+        gain = x.loot + case when public._exp_adm(x.uid) then sha else sh end,
+        relic = case when public._exp_adm(x.uid) then 0 else rel end
+      where day = p_day and state = 'in' returning * loop
+    perform public._exp_pay(p.uid, p.gain, p.relic * c.relic_boost);
+    perform public._exp_push(p.uid, p_day, 'L''expédition s''arrête pour la nuit : retour au camp avec +' || p.gain || ' 🍌 !');
+  end loop;
+  update public.mf_exp_days set status = 'done', ended_at = now(), path = path - sh * n, relic = relic - rel where day = p_day;
+end $$;
+
+-- l'admin ne bloque pas la carte suivante et ne fait pas partir l'expédition à lui seul
+create or replace function public._exp_allready(p_day date) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists(select 1 from public.mf_exp_players where day = p_day and state = 'in' and not public._exp_adm(uid))
+    and not exists(select 1 from public.mf_exp_players where day = p_day and state = 'in' and not public._exp_adm(uid)
+      and not (ready or (auto > 0 and loot >= auto))) $$;
+
+create or replace function public._exp_advance(p_day date) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare d public.mf_exp_days; c public.mf_exp_cfg;
+begin
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = p_day for update;
+  if d.day is null or d.status <> 'run' or d.step >= c.steps then return false; end if;
+  if not exists(select 1 from public.mf_exp_players where day = p_day and state = 'in' and not public._exp_adm(uid)) then return false; end if;
+  if now() >= public._exp_due(p_day) or (d.step >= 1 and public._exp_allready(p_day)) then
+    perform public._exp_step(p_day);
+    return true;
+  end if;
+  return false;
+end $$;
+
+create or replace function public.mf_exp_choose(p_choice text, p_auto int default null, p_ready boolean default true)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uuid := public._check(); n int; t date := public._exp_today(); d public.mf_exp_days; p record;
+begin
+  if p_choice not in ('go', 'home') then raise exception 'exp_bad'; end if;
+  update public.mf_exp_players set choice = p_choice, auto = coalesce(least(greatest(p_auto, 0), 999), auto), ready = coalesce(p_ready, ready)
+    where uid = u and state = 'in' and day in (t, t + 1);
+  get diagnostics n = row_count;
+  if n = 0 then raise exception 'exp_not_in'; end if;
+  if not public._exp_advance(t) then
+    -- un seul explorateur n'a pas encore choisi : on le relance (une fois par étape)
+    select * into d from public.mf_exp_days where day = t;
+    if d.status = 'run' and d.step >= 1 and (select count(*) from public.mf_exp_players where day = t and state = 'in' and not public._exp_adm(uid)) > 1 then
+      for p in select * from public.mf_exp_players where day = t and state = 'in' and not public._exp_adm(uid) and not (ready or (auto > 0 and loot >= auto)) and coalesce(nudged, -1) <> d.step loop
+        if (select count(*) from public.mf_exp_players where day = t and state = 'in' and not public._exp_adm(uid) and not (ready or (auto > 0 and loot >= auto))) = 1 then
+          update public.mf_exp_players set nudged = d.step where day = t and uid = p.uid;
+          perform public._exp_push(p.uid, t, 'Tout le monde a choisi pour l''étape ' || (d.step + 1) || ', il ne manque plus que toi ! Continuer ou rentrer au camp ?');
+        end if;
+      end loop;
+    end if;
+  end if;
+  return public._exp_info(u);
+end $$;
+
+create or replace function public._exp_info(p_uid uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare c public.mf_exp_cfg; t date := public._exp_today(); d public.mf_exp_days; me public.mf_exp_players; tg date := public._exp_target();
+  nx public.mf_exp_players; last public.mf_exp_players; ld public.mf_exp_days;
+begin
+  perform public._exp_ensure(t);
+  select * into c from public.mf_exp_cfg where id = 1;
+  select * into d from public.mf_exp_days where day = t;
+  select * into me from public.mf_exp_players where day = t and uid = p_uid;
+  select * into nx from public.mf_exp_players where day = t + 1 and uid = p_uid;
+  select pl.* into last from public.mf_exp_players pl join public.mf_exp_days dd on dd.day = pl.day
+    where pl.uid = p_uid and pl.state <> 'in' and not pl.seen and dd.status <> 'run' order by pl.day desc limit 1;
+  if last.day is not null then select * into ld from public.mf_exp_days where day = last.day; end if;
+  return jsonb_build_object(
+    'open', coalesce(c.open, false), 'steps', c.steps, 'firstHour', c.first_hour, 'consol', c.consol, 'relicBoost', c.relic_boost,
+    'dangers', c.dangers, 'copies', c.copies,
+    'day', t, 'status', d.status, 'step', d.step, 'path', d.path, 'relic', d.relic, 'seen', to_jsonb(d.seen), 'cards', d.cards,
+    'startAt', (extract(epoch from d.base) * 1000)::bigint,
+    'nextAt', case when d.status = 'run' and d.step < c.steps then (extract(epoch from public._exp_due(t)) * 1000)::bigint end,
+    'inN', (select count(*) from public.mf_exp_players where day = t and state = 'in' and not public._exp_adm(uid)),
+    'readyN', (select count(*) from public.mf_exp_players where day = t and state = 'in' and not public._exp_adm(uid) and (ready or (auto > 0 and loot >= auto))),
+    'players', (select coalesce(jsonb_agg(jsonb_build_object('uid', pl.uid, 'name', coalesce(ps.pseudo, '?'), 'state', pl.state,
+        'loot', pl.loot, 'gain', pl.gain, 'relic', pl.relic, 'out', pl.out_step, 'joined', pl.joined,
+        'ready', pl.ready or (pl.auto > 0 and pl.loot >= pl.auto), 'admin', public._exp_adm(pl.uid))
+        order by (pl.state = 'in') desc, pl.gain desc, pl.loot desc, pl.at), '[]'::jsonb)
+      from public.mf_exp_players pl left join public.pstate ps on ps.uid = pl.uid where pl.day = t and (pl.uid = p_uid or not public._exp_adm(pl.uid))),
+    'me', case when me.uid is null then null else jsonb_build_object('state', me.state, 'choice', me.choice, 'auto', me.auto, 'loot', me.loot,
+      'gain', me.gain, 'relic', me.relic, 'out', me.out_step, 'joined', me.joined, 'canLeave', me.state = 'in' and me.joined < d.step,
+      'ready', me.ready or (me.auto > 0 and me.loot >= me.auto), 'ghost', public._exp_adm(p_uid)) end,
+    'target', tg,
+    'next', jsonb_build_object('day', t + 1, 'joined', nx.uid is not null, 'choice', nx.choice, 'auto', nx.auto,
+      'n', (select count(*) from public.mf_exp_players where day = t + 1 and not public._exp_adm(uid)),
+      'startAt', (extract(epoch from (((t + 1)::timestamp + make_interval(hours => c.first_hour)) at time zone 'Europe/Paris')) * 1000)::bigint),
+    'last', case when last.day is null then null else jsonb_build_object('day', last.day, 'state', last.state, 'gain', last.gain, 'loot', last.loot,
+      'relic', last.relic, 'out', last.out_step, 'status', ld.status, 'steps', ld.step,
+      'danger', case when ld.status = 'dead' then (ld.cards -> -1 ->> 'd')::int end) end,
+    'hist', (select coalesce(jsonb_agg(jsonb_build_object('day', h.day, 'state', h.state, 'gain', h.gain, 'relic', h.relic, 'out', h.out_step) order by h.day desc), '[]'::jsonb)
+      from (select * from public.mf_exp_players where uid = p_uid and state <> 'in' order by day desc limit 7) h),
+    'me_uid', p_uid,
+    'now', (extract(epoch from now()) * 1000)::bigint,
+    'state', public._state(p_uid));
+end $$;
+
+revoke execute on function public._exp_adm(uuid), public._exp_reveal(date), public._exp_close(date), public._exp_allready(date), public._exp_advance(date),
+  public._exp_info(uuid) from public, anon, authenticated;
+revoke execute on function public.mf_exp_choose(text, int, boolean) from public, anon;
+grant execute on function public.mf_exp_choose(text, int, boolean) to authenticated;

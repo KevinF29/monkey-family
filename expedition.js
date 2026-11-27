@@ -169,7 +169,7 @@ function meHTML(){const me=S.me,run=S.status==="run"&&S.step<+S.steps;
    ${live?`<div class="ex-two" role="group" aria-label="Ton choix pour la prochaine étape">
     <button type="button" class="ex-ch go${on("go")}" data-c="go" aria-pressed="${me.choice==="go"&&rd}"${busy||first?" disabled":""}>🧗 Continuer<small>je tente la suite</small></button>
     <button type="button" class="ex-ch home${on("home")}" data-c="home" aria-pressed="${me.choice==="home"&&rd}"${busy||!can||first?" disabled":""}>🏕️ Rentrer<small>${can?"je garde mon butin":"après ta 1re carte"}</small></button></div>
-   <p class="ex-sub">${msg}</p>${autoHTML(me.auto)}`:""}`;}
+   <p class="ex-sub">${msg}</p>${me.ghost?`<p class="ex-sub">👻 Admin : tu joues sans compter. Tu ne bloques personne, tu ne prends rien aux parts des potes et tu ne peux pas ramasser l'Idole.</p>`:""}${autoHTML(me.auto)}`:""}`;}
  if(me.state==="home")return `<img class="ex-hero" src="${IMG.camp}" alt=""><div class="ex-sub">Rentré au camp${me.out?` après l'étape ${esc(me.out)}`:""}</div><div class="ex-loot">+${esc(me.gain)} 🍌</div>${+me.relic?`<p><b>🗿 Et l'Idole d'or : +${esc(+me.relic*(+S.relicBoost||1))} booster !</b></p>`:""}`;
  return `<img class="ex-hero" src="${IMG.perdu}" alt=""><div class="ex-sub">Butin perdu à l'étape ${esc(me.out)}…</div><div class="ex-loot" style="color:#ff8f7a">${esc(me.loot)} 🍌</div><p class="ex-sub">Consolation : +${esc(me.gain)} 🍌 (${esc(S.consol)} par carte passée).</p>`;}
 function autoHTML(v){v=+v||0;const opts=AUTO.includes(v)?AUTO:AUTO.concat(v).sort((a,b)=>a-b);
@@ -177,7 +177,7 @@ function autoHTML(v){v=+v||0;const opts=AUTO.includes(v)?AUTO:AUTO.concat(v).sor
 function playersHTML(){const L=S.players||[],me=S.me_uid,live=S.status==="run"&&S.step>=1&&S.step<+S.steps;if(!L.length)return `<p class="ex-empty">Personne n'est encore parti. Sois le premier !</p>`;
  return `<ul class="ex-pl">${L.map(p=>{const ic=p.state==="in"?"🧗":p.state==="home"?"🏕️":"💀",
   v=p.state==="in"?`${live?(p.ready?"✅ ":"⏳ "):""}${p.loot} 🍌 en poche`:p.state==="home"?`+${p.gain} 🍌${+p.relic?" 🗿":""} · étape ${p.out}`:`perdu ${p.loot} 🍌 · étape ${p.out}`;
-  return `<li class="${p.uid===me?"me":""} ${p.state}"><span aria-hidden="true">${ic}</span><span class="nm">${esc(p.name)}${p.uid===me?" (toi)":""}</span><span class="v">${esc(v)}</span></li>`;}).join("")}</ul>`;}
+  return `<li class="${p.uid===me?"me":""} ${p.state}"><span aria-hidden="true">${ic}</span><span class="nm">${esc(p.name)}${p.uid===me?(p.admin?" (toi · ne compte pas)":" (toi)"):""}</span><span class="v">${esc(v)}</span></li>`;}).join("")}</ul>`;}
 
 function render(){if(!root||!S)return;const st=S.state;
  $("#exBan").textContent=st?st.bananas:"…";$("#exStep").textContent=`${S.step}/${S.steps}`;
