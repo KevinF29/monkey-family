@@ -256,7 +256,7 @@ function box(g,s0,s1,l0,l1,y0,y1,cF,cT,cS){
 function toSeg(g){const f=fw(g.dir),r=rt(g.dir),dx=cam.x-g.sx,dz=cam.z-g.sz;return {s:dx*f[0]+dz*f[1],l:dx*r[0]+dz*r[1]};}
 const BLK=[[[138,128,104],[160,150,124],[112,104,84]],[[126,120,96],[150,144,118],[100,96,78]],[[146,124,96],[168,146,116],[118,100,78]]];
 function obstacles(g){for(const o of g.obs){
- if(o.k==="low"&&ok("root"))bill(g,"root",o.s0,-HW-.3,HW+.3,0,null);          // racine : packs/rush-racine.webp
+ if(o.k==="low"&&ok("root"))bill(g,"root",o.s0,-HW-.3,HW+.3,0,.8);          // racine : packs/rush-racine.webp
  else if(o.k==="high"&&ok("beam"))bill(g,"beam",o.s0,-HW-.55,HW+.55,0,2.1);  // arche : packs/rush-poutre.webp
  else if(o.k==="block"&&ok("block"))bill(g,"block",o.s0,o.lat-.62,o.lat+.62,0,null); // bloc : packs/rush-bloc.webp
  else if(o.k==="low"){box(g,o.s0,o.s1,-HW-.15,HW+.15,0,.55,[104,66,34],[134,90,48],[84,52,26]);Q.push({z:depth(g,o.s0,0),layer:3,root:[g,o]});}
@@ -474,6 +474,9 @@ function build(){
  cv=$("canvas");cx=cv.getContext("2d");
  const lg=$(".ru-logo"),noLogo=()=>{lg.hidden=true;$(".ru-logoT").hidden=false;};lg.onerror=noLogo;if(lg.complete&&!lg.naturalWidth)noLogo();
  Object.entries(IMG).forEach(([k,u])=>{if(k==="logo")return;const i=new Image();i.src=u;IM[k]=i;});
+ // la brume du lointain prend la couleur du bas du panorama, pour que l'horizon se fonde
+ IM.bg.addEventListener("load",()=>{try{const c=document.createElement("canvas");c.width=c.height=1;const x=c.getContext("2d"),im=IM.bg;
+  x.drawImage(im,0,im.naturalHeight*.8,im.naturalWidth,im.naturalHeight*.2,0,0,1,1);const d=x.getImageData(0,0,1,1).data;FOG[0]=d[0];FOG[1]=d[1];FOG[2]=d[2];}catch(e){}});
  try{new ResizeObserver(size).observe($(".ru-main"));}catch(e){addEventListener("resize",size);}
  // glisser le doigt : une action par geste, dès que le doigt a bougé assez
  const scr=$("#ruScr");let sw=null;
