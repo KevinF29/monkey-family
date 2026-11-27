@@ -12,7 +12,7 @@
 const NAME="Monkey Rush";
 const P="packs/rush-";
 const IMG={logo:P+"titre.webp",monkey:P+"singe.webp",fall:P+"chute.webp",jump:P+"saut.webp",slide:P+"glisse.webp",
- root:P+"racine.webp",beam:P+"poutre.webp",block:P+"bloc.webp",wall:P+"mur.webp",tree:P+"arbre.webp",pillar:P+"pilier.webp",torch:P+"torche.webp",bush:P+"buisson.webp",bg:P+"fond.webp",path:P+"dalles.webp",banana:"packs/fly-banana.webp"};
+ root:P+"racine.webp",beam:P+"poutre.webp",block:P+"bloc.webp",wall:P+"mur.webp",tree:P+"arbre.webp",pillar:P+"pilier.webp",torch:P+"torche.webp",bush:P+"buisson.webp",bg:P+"fond.webp",path:P+"dalles.webp",grass:P+"herbe.webp",banana:"packs/fly-banana.webp"};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",rush_limit:"Plus de courses dans cette manche : reviens après 18 h !",rush_closed:NAME+" n'est pas ouvert en ce moment.",
  rush_token:"Cette course n'est plus valable.",not_member:"Ton accès est en pause."};
@@ -224,7 +224,8 @@ function floorSeg(g,stub){
   if(!(open&&(g.turn==="L"||g.turn==="T")))poly([wpt(g,q,-HW-CURB,.18),wpt(g,q1,-HW-CURB,.18),wpt(g,q1,-HW,.18),wpt(g,q,-HW,.18)],CURBC,1,-.01);
   if(!(open&&(g.turn==="R"||g.turn==="T")))poly([wpt(g,q,HW,.18),wpt(g,q1,HW,.18),wpt(g,q1,HW+CURB,.18),wpt(g,q,HW+CURB,.18)],CURBC,1,-.01);}
  const ga=stub?HW:a,gb=stub?b:b+22;
- for(let q=ga;q<gb;q+=4){const q1=Math.min(gb,q+4),i=Math.floor(q/4)&1;
+ if(ok("grass")){for(let q=ga;q<gb;q+=2){const q1=Math.min(gb,q+2);turf(g,q,q1,-HW-14,-HW-CURB);turf(g,q,q1,HW+CURB,HW+14);}}
+ else for(let q=ga;q<gb;q+=4){const q1=Math.min(gb,q+4),i=Math.floor(q/4)&1;
   poly([wpt(g,q,-HW-14),wpt(g,q1,-HW-14),wpt(g,q1,-HW-CURB),wpt(g,q,-HW-CURB)],GRASS[i],0);
   poly([wpt(g,q,HW+CURB),wpt(g,q1,HW+CURB),wpt(g,q1,HW+14),wpt(g,q,HW+14)],GRASS[i],0);}
  if(!stub){const e=g.L+HW;   // le mur du bout : il faut tourner !
@@ -241,6 +242,16 @@ function drawTile(T,f){const im=IM.path,iw=im.naturalWidth,ih=im.naturalHeight,P
  const ax=(P[1][0]-P[0][0])/iw,ay=(P[1][1]-P[0][1])/iw,ccx=(P[2][0]-P[0][0])/-sh,ccy=(P[2][1]-P[0][1])/-sh;
  cx.transform(ax,ay,ccx,ccy,P[0][0]-ccx*(sy+sh),P[0][1]-ccy*(sy+sh));cx.drawImage(im,0,sy,iw,sh+1,0,sy,iw,sh+1);cx.restore();
  if(f>0){cx.fillStyle=`rgba(${FOG[0]},${FOG[1]},${FOG[2]},${f})`;cx.beginPath();cx.moveTo(P[0][0],P[0][1]);cx.lineTo(P[1][0],P[1][1]);cx.lineTo(P[3][0],P[3][1]);cx.lineTo(P[2][0],P[2][1]);cx.closePath();cx.fill();}}
+// herbe des bas-côtés (packs/rush-herbe.webp) : texture carrée raccordable qui couvre 4 m × 4 m, remplie en motif déformé en perspective
+let PAT=null;
+function turf(g,q,q1,l0,l1){const c=[wpt(g,q,l0),wpt(g,q,l1),wpt(g,q1,l0),wpt(g,q1,l1)].map(toCam);let zm=1e9,zs=0;for(const v of c){zs+=v[2];if(v[2]<zm)zm=v[2];}
+ const z=zs/4;if(zm<NEAR||zm>FAR)return;Q.push({z,layer:0,turf:{P:c.map(prj),q,q1,l0,l1},fog:fogK(z)});}
+function drawTurf(T,f){const im=IM.grass,iw=im.naturalWidth,ih=im.naturalHeight,P=T.P;
+ if(!PAT){try{PAT=cx.createPattern(im,"repeat");}catch(e){return;}}
+ const x0=T.l0/4*iw,x1=T.l1/4*iw,y0=-T.q/4*ih,y2=-T.q1/4*ih,ax=(P[1][0]-P[0][0])/(x1-x0),ay=(P[1][1]-P[0][1])/(x1-x0),ccx=(P[2][0]-P[0][0])/(y2-y0),ccy=(P[2][1]-P[0][1])/(y2-y0);
+ try{PAT.setTransform(new DOMMatrix([ax,ay,ccx,ccy,P[0][0]-ax*x0-ccx*y0,P[0][1]-ay*x0-ccy*y0]));}catch(e){}
+ cx.beginPath();cx.moveTo(P[0][0],P[0][1]);cx.lineTo(P[1][0],P[1][1]);cx.lineTo(P[3][0],P[3][1]);cx.lineTo(P[2][0],P[2][1]);cx.closePath();cx.fillStyle=PAT;cx.fill();
+ if(f>0){cx.fillStyle=`rgba(${FOG[0]},${FOG[1]},${FOG[2]},${f})`;cx.fill();}}
 // image posée debout face à la caméra, entre deux couloirs (l0 → l1), le bas à la hauteur y0 ; hauteur hM (m) ou selon les proportions de l'image
 function bill(g,im,ss,l0,l1,y0,hM,zb){const a=toCam(wpt(g,ss,l0,y0)),b=toCam(wpt(g,ss,l1,y0));if(Math.min(a[2],b[2])<NEAR+.3)return;
  const z=(a[2]+b[2])/2;if(z>FAR)return;Q.push({z:z+(zb||0),layer:3,bill:{im,a:prj(a),b:prj(b),k:F/z,hM,f:fogK(z)}});}
@@ -283,6 +294,7 @@ function sky(){const yaw=cam.th;
  ridge(sx,26,HZ+1,"#4f7a52",420,4);
  const g2=cx.createLinearGradient(0,HZ,0,H);g2.addColorStop(0,mix([62,112,52],.9));g2.addColorStop(.25,"#4a7a40");g2.addColorStop(1,"#2e5326");cx.fillStyle=g2;cx.fillRect(0,HZ,W,H-HZ);}
 function drawQ(q){
+ if(q.turf){drawTurf(q.turf,q.fog);return;}
  if(q.tex){drawTile(q.tex,q.fog);return;}
  if(q.bill){drawBill(q.bill);return;}
  if(q.pts){cx.fillStyle=q.col;cx.beginPath();cx.moveTo(q.pts[0][0],q.pts[0][1]);for(let i=1;i<q.pts.length;i++)cx.lineTo(q.pts[i][0],q.pts[i][1]);cx.closePath();cx.fill();return;}
