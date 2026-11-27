@@ -4,13 +4,14 @@
    Score = mètres parcourus + 5 points par banane. À 18 h, le serveur classe la manche et donne les récompenses
    (1er 1 booster + 20 🍌, 2e 15, 3e 10, 4e 5, 5e 3, 6e 1). Serveur : mf_rush_* (supabase-rush.sql).
    Visible par l'admin seulement tant que le jeu n'est pas ouvert (réglages admin → « Ouvrir à tous »).
-   Visuels provisoires dessinés dans le code ; les images de Kévin (packs/rush-*.webp) prennent le relais dès qu'elles existent. */
+   Visuels provisoires dessinés dans le code ; les images de Kévin (packs/rush-*.webp) prennent le relais dès qu'elles existent :
+   rush-singe (4 images de course vues de dos), rush-saut (saut, vu de dos), rush-glisse (glissade, vu de dos), rush-chute (singe sonné). */
 (function(){
 "use strict";
 
 const NAME="Monkey Rush";
 const P="packs/rush-";
-const IMG={logo:P+"titre.webp",monkey:P+"singe.webp",fall:P+"chute.webp",banana:"packs/fly-banana.webp"};
+const IMG={logo:P+"titre.webp",monkey:P+"singe.webp",fall:P+"chute.webp",jump:P+"saut.webp",slide:P+"glisse.webp",banana:"packs/fly-banana.webp"};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",rush_limit:"Plus de courses dans cette manche : reviens après 18 h !",rush_closed:NAME+" n'est pas ouvert en ce moment.",
  rush_token:"Cette course n'est plus valable.",not_member:"Ton accès est en pause."};
@@ -300,6 +301,9 @@ function monkey(){const pw=playerW(),c=toCam(pw),g=toCam([pw[0],0,pw[2]]);if(c[2
  if(mode==="dead"){const q=clamp((t-deadAt)*2.5,0,1);cx.rotate((deathKind==="wall"||deathKind==="block"?-1:1)*q*1.2);cx.translate(0,q*2*u);}
  else cx.rotate(clamp(latV*.025,-.3,.3));
  if(mode==="dead"&&ok("fall")){const im=IM.fall,h=22*u,w=h*im.naturalWidth/im.naturalHeight;cx.drawImage(im,-w/2,-h,w,h);cx.restore();stars(p,u);return;}
+ const one=(im,hh)=>{const h=hh*u,w=h*im.naturalWidth/im.naturalHeight;cx.drawImage(im,-w/2,-h,w,h);cx.restore();};
+ if(sl&&ok("slide"))return one(IM.slide,13);              // glissade : packs/rush-glisse.webp
+ if(run&&y>0&&ok("jump"))return one(IM.jump,22);          // saut : packs/rush-saut.webp
  if(ok("monkey")&&!sl){const im=IM.monkey,fwid=im.naturalWidth/4,f=run?Math.floor(ph/1.57)&3:0,h=22*u,w=h*fwid/im.naturalHeight;cx.drawImage(im,f*fwid,0,fwid,im.naturalHeight,-w/2,-h,w,h);cx.restore();return;}
  if(sl)cx.scale(1.1,.6);
  const BR="#7a4a26",DK="#5a3418",LT="#d9a77a";
