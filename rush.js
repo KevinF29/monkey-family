@@ -139,7 +139,7 @@ function mkSeg(sx,sz,dir,first){
  const L=first?70:Math.round(rnd(40,78));
  const g={sx,sz,dir,L,obs:[],ban:[],deco:[],turn:first?pick(["L","R"]):(turns<2?pick(["L","R"]):pick(["L","R","L","R","T"]))};
  // obstacles
- const v=Math.max(speed,10),pc=first?0:clamp((dist-300)/1500,0,.55),lim=L-(dist>1200?8:14);let p=first?26:Math.max(16,v*1.3);
+ const v=Math.max(speed,10),pc=first?0:clamp((dist-300)/1500,0,.55),lim=L-(dist>1200?8:14);let p=first?rnd(24,32):Math.max(16,v*1.3);
  while(p<lim){
   const r=Math.random(),k=r<.27?"low":r<.5?"high":"block";
   const cb=Math.random()<pc?combo(g,p,v,lim):null;
@@ -679,6 +679,8 @@ async function boot(){
    if(+I.left>0)return {line:`Encore ${I.left} course${+I.left>1?"s":""} · ${I.price} 🍌 la course${pos}`,pre:"Classement dans ",in:end,hot:false};
    return {line:"Plus de courses dans cette manche"+pos,pre:"Classement dans ",in:end,hot:false};}});
 }
-window.MF_RUSH={open,_test:{act,setDist(v){dist=v;},get st(){return {mode,s,lat,y,dist,nb,speed,turns,cur,view,deathKind,slideT,laneT};}}};
+window.MF_RUSH={open};
+// commandes de test (pilote automatique, accéléré) : seulement sur un serveur local, jamais dans l'appli en ligne
+if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname))window.MF_RUSH._test={act,setDist(v){dist=v;},step(n,dt){for(let i=0;i<n&&mode==="play";i++)update(dt);},start(){reset();mode="play";},get gl(){return GL?{calls:GL.R.info.render.calls,geo:GL.R.info.memory.geometries,tex:GL.R.info.memory.textures,objs:(()=>{let n=0;GL.scene.traverse(()=>n++);return n;})()}:null;},get st(){return {mode,s,lat,y,dist,nb,speed,turns,cur,view,deathKind,slideT,laneT};}};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
