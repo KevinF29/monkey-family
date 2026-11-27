@@ -204,13 +204,16 @@ function update(dt){t+=dt;
  for(const b of bans){if(!b.got&&Math.hypot(b.x-mx,b.y-cyM)<32){b.got=true;nBan++;score=Math.floor(hmax)+5*nBan;[988,1319].forEach((f,i)=>beep(f,i*.06,.08,.03,"triangle"));burst(b.x,b.y,"#ffd23f",10,200);}}
  // serpents (on peut leur sauter dessus, mais pas les toucher par en dessous ou par le côté)
  for(const p of plats){if(!p.snake||p.fall)continue;const sx=p.x,sy=p.y-16;
-  if(Math.abs(sx-mx)<26&&Math.abs(sy-cyM)<34){const e={x:sx,y:sy,dead:false};hit("snake",e);if(e.dead){p.snake=false;}if(mode!=="play")return;}}
+  if(Math.abs(sx-mx)<26&&Math.abs(sy-cyM)<34){
+   // en retombant dessus (pieds au-dessus du bois) : le serpent est écrasé et le singe rebondit
+   if(vy>0&&heli<=0&&my<=p.y+4){p.snake=false;my=Math.min(my,p.y);vy=-VJ*1.12;squash=.12;burst(sx,sy,"#4caf50",14,220);beep(660,0,.1,.04,"square",990);vib(20);continue;}
+   const e={x:sx,y:sy,dead:false};hit("snake",e);if(e.dead){p.snake=false;}if(mode!=="play")return;}}
  // toucans
  const h=hmax;
  if(h>300){touT-=dt;if(touT<=0){touT=rnd(6,12)-Math.min(4,h/600);const d=Math.random()<.5?1:-1;tous.push({x:d>0?-40:W+40,y:camY+rnd(60,H*.5),vx:d*(110+Math.min(130,h*.03)),dead:false,ph:Math.random()*6});}}
  for(const o of tous){o.x+=o.vx*dt;if(o.dead)continue;
   if(Math.abs(o.x-mx)<34&&Math.abs(o.y-cyM)<36){
-   if(vy>0&&my<o.y+6){o.dead=true;vy=-VJ*1.12;burst(o.x,o.y,"#ff8a1f",14,220);beep(660,0,.1,.04,"square",990);}
+   if(vy>0&&heli<=0&&my<o.y+14){o.dead=true;vy=-VJ*1.12;burst(o.x,o.y,"#ff8a1f",14,220);beep(660,0,.1,.04,"square",990);}
    else{hit("toucan",o);if(mode!=="play")return;}}}
  tous=tous.filter(o=>!o.dead&&o.x>-80&&o.x<W+80&&o.y<camY+H+60);
  // noix de coco (un point rouge prévient avant la chute)
@@ -498,6 +501,8 @@ async function boot(){
    return {line:"Plus de parties dans cette manche"+pos,pre:"Classement dans ",in:end,hot:false};}});
 }
 window.MF_JUMP={open};
-if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname))window.MF_JUMP._test={st:()=>({mode,mx,my,vy,camY,hmax,score,nBan,plats:plats.length,heli,shield,why}),lift:m=>{startY+=m*PXM;},spawn:()=>{const y=camY+H*.5;addPlat(90,y,"n",{it:"spring",itx:0});addPlat(330,y,"n",{it:"heli",itx:0});addPlat(90,y-140,"n",{it:"shield",itx:0});addPlat(330,y-140,"n",{snake:true});addPlat(210,y+120,"p");addPlat(210,y-260,"m");tous.push({x:120,y:camY+110,vx:150,dead:false,ph:0});cocos.push({x:300,y:camY+200,vy:0,warn:0,dead:false},{x:60,y:0,vy:0,warn:5,dead:false});},world:()=>({mx,my,vy,heli,plats:plats.filter(p=>!p.fall).map(p=>({x:p.x,y:p.y,k:p.k,w:p.w,s:p.snake,g:!!p.ground,it:p.it})),tous:tous.map(o=>({x:o.x,y:o.y})),cocos:cocos.map(o=>({x:o.x,y:o.y,w:o.warn}))})};
+if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname))window.MF_JUMP._test={st:()=>({mode,mx,my,vy,camY,hmax,score,nBan,plats:plats.length,heli,shield,why}),lift:m=>{startY+=m*PXM;},place:(x,y,v)=>{mx=x;my=y;vy=v;},clear:()=>{plats=plats.filter(p=>p.ground);tous=[];cocos=[];bans=[];topY=-1e9;},pow:(h,s)=>{heli=h;shield=s;},cam:()=>camY,
+ add:(w,o)=>{if(w==="plat"){const p=addPlat(o.x,o.y,o.k||"n",o.e);return plats.indexOf(p);}if(w==="tou")tous.push(Object.assign({dead:false,ph:0},o));if(w==="coco")cocos.push(Object.assign({dead:false,warn:0,vy:0},o));if(w==="ban")bans.push(Object.assign({ph:0},o));},
+ plat:i=>{const p=plats[i];return p?{y:p.y,fall:p.fall,snake:p.snake,it:p.it}:null;},spawn:()=>{const y=camY+H*.5;addPlat(90,y,"n",{it:"spring",itx:0});addPlat(330,y,"n",{it:"heli",itx:0});addPlat(90,y-140,"n",{it:"shield",itx:0});addPlat(330,y-140,"n",{snake:true});addPlat(210,y+120,"p");addPlat(210,y-260,"m");tous.push({x:120,y:camY+110,vx:150,dead:false,ph:0});cocos.push({x:300,y:camY+200,vy:0,warn:0,dead:false},{x:60,y:0,vy:0,warn:5,dead:false});},world:()=>({mx,my,vy,heli,plats:plats.filter(p=>!p.fall).map(p=>({x:p.x,y:p.y,k:p.k,w:p.w,s:p.snake,g:!!p.ground,it:p.it})),tous:tous.map(o=>({x:o.x,y:o.y})),cocos:cocos.map(o=>({x:o.x,y:o.y,w:o.warn}))})};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
