@@ -298,9 +298,10 @@ function monkey(){const pw=playerW(),c=toCam(pw),g=toCam([pw[0],0,pw[2]]);if(c[2
  cx.fillStyle="rgba(0,0,0,.28)";cx.beginPath();cx.ellipse(pg[0],pg[1],(3.6-Math.min(1.5,y))*u,1.1*u,0,0,7);cx.fill();
  const run=mode==="play",ph=dist*1.7,a=run?Math.sin(ph):0,bob=run&&y<=0?Math.abs(Math.cos(ph))*.7*u:Math.sin(t*3)*.3*u,sl=slideT>0;
  cx.save();cx.translate(p[0],p[1]-bob);
+ if(mode==="dead"&&ok("fall")){const q=clamp((t-deadAt)*4,0,1),im=IM.fall,h=21*u*(.6+.4*q),w=h*im.naturalWidth/im.naturalHeight;   // singe sonné : packs/rush-chute.webp
+  cx.globalAlpha=q;cx.drawImage(im,-w/2,-h,w,h);cx.globalAlpha=1;cx.restore();return;}
  if(mode==="dead"){const q=clamp((t-deadAt)*2.5,0,1);cx.rotate((deathKind==="wall"||deathKind==="block"?-1:1)*q*1.2);cx.translate(0,q*2*u);}
  else cx.rotate(clamp(latV*.025,-.3,.3));
- if(mode==="dead"&&ok("fall")){const im=IM.fall,h=22*u,w=h*im.naturalWidth/im.naturalHeight;cx.drawImage(im,-w/2,-h,w,h);cx.restore();stars(p,u);return;}
  const one=(im,hh)=>{const h=hh*u,w=h*im.naturalWidth/im.naturalHeight;cx.drawImage(im,-w/2,-h,w,h);cx.restore();};
  if(sl&&ok("slide"))return one(IM.slide,13);              // glissade : packs/rush-glisse.webp
  if(run&&y>0&&ok("jump"))return one(IM.jump,22);          // saut : packs/rush-saut.webp
