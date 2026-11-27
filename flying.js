@@ -172,7 +172,7 @@ async function send(sc){
  const res=!r?{t:"Score non envoyé : "+errText(err),w:false}
   :r.why==="fly_bad"?{t:"Ce vol n'a pas été compté.",w:false}
   :r.why==="fly_late"?{t:"La manche était déjà terminée : ce vol ne compte pas.",w:false}
-  :r.newBest?{t:`Meilleur vol de la manche ! Tu es ${r.rank===1?"1er":r.rank+"e"}.`,w:true}
+  :r.newBest?{t:`Meilleur vol de la manche !${r.rank?` Tu es ${r.rank===1?"1er":r.rank+"e"}.`:" (hors classement)"}`,w:true}
   :{t:`Ton meilleur vol reste ${S&&S.myBest!=null?S.myBest:"—"} points${r.rank?` · ${r.rank===1?"1er":r.rank+"e"}`:""}.`,w:false};
  if(r){take(r.info);render();}
  if(r&&r.newBest)[523,659,784,1047].forEach((f,i)=>beep(f,i*.08,.16,.05,"triangle"));

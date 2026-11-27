@@ -21,7 +21,7 @@ create table if not exists public.mf_fly_cfg (
   free int not null default 1,           -- vols gratuits par manche
   flights int not null default 5,        -- vols par manche (gratuits compris)
   rewards jsonb not null default '[{"ban":20,"boost":1},{"ban":15},{"ban":10},{"ban":5},{"ban":3},{"ban":1}]'::jsonb,
-  admin_ranked boolean not null default true,   -- l'admin joue dans le classement comme les autres
+  admin_ranked boolean not null default false,   -- l'admin ne compte pas dans le classement (choix de Kévin, 27/11)
   grace_s int not null default 120       -- secondes après 18 h avant de régler la manche
 );
 alter table public.mf_fly_cfg enable row level security;   -- aucune politique : on passe uniquement par les fonctions
