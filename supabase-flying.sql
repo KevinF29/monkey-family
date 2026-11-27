@@ -194,15 +194,17 @@ end $$;
 -- atterrir : rend le jeton et le score. Le score compte pour la manche où le vol a décollé.
 create or replace function public.mf_fly_end(p_token uuid, p_score int)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare u uuid := public._check(); t public.mf_fly; el numeric; mx int; sc int := greatest(0, coalesce(p_score, 0));
+declare u uuid := public._check(); t public.mf_fly; el numeric; mx int; n int; sc int := greatest(0, coalesce(p_score, 0));
   old int; counted boolean := true; why text := null; nb_ boolean := false; rk int;
 begin
   select * into t from public.mf_fly where uid = u for update;
   if t.uid is null or t.token is null or t.token <> p_token then raise exception 'fly_token'; end if;
   el := extract(epoch from now() - t.started_at);
   update public.mf_fly set token = null where uid = u;
-  -- plafond : le 1er tronc arrive après ~3 s, puis un tronc toutes les 1,25 s au mieux, une banane au plus par tronc
-  mx := 2 * (floor(el / 1.25)::int + 1);
+  -- plafond : au mieux un tronc toutes les 1,25 s (n), une banane sur 45 % des troncs (+ 4 écarts-types de chance) + 5
+  -- (resserré le 27/11 : ≈ 374 pts max pour 290 s au lieu de 466 ; le jeu parfait simulé fait ≈ 350)
+  n := floor(el / 1.25)::int + 1;
+  mx := least(2 * n, ceil(1.45 * n + 4 * sqrt(0.2475 * n) + 5)::int);
   if el > 3600 or sc > mx or sc > 5000 then
     counted := false; why := 'fly_bad';
     perform public._fly_log(u, 'Vol refusé : ' || sc || ' points en ' || round(el) || ' s');
