@@ -123,7 +123,8 @@ async function setCtrl(c){
  if(c==="tilt")toast("Penche ton téléphone à gauche ou à droite pour diriger le singe.");
  render();}
 function touchDir(){let d=0;for(const v of ptrs.values())d=v;return d;}
-function wantDir(){const k=(keyR?1:0)-(keyL?1:0);if(k)return k;const p=touchDir();if(p)return p;return ctrl==="tilt"?tilt:0;}
+// mode Pencher : seul le téléphone dirige (toucher l'écran ne fait rien) ; mode Toucher : les côtés de l'écran ; le clavier marche toujours
+function wantDir(){const k=(keyR?1:0)-(keyL?1:0);if(k)return k;return ctrl==="tilt"?tilt:touchDir();}
 
 /* ---------- le jeu (coordonnées logiques 420 × 640, y vers le bas, monde qui monte) ---------- */
 const W=420,H=640,PXM=20,G=1500,VJ=820,VS=1360,VH=760,HELI_T=3,MAXVX=340,MW=58,MH=64;
@@ -172,9 +173,9 @@ function update(dt){t+=dt;
   const g=plats.find(p=>p.ground);vy+=G*dt;my+=vy*dt;mx=W/2+Math.sin(t*.9)*80;face=Math.cos(t*.9)>=0?1:-1;
   if(g&&my>=g.y){my=g.y;vy=-VJ*.72;squash=.12;}return;}
  playT+=dt;
- if(ctrl==="tilt"&&coarse&&!tiltWarned&&playT>1.6&&performance.now()-tiltSeen>1500&&!ptrs.size){tiltWarned=true;toast("Pas d'inclinaison reçue : touche la gauche ou la droite de l'écran.");}
+ if(ctrl==="tilt"&&coarse&&!tiltWarned&&playT>1.6&&performance.now()-tiltSeen>1500){tiltWarned=true;toast("Ton téléphone n'envoie pas l'inclinaison : choisis « Toucher » sur l'écran d'accueil.");}
  // gauche / droite (le singe repasse de l'autre côté de l'écran)
- const tg=wantDir()*MAXVX;vx+=(tg-vx)*Math.min(1,dt*(ctrl==="tilt"&&!ptrs.size&&!keyL&&!keyR?14:9));
+ const tg=wantDir()*MAXVX;vx+=(tg-vx)*Math.min(1,dt*(ctrl==="tilt"&&!keyL&&!keyR?14:9));
  mx+=vx*dt;if(mx<-MW/2)mx+=W+MW;if(mx>W+MW/2)mx-=W+MW;if(Math.abs(vx)>25)face=vx>0?1:-1;
  // haut / bas
  const py=my;
@@ -441,7 +442,7 @@ function build(){
  Object.entries(IMG).forEach(([k,u])=>{const i=new Image();i.src=u;IM[k]=i;});
  try{new ResizeObserver(size).observe($(".jp-main"));}catch(e){addEventListener("resize",size);}
  const scr=$("#jpScr"),side=e=>{const r=scr.getBoundingClientRect();return e.clientX<r.left+r.width/2?-1:1;};
- scr.addEventListener("pointerdown",e=>{if(mode!=="play")return;e.preventDefault();ptrs.set(e.pointerId,side(e));try{scr.setPointerCapture(e.pointerId);}catch(x){}});
+ scr.addEventListener("pointerdown",e=>{if(mode!=="play")return;e.preventDefault();if(ctrl==="tilt")return;ptrs.set(e.pointerId,side(e));try{scr.setPointerCapture(e.pointerId);}catch(x){}});
  scr.addEventListener("pointermove",e=>{if(ptrs.has(e.pointerId)){ptrs.delete(e.pointerId);ptrs.set(e.pointerId,side(e));}});
  ["pointerup","pointercancel","lostpointercapture"].forEach(n=>scr.addEventListener(n,e=>ptrs.delete(e.pointerId)));
  scr.addEventListener("contextmenu",e=>{if(mode==="play")e.preventDefault();});
