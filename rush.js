@@ -147,10 +147,11 @@ function combo(g,p,v,lim){const D=dist,q=Math.max(7,v*.75),qj=Math.max(8,v*.85),
   row(g,p-4,f1*LW,.75,3);return p+q;}
  const f=blocks(g,p,2)[0];lowAt(g,p+3);row(g,p-3,f*LW,.75,2);return p+3.7;}                                   // deux blocs + racine juste derrière : passer dans le trou et sauter
 function mkSeg(sx,sz,dir,first){
- const L=first?70:Math.round(rnd(40,78));
+ // longueur d'allée qui suit la vitesse (≈ 2 à 4 s de course), sinon à grande vitesse il n'y a plus la place pour les obstacles
+ const L=first?70:Math.round(rnd(40,78)*Math.max(1,speed/20));
  const g={sx,sz,dir,L,obs:[],ban:[],deco:[],turn:first?pick(["L","R"]):(turns<2?pick(["L","R"]):pick(["L","R","L","R","T"]))};
  // obstacles
- const v=Math.max(speed,12),pc=first?0:clamp((dist-200)/1300,0,.7),lim=L-(dist>1000?8:14);let p=first?rnd(24,32):Math.max(16,v*1.3);
+ const v=Math.max(speed,12),pc=first?0:clamp((dist-200)/1300,0,.7),lim=L-(dist>1000?Math.max(8,v*.3):Math.max(14,v*.5));let p=first?rnd(24,32):Math.max(16,v*.75);
  while(p<lim){
   const r=Math.random(),k=r<.27?"low":r<.5?"high":"block";
   const cb=Math.random()<pc?combo(g,p,v,lim):null;
