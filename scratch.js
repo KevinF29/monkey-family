@@ -28,7 +28,7 @@ const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(
 /* ---------- état ---------- */
 let INFO=null,skew=0;          // dernière réponse du serveur ; décalage entre l'horloge du serveur et celle du téléphone
 let T=null,phase="none";        // ticket affiché ; none (pas de ticket) | scratch (à gratter) | done (gratté)
-let ADMIN=false,USER=null,busy=false,sound=true,buzz=true,force="",armed=false;
+let ADMIN=false,USER=null,busy=false,sound=(()=>{try{return localStorage.getItem("mf-scratch-sound")!=="0";}catch(e){return true;}})(),buzz=true,force="",armed=false;
 function applyState(st){if(!st)return;try{if(window.MF_APPLY)window.MF_APPLY(st);}catch(e){}}
 function take(r){if(!r)return;INFO=r;if(r.state&&+r.state.now)skew=+r.state.now-Date.now();badge();}
 /* le solde affiché ne montre pas encore le gain d'un ticket pas gratté (sinon ça vend la mèche) */
@@ -54,6 +54,7 @@ const CSS=`
 .sc-top{flex:none;position:relative;z-index:6;display:flex;align-items:center;gap:8px;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 4px max(12px,env(safe-area-inset-left))}
 .sc-top h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .sc-x,.sc-gear{min-width:44px;min-height:44px;border-radius:12px;border:2px solid #6a3aa0;background:#2a1145;color:#ffd23f;font:400 20px "Titan One",sans-serif;cursor:pointer;display:grid;place-items:center}
+.sc-snd{font:400 19px/1 system-ui,sans-serif;padding:0}
 .sc-gear[aria-expanded=true]{background:#ffd23f;color:#2a1145}
 .sc-tag{font:700 12px Quicksand,sans-serif;background:#ffd23f;color:#2a1145;border-radius:99px;padding:3px 10px}
 .sc-pill{margin-left:auto;background:#2a1145;border-radius:12px;padding:6px 12px;font-weight:700;color:#ffd23f;white-space:nowrap;box-shadow:inset 0 0 0 2px #6a3aa0}
@@ -154,7 +155,7 @@ function build(){
   root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Monkey Cash, ticket à gratter");
   root.innerHTML=`<div class="sc-stars"></div>
   <div class="sc-top"><h2>Monkey Cash</h2>
-   <button type="button" class="sc-gear sc-adm" id="scTog" aria-controls="scSide" aria-expanded="false" aria-label="Réglages admin">⚙</button><span class="sc-tag sc-adm">Admin</span>
+   <button type="button" class="sc-gear sc-adm" id="scTog" aria-controls="scSide" aria-expanded="false" aria-label="Réglages admin">⚙</button><button type="button" class="sc-x sc-snd" id="scSound" aria-pressed="true" aria-label="Couper le son">🔊</button><span class="sc-tag sc-adm">Admin</span>
    <div class="sc-pill">🍌<b id="scBal">…</b></div>
    <button type="button" class="sc-x" id="scClose" aria-label="Fermer">✕</button></div>
   <div class="sc-main">
@@ -183,13 +184,13 @@ function build(){
    <label class="sc-chk" for="scForce">Prochain ticket
     <select id="scForce"><option value="">Tirage normal</option><option value="perdu">Forcer : perdu</option>${ORDER.map(e=>`<option value="${e}">Forcer : 3 × ${esc(SYM[e].n)} (${esc(SYM[e].p)})</option>`).join("")}</select></label>
    <div class="sc-bar"><button type="button" class="sc-sbtn" id="scAdd">+50 🍌</button><button type="button" class="sc-sbtn" id="scReset">Rendre mes tickets du jour</button></div>
-   <div class="sc-bar"><label class="sc-chk"><input type="checkbox" id="scSnd" checked> Sons</label><label class="sc-chk"><input type="checkbox" id="scVib" checked> Vibrations</label></div>
+   <div class="sc-bar"><label class="sc-chk"><input type="checkbox" id="scSnd"> Sons</label><label class="sc-chk"><input type="checkbox" id="scVib" checked> Vibrations</label></div>
    <h3>Joueurs</h3>
    <p class="sc-note" id="scOpenNote"></p>
    <div class="sc-bar"><button type="button" class="sc-sbtn sc-warn" id="scOpen"></button></div>
    <h3>Chances par ticket</h3>
-   <ul class="sc-odds">${[["Jackpot · 3 boosters","0,4 %"],["1 booster","2,5 %"],["25 🍌","3 %"],["−2 h d'attente","4 %"],["10 🍌","7 %"],["5 🍌","15 %"],["Perdu","68,1 %"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("")}</ul>
-   <p class="sc-note">Un ticket gagne 1 fois sur 3. Un ticket payant rend en moyenne 3,7 🍌 pour 5 🍌 (en comptant un booster à 40 🍌), sans compter le sablier.</p>
+   <ul class="sc-odds">${[["Jackpot · 3 boosters","1 %"],["1 booster","2,5 %"],["25 🍌","4 %"],["−2 h d'attente","5 %"],["10 🍌","10 %"],["5 🍌","15 %"],["Perdu","62,5 %"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("")}</ul>
+   <p class="sc-note">Un ticket gagne un peu plus d'1 fois sur 3 (37,5 %). Un ticket payant rend en moyenne 4,95 🍌 pour 5 🍌 (en comptant un booster à 40 🍌), sans compter le sablier.</p>
   </aside>
   <div class="sc-jp" id="scJp" hidden><div class="sc-rays"></div><div class="sc-jpin"><img class="sc-coin" id="scJpImg" alt=""><div class="sc-jpt" id="scJpT"></div><div class="sc-jps" id="scJpS"></div><button type="button" class="sc-btn" id="scJpOk">Récupérer</button></div></div>`;
   document.body.appendChild(root);
@@ -201,7 +202,9 @@ function build(){
   $("#scPaid").addEventListener("click",()=>buy(true));
   $("#scAll").addEventListener("click",()=>reveal(true));
   $("#scForce").addEventListener("change",e=>{force=e.target.value;});
-  $("#scSnd").addEventListener("change",e=>{sound=e.target.checked;});
+  $("#scSnd").addEventListener("change",e=>setSound(e.target.checked));
+  $("#scSound").addEventListener("click",()=>setSound(!sound));
+  setSound(sound);
   $("#scVib").addEventListener("change",e=>{buzz=e.target.checked;});
   $("#scAdd").addEventListener("click",async e=>{e.target.disabled=true;try{const st=await rpc("mf_admin_bananas",{p_n:50});if(INFO)INFO.state=st;applyState(st);say("+50 bananes sur ton compte.");}catch(x){say(errText(x),"bad");}e.target.disabled=false;render();});
   $("#scReset").addEventListener("click",async e=>{e.target.disabled=true;try{take(await rpc("mf_scratch_admin",{p_action:"reset"}));T=null;phase="none";paintGrid();foil.reset();say("Ton ticket gratuit et tes tickets payants du jour sont rendus.");}catch(x){say(errText(x),"bad");}e.target.disabled=false;render();});
@@ -425,6 +428,9 @@ function audio(){
     s.connect(hp).connect(pk).connect(lp).connect(g).connect(ac.destination);s.start(0,Math.random()*2.5);
     noise={s,pk,g};}catch(e){}}
 }
+// son coupé ou non : bouton 🔊 en haut à gauche (pour tous), retenu sur ce téléphone ; la case « Sons » des réglages admin suit
+function setSound(on){sound=on;try{localStorage.setItem("mf-scratch-sound",on?"1":"0");}catch(e){}
+  if(!root)return;const b=$("#scSound");b.textContent=on?"🔊":"🔇";b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-label",on?"Couper le son":"Remettre le son");$("#scSnd").checked=on;}
 function tone(type,f0,f1,vol,len){if(!sound||!ac)return;try{const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+len*.8);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+len);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+len+.01);}catch(e){}}
 
 /* ---------- grands gains ---------- */

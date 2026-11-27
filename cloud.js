@@ -66,7 +66,7 @@
     const msg = {
       nolink: ["Monkey Family est un jeu privé.", "Ouvre le lien personnel que Kévin t'a envoyé pour entrer. Garde-le bien : il te permet de retrouver ta collection sur n'importe quel appareil."],
       badlink: ["Ce lien ne marche plus.", "Il a peut-être été remplacé. Demande un nouveau lien à Kévin."],
-      disabled: ["Le jeu n'est pas encore ouvert !", "Rendez-vous ce soir à 21h pour partir à la conquête du TCG Monkey Family. Garde bien ton lien : c'est lui qui te permet d'entrer."],
+      disabled: ["Ton accès est en pause.", "Ton compte Monkey Family est en pause pour le moment : ta collection t'attend. Demande à Kévin de le réactiver, et garde bien ton lien : c'est lui qui te permet d'entrer."],
       offline: ["Connexion impossible.", "Vérifie ta connexion internet puis recharge la page."],
       setup: ["Installation", "Crée le compte administrateur. Ce sera ton compte de joueur aussi."]}[kind];
     g.querySelector("h1").textContent = msg[0];

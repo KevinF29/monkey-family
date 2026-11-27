@@ -104,6 +104,25 @@ body:not(.admin) .mfadminrow{display:none!important}
 .advspark{position:fixed;width:10px;height:10px;pointer-events:none;z-index:200;background:radial-gradient(circle,#fff 0 30%,var(--sc,#ffd447) 31% 60%,transparent 62%);border-radius:50%}
 body:has(.advent:not([hidden])) .socialbtn,body:has(.advent:not([hidden])) .tabbar{display:none}
 @media (prefers-reduced-motion:reduce){.acell.today .door,.advrew .rays,.advrc .art,.advrc,.advbtn .advdot{animation:none}}
+/* ---------- admin : qui possède quoi (un point de couleur par pote sur chaque carte) ---------- */
+.btop{flex-wrap:wrap;gap:8px}
+.btop>b{margin-right:auto}
+.bwho{font-size:19px}
+.bwho[aria-pressed="true"]{background:#ffd98a;color:#2b2433;border-color:#ffd98a}
+body:not(.admin) .bwho,body.preview .bwho,body:not(.admin) .blegend,body.preview .blegend{display:none!important}
+.blegend{flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px 5px;justify-content:center;font:600 11px/1 var(--ui);letter-spacing:0;color:#f3eee4}
+.blegend[hidden]{display:none}
+.blegend button{appearance:none;display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 8px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:inherit;font:inherit;cursor:pointer}
+.blegend button[aria-pressed="true"]{background:rgba(255,255,255,.22);border-color:#fff}
+.blegend button.dim{opacity:.4}
+.blegend i{width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 1.5px #fff}
+.blegend small{opacity:.7;font-weight:500}
+.blegend .bwmsg{flex-basis:100%;text-align:center;font-weight:500;color:#ffd98a;padding:2px 8px}
+.odots{position:absolute;left:3%;right:3%;bottom:3.5%;z-index:3;display:flex;flex-wrap:wrap;justify-content:center;gap:2px;pointer-events:none}
+.slot.empty .odots{bottom:17%}
+.odots i{width:clamp(6px,calc(var(--pw)*.026),11px);aspect-ratio:1;border-radius:50%;box-shadow:0 0 0 1.5px #fff,0 1px 2px rgba(0,0,0,.55)}
+.bzwho{margin:0;font:500 14px/1.4 var(--ui);color:#f3eee4;text-align:center;max-width:90vw}
+.bzwho i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px;box-shadow:0 0 0 1.5px #fff;vertical-align:-1px}
 </style>
 </head>
 <body>
@@ -908,7 +927,7 @@ td.n{text-align:right}
 </div>
 
 <div id="binder" class="binder" role="dialog" aria-modal="true" aria-label="Classeur Monkey Family" hidden>
-  <div class="btop"><b>Monkey Family</b><button class="bbtn" id="bclose" type="button" aria-label="Fermer le classeur">✕</button></div>
+  <div class="btop"><b>Monkey Family</b><button class="bbtn bwho" id="bwho" type="button" aria-pressed="false" aria-label="Qui possède quoi (admin)" title="Qui possède quoi">👥</button><button class="bbtn" id="bclose" type="button" aria-label="Fermer le classeur">✕</button><div class="blegend" id="blegend" hidden></div></div>
   <div class="bstage"><div class="book" id="book"><div class="rings" aria-hidden="true"><i></i><i></i><i></i></div><div class="board"></div><div id="leaves" class="leaves"></div></div></div>
   <div class="bnav"><button class="bbtn" id="bprev" type="button" aria-label="Page précédente">‹</button><span id="bpage" role="status"></span><button class="bbtn" id="bnext" type="button" aria-label="Page suivante">›</button></div>
 </div>
@@ -924,6 +943,18 @@ td.n{text-align:right}
 <script src="slot.js"></script>
 <script src="race.js"></script>
 <script src="scratch.js"></script>
+<script src="cocotier.js"></script>
+<script src="wheel.js"></script>
+<script src="blackjack.js"></script>
+<script src="bonneteau.js"></script>
+<script src="poker.js"></script>
+<script src="plinko.js"></script>
+<script src="flying.js"></script>
+<script src="champ.js"></script>
+<script src="tour.js"></script>
+<script src="expedition.js"></script>
+<script src="rush.js"></script>
+<script src="jump.js"></script>
 <script>
 (function(){
   const W=750,H=1050;
@@ -1858,7 +1889,7 @@ td.n{text-align:right}
     if(!st||typeof st!=="object")return;if(st.state)st=st.state;
     const off=Date.now()-(+st.now||Date.now()),owned={};
     Object.entries(st.owned||{}).forEach(([k,n])=>{const c=cardOfKey(k);if(c&&n>0)owned[c.id]=(owned[c.id]||0)+(+n);});
-    if(+st.packMs>0)PACK_MS=+st.packMs;S.special=+st.special||0;S.xpacks=Array.isArray(st.xpacks)?st.xpacks:[];EVENTS=(st.events||[]).map(e=>({...e,ends:+e.ends+off}));
+    if(+st.packMs>0)PACK_MS=+st.packMs;S.special=+st.special||0;S.xpacks=Array.isArray(st.xpacks)?st.xpacks:[];S.rpacks=Array.isArray(st.rpacks)?st.rpacks:[];EVENTS=(st.events||[]).map(e=>({...e,ends:+e.ends+off}));
     S.owned=owned;S.opened=+st.opened||0;S.bananas=+st.bananas||0;S.stock=+st.stock;S.nextAt=+st.nextAt?(+st.nextAt+off):0;S.counts=st.counts||{};
     S.styles=[...new Set([0,...(st.styles||[]).map(n=>STYLES.findIndex(x=>x.name===n)).filter(i=>i>=0)])];S.style=Math.max(0,STYLES.findIndex(x=>x.name===st.style));
     if(st.pseudo&&st.pseudo!==PREFS.pseudo){PREFS.pseudo=st.pseudo;savePrefs();const pi=document.getElementById("pseudoIn");if(pi&&document.activeElement!==pi)pi.value=st.pseudo;}
@@ -2156,7 +2187,12 @@ td.n{text-align:right}
   pack.style.setProperty("--packimg",`url(${PACK_SRC[0]})`);pack.classList.add("art");
   const PACK_AR=1226/720, PACK_TEAR=.93;
   /* exclusive boosters (event): their own wrapper, same size as the normal one */
-  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël",ico:"🎄"},hiver:{src:["packs/hiver-front.webp","packs/hiver-back.webp"],name:"Booster hiver",ico:"❄️"},gaming:{src:["packs/gaming-front.webp","packs/gaming-back.webp"],name:"Booster de lancement",ico:"🎮",music:"__pack-gaming"}};
+  const SKINS={noel:{src:["packs/noel-front.webp","packs/noel-back.webp"],name:"Booster de Noël",ico:"🎄"},hiver:{src:["packs/hiver-front.webp","packs/hiver-back.webp"],name:"Booster hiver",ico:"❄️"},gaming:{src:["packs/gaming-front.webp","packs/gaming-back.webp"],name:"Booster de lancement",ico:"🎮",music:"__pack-gaming"},
+    /* boosters de rareté (1 carte de leur rareté, gagnés au casino) */
+    "r-legendaire":{src:["packs/r-legendaire-front.webp","packs/r-legendaire-back.webp"],name:"Booster Légendaire",ico:"⭐"},
+    "r-mythique":{src:["packs/r-mythique-front.webp","packs/r-mythique-back.webp"],name:"Booster Mythique",ico:"🍺"},
+    "r-secret":{src:["packs/r-secret-front.webp","packs/r-secret-back.webp"],name:"Booster Secret",ico:"🎮"},
+    "r-originel":{src:["packs/r-originel-front.webp","packs/r-originel-back.webp"],name:"Booster Originel",ico:"🐒"}};
   const skinImgs={};
   function skinLoad(k){if(!SKINS[k])return null;if(!skinImgs[k]){const imgs=SKINS[k].src.map(u=>{const i=new Image();i.decoding="async";i.src=u;return i;});
     skinImgs[k]={imgs,ready:Promise.all(imgs.map(i=>i.decode?i.decode().catch(()=>{}):new Promise(r=>{i.onload=i.onerror=r;})))};}return skinImgs[k];}  // height/width of the wrapper; the tear line sits just under the top crimp
@@ -2521,7 +2557,7 @@ td.n{text-align:right}
     if(!xp&&!takePack()){if(use3d)P3.show(false);setHint("Plus de booster : le prochain arrive dans "+hms(S.nextAt-Date.now()));renderPacks();return;}
     busy=true;mode="opening";say("");setBtn("Ouverture…",true);
     if(SRV){let res;
-      try{res=xp?await window.MF_RPC("mf_open_xpack",{}):await window.MF_RPC("mf_open",{p_free:!limitOn(),p_force:$("force").value||null});}
+      try{res=xp?await window.MF_RPC(xp.rk?"mf_open_rpack":"mf_open_xpack",{}):await window.MF_RPC("mf_open",{p_free:!limitOn(),p_force:$("force").value||null});}
       catch(e){const m=String(e&&e.message||e);const k=Object.keys(SRV_MSG).find(x=>m.includes(x));say(k?SRV_MSG[k]:"Connexion impossible : le booster n'a pas été ouvert, réessaie.");
         busy=false;mode="pack";if(use3d)P3.show(false);else gsap.set(pack,{display:"block",opacity:1});srvRefresh();renderPacks();if(!/Prochain/.test(openBtn.textContent))setBtn("Ouvrir le booster");return;}
       const got=(res.cards||[]).map(cardOfKey).filter(Boolean);
@@ -2570,6 +2606,11 @@ td.n{text-align:right}
   function toRecap(wait){mode="revealed";setTimeout(()=>{setHint("Touche pour voir le récap");setBtn("Voir le récap");},wait||0);}
   /* exclusive booster: every card is flipped with a festive burst, the last one with the big finish */
   function xmasReveal(s,last){const p=center(s.el),k=shown.indexOf(s)+1;
+    if(XP&&XP.rk){const rk=XP.rk,col=RCOL[rk]||"#ffd75e";  // rarity booster: its single card, with the rarity's colours
+      try{SFX.play(rk);}catch(e){}
+      burst(p.x,p.y,140,rk==="Originel"?["#ffffff","#ff7ad9","#7ad8ff","#ffe36e"]:[col,"#ffffff",col],7,{up:1.2,stars:.6});rays(col,2.6,rk==="Originel");
+      setTimeout(()=>burst(p.x,p.y,90,["#ffffff",col],5,{ring:true,g:.02,stars:.8}),300);
+      banner(rk.toUpperCase()+" !",col,rk==="Originel");setHint(`Booster ${rk} : ta carte !`);return;}
     try{SFX.play(last?"Légendaire":"Épique");}catch(e){}
     const gm=curSkin==="gaming";
     burst(p.x,p.y,last?130:55,gm?["#ffffff","#3ee8ff","#b16bff","#ffd75e"]:["#ffffff","#ff4b45","#ffd75e","#3fcf72"],last?7:4.5,{up:1.2,stars:.6});
@@ -2911,6 +2952,19 @@ td.n{text-align:right}
   const COVER_HIVER="packs/avent/classeur-hiver.webp";let COVER_H=null;
   const coverSrc=()=>SEASON==="hiver"?COVER_HIVER:COVER_SRC;
   function coverImg(){if(SEASON!=="hiver")return COVER_IMG;if(!COVER_H){COVER_H=new Image();COVER_H.decoding="async";COVER_H.onload=()=>{try{BIND.repaint();}catch(e){}};COVER_H.src=COVER_HIVER;}return COVER_H;}
+
+  /* admin only: who owns what, one colour per friend (read from the server, never stored) */
+  const WHO={on:false,players:[],focus:null,
+    COLORS:["#e6194b","#3cb44b","#4363d8","#f58231","#911eb4","#42d4f4","#f032e6","#ffe119","#9a6324","#808000"],
+    live(){return this.on&&ADMIN&&!PREVIEW;},
+    of(c){if(!this.live()||!c)return [];return this.players.filter(p=>(this.focus===null||this.focus===p.uid)&&(+p.owned[c.key]||0)>0).map(p=>({color:p.color,pseudo:p.pseudo,n:+p.owned[c.key]}));},
+    html(c){const l=this.of(c);return l.length?`<span class="odots" aria-hidden="true">${l.map(o=>`<i style="background:${o.color}"></i>`).join("")}</span>`:"";},
+    draw(x,c,cx,cy,W){const l=this.of(c);if(!l.length)return;const r=W*.0095,g=W*.0065,per=Math.min(l.length,8),rows=Math.ceil(l.length/per);
+      l.forEach((o,k)=>{const row=(k/per)|0,inRow=Math.min(per,l.length-row*per),col=k%per,x0=cx-(inRow*2*r+(inRow-1)*g)/2+r;
+        const px=x0+col*(2*r+g),py=cy-(rows-1-row)*(2*r+g);
+        x.beginPath();x.arc(px,py,r+W*.0022,0,Math.PI*2);x.fillStyle="#fff";x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=W*.004;x.fill();x.shadowBlur=0;x.shadowColor="transparent";
+        x.beginPath();x.arc(px,py,r,0,Math.PI*2);x.fillStyle=o.color;x.fill();});},
+    text(c){const l=this.of(c);return l.length?l.map(o=>`<span style="white-space:nowrap"><i style="background:${o.color}"></i>${esc(String(o.pseudo))}${o.n>1?` ×${o.n}`:""}</span>`).join(" "):"Aucun pote ne l'a encore.";}};
   const BIND=(function(){
     const root=$("binder"),book=$("book"),leavesEl=$("leaves"),pageLbl=$("bpage"),prevB=$("bprev"),nextB=$("bnext");
     const CAT_ORDER=["Lieux mémorables", "Heures perdues", "Répliques Cultes", "Running gags", "Objets Cultes", "Moments légendaires", "Personnages", EXCL_CAT];
@@ -2947,8 +3001,8 @@ td.n{text-align:right}
           <div class="tocbody">${rows}<div class="rchips">${rar}</div><p class="tochint">Touche une catégorie pour y aller.</p></div></div>`;}
       if(f.type==="page"){const p=PAGES[f.i];
         const slots=p.cards.map(c=>{if(!c)return `<div class="slot none"></div>`;const n=S.owned[c.id]||0,R=RARITIES[c.r];
-          if(!n)return `<div class="slot empty${c.excl?" excl":""}"><span class="snum">${c.num}</span><span class="sq">${c.excl?"🏆":"?"}</span><span class="sdot" style="background:${colorOf(c.rarity)}"></span></div>`;
-          return `<button type="button" class="slot got${R.foil?" foil":""}" data-id="${c.id}" aria-label="${c.name.trim()}, ${c.rarity}"><canvas width="240" height="336" data-id="${c.id}"></canvas>${n>1?`<span class="cnt">×${n}</span>`:""}${(S.fresh||[]).includes(c.id)?`<span class="new">Nouveau</span>`:""}</button>`;}).join("");
+          if(!n)return `<div class="slot empty${c.excl?" excl":""}"><span class="snum">${c.num}</span><span class="sq">${c.excl?"🏆":"?"}</span><span class="sdot" style="background:${colorOf(c.rarity)}"></span>${WHO.html(c)}</div>`;
+          return `<button type="button" class="slot got${R.foil?" foil":""}" data-id="${c.id}" aria-label="${c.name.trim()}, ${c.rarity}"><canvas width="240" height="336" data-id="${c.id}"></canvas>${n>1?`<span class="cnt">×${n}</span>`:""}${(S.fresh||[]).includes(c.id)?`<span class="new">Nouveau</span>`:""}${WHO.html(c)}</button>`;}).join("");
         const pad=Array.from({length:9-p.cards.length},()=>`<div class="slot none"></div>`).join("");
         return `<div class="sheet"><div class="phead"><span>${p.cat}${p.parts>1?` <small>${p.part}/${p.parts}</small>`:""}</span><span>p. ${f.i+1}</span></div><div class="pgrid">${slots}${pad}</div></div>`;}
       if(f.type==="inside")return `<div class="lining"><canvas class="medal sm" width="200" height="200"></canvas><span>Monkey Family</span></div>`;
@@ -3231,13 +3285,14 @@ td.n{text-align:right}
               x.textAlign="center";x.font=`700 ${W*.034}px ${F_L}`;x.fillStyle="#6a6274";x.fillText(c.num,sx+sw/2,sy+sh*.06+W*.03);
               if(c.excl){x.font=`400 ${W*.07}px ${F_U}`;x.globalAlpha=.75;x.fillText("🏆",sx+sw/2,sy+sh*.56);x.globalAlpha=1;x.font=`700 ${W*.022}px ${F_L}`;x.fillStyle="#8a6a12";x.fillText("RÉCOMPENSE",sx+sw/2,sy+sh*.72);}
               else{x.font=`400 ${W*.08}px ${F_D}`;x.fillStyle="rgba(43,36,51,.22)";x.fillText("?",sx+sw/2,sy+sh*.58);}
-              x.beginPath();x.arc(sx+sw/2,sy+sh*.9,W*.011,0,PI*2);x.globalAlpha=.85;x.fillStyle=fillColor(x,c.rarity,sx+sw/2,sy+sh*.9);x.fill();x.globalAlpha=1;continue;}
+              x.beginPath();x.arc(sx+sw/2,sy+sh*.9,W*.011,0,PI*2);x.globalAlpha=.85;x.fillStyle=fillColor(x,c.rarity,sx+sw/2,sy+sh*.9);x.fill();x.globalAlpha=1;WHO.draw(x,c,sx+sw/2,sy+sh*.78,W);continue;}
             x.save();x.shadowColor="rgba(0,0,0,.35)";x.shadowBlur=W*.012;x.shadowOffsetY=W*.004;rr(x,sx,sy,sw,sh,rad);x.fillStyle="#222";x.fill();x.restore();
             x.save();rr(x,sx,sy,sw,sh,rad);x.clip();x.drawImage(thumb(c,tw),sx,sy,sw,sh);
             const gl=x.createLinearGradient(sx,sy,sx+sw,sy+sh);gl.addColorStop(0,"rgba(255,255,255,.3)");gl.addColorStop(.3,"rgba(255,255,255,0)");gl.addColorStop(.7,"rgba(255,255,255,0)");gl.addColorStop(1,"rgba(255,255,255,.15)");x.fillStyle=gl;x.fillRect(sx,sy,sw,sh);x.restore();
             if(hasForms(c))out.anim.push({c,sx,sy,sw,sh,rad,tw,W,nOwn,fresh:(S.fresh||[]).includes(c.id),sig:null});
             if(nOwn>1)pill(x,sx+sw+W*.008,sy+W*.004,"×"+nOwn,"#2b2433",W*.026,"right");
             if((S.fresh||[]).includes(c.id))pill(x,sx+sw/2,sy+sh+W*.004,"NOUVEAU","#ff4f7a",W*.024);
+            WHO.draw(x,c,sx+sw/2,sy+sh-W*.024,W);
             if(R0.foil)out.foil.push(new T.Vector4(sx/W,1-(sy+sh)/H,sw/W,sh/H));
             out.regions.push({x:sx/W,y:sy/H,w:sw/W,h:sh/H,act:"card",id:c.id});}
           return out;}
@@ -3258,7 +3313,7 @@ td.n{text-align:right}
             x.save();rr(x,sx,sy,sw,sh,rad);x.clip();x.drawImage(animCv,sx,sy,sw,sh);
             const gl=x.createLinearGradient(sx,sy,sx+sw,sy+sh);gl.addColorStop(0,"rgba(255,255,255,.3)");gl.addColorStop(.3,"rgba(255,255,255,0)");gl.addColorStop(.7,"rgba(255,255,255,0)");gl.addColorStop(1,"rgba(255,255,255,.15)");x.fillStyle=gl;x.fillRect(sx,sy,sw,sh);x.restore();
             if(a.nOwn>1)pill(x,sx+sw+W*.008,sy+W*.004,"×"+a.nOwn,"#2b2433",W*.026,"right");
-            if(a.fresh)pill(x,sx+sw/2,sy+sh+W*.004,"NOUVEAU","#ff4f7a",W*.024);}
+            if(a.fresh)pill(x,sx+sw/2,sy+sh+W*.004,"NOUVEAU","#ff4f7a",W*.024);WHO.draw(x,a.c,sx+sw/2,sy+sh-W*.024,W);}
           if(ch){e.tex.needsUpdate=true;any=true;}}
         return any;}
       function upload(e){try{R.initTexture(e.tex);}catch(_){} }
@@ -3398,7 +3453,7 @@ td.n{text-align:right}
     function bzoom(c,dir){
       const R=RARITIES[c.r],n=S.owned[c.id]||0;
       const z=document.createElement("div");z.className="bzoom";
-      z.innerHTML=`<div class="bzcard${R.foil?" foil":" plain"}"><canvas width="${750*ZOOM_K}" height="${1050*ZOOM_K}"></canvas><div class="bzshine"><i></i></div><div class="bzglare"></div></div><p>${c.name.trim()} · ${c.rarity}${n>1?` · ×${n}`:""}</p>`;
+      z.innerHTML=`<div class="bzcard${R.foil?" foil":" plain"}"><canvas width="${750*ZOOM_K}" height="${1050*ZOOM_K}"></canvas><div class="bzshine"><i></i></div><div class="bzglare"></div></div><p>${c.name.trim()} · ${c.rarity}${n>1?` · ×${n}`:""}</p>${WHO.live()?`<p class="bzwho">${WHO.text(c)}</p>`:""}`;
       const seq=ownedSeq();
       if(seq.length>1){z.insertAdjacentHTML("beforeend",`<button type="button" class="bznav prev" aria-label="Carte précédente">‹</button><button type="button" class="bznav next" aria-label="Carte suivante">›</button><span class="bzpos">${seq.indexOf(c)+1} / ${seq.length}</span>`);
         z.querySelector(".bznav.prev").addEventListener("click",e=>{e.stopPropagation();bzStep(z,c,-1);});
@@ -3407,7 +3462,7 @@ td.n{text-align:right}
       paint(cv,c,0);formTicker(cv,c,()=>z.isConnected);
       if(n>1){const b=document.createElement("button");b.type="button";b.className="bzrec";const lbl=()=>`Recycler 1 double · +${RECYCLE[c.rarity]} 🍌`;b.textContent=lbl();z.appendChild(b);
         b.addEventListener("click",e=>{e.stopPropagation();if(dupes(c)<1)return;const v=recycleCard(c,1);addBananas(v);z.dataset.changed=1;serverDo("mf_recycle",{p_key:c.key,p_count:1}).catch(()=>{});
-          const m=S.owned[c.id];z.querySelector("p").textContent=`${c.name.trim()} · ${c.rarity}${m>1?` · ×${m}`:""}`;
+          const m=S.owned[c.id];z.querySelector("p").textContent=`${c.name.trim()} · ${c.rarity}${m>1?` · ×${m}`:""}`;const bw=z.querySelector(".bzwho");if(bw)bw.innerHTML=WHO.text(c);
           const slot=book.querySelector(`.slot[data-id="${c.id}"] .cnt`);if(slot){if(m>1)slot.textContent="×"+m;else slot.remove();}
           if(m<=1)b.remove();renderStats();});}
       root.classList.add("zooming");root.appendChild(z);
@@ -3491,8 +3546,31 @@ td.n{text-align:right}
       if(e.key==="Escape"){if(zz)zz.__close(false);else closeBinder();}
       else if(e.key==="ArrowRight"){e.preventDefault();go(1);}else if(e.key==="ArrowLeft"){e.preventDefault();go(-1);}});
     let rT=0;window.addEventListener("resize",()=>{if(!B.open)return;clearTimeout(rT);rT=setTimeout(()=>{const was=B.spread;layout();if(was!==B.spread){B.cur=0;}build();},150);});
-    return {open:openBinder,close:closeBinder,pages:PAGES,repaint(){if(!B.open)return;if(use3){G3.invalidate(true);return;}[B.cur-1,B.cur,B.cur+1].forEach(i=>{if(B.leaves[i])hydrate(B.leaves[i]);});}};
+    return {open:openBinder,close:closeBinder,pages:PAGES,rebuild(){if(!B.open)return;if(use3)G3.invalidate(true);else build();},repaint(){if(!B.open)return;if(use3){G3.invalidate(true);return;}[B.cur-1,B.cur,B.cur+1].forEach(i=>{if(B.leaves[i])hydrate(B.leaves[i]);});}};
   })();
+  /* admin: the 👥 button of the binder shows who owns each card */
+  (function(){const btn=$("bwho"),leg=$("blegend");if(!btn||!leg)return;
+    let lastH=-1;const relayout=()=>{const h=leg.hidden?0:leg.offsetHeight;if(h!==lastH){lastH=h;dispatchEvent(new Event("resize"));}};
+    function legend(msg){
+      if(!WHO.on){leg.hidden=true;leg.innerHTML="";requestAnimationFrame(relayout);return;}
+      leg.hidden=false;
+      leg.innerHTML=(msg?`<span class="bwmsg">${esc(msg)}</span>`:"")+WHO.players.map(p=>{const n=Object.values(p.owned).filter(v=>+v>0).length,on=WHO.focus===p.uid;
+        return `<button type="button" data-uid="${p.uid}" aria-pressed="${on}" class="${WHO.focus!==null&&!on?"dim":""}"><i style="background:${p.color}"></i>${esc(String(p.pseudo))} <small>${n}</small></button>`;}).join("");requestAnimationFrame(relayout);}
+    leg.addEventListener("click",e=>{const b=e.target.closest("button[data-uid]");if(!b)return;e.stopPropagation();
+      WHO.focus=WHO.focus===b.dataset.uid?null:b.dataset.uid;legend();try{BIND.rebuild();}catch(_){}});
+    btn.addEventListener("click",async e=>{e.stopPropagation();
+      if(WHO.on){WHO.on=false;WHO.focus=null;btn.setAttribute("aria-pressed","false");legend();try{BIND.rebuild();}catch(_){}return;}
+      btn.disabled=true;
+      try{const list=await window.MF_RPC("mf_admin_owners");
+        WHO.players=(Array.isArray(list)?list:[]).map((p,i)=>({uid:p.uid,pseudo:p.pseudo||"?",owned:p.owned||{},color:WHO.COLORS[i%WHO.COLORS.length]}));
+        WHO.on=true;WHO.focus=null;btn.setAttribute("aria-pressed","true");
+        legend(WHO.players.length?"":"Aucun joueur pour l'instant.");try{BIND.rebuild();}catch(_){}}
+      catch(err){const m=String(err&&err.message||err);WHO.on=true;WHO.players=[];
+        legend(/not_admin/.test(m)?"Réservé à l'admin.":/function|does not exist|404|PGRST/.test(m)?"Fonction serveur pas encore installée (SQL v16).":"Connexion impossible : réessaie dans un instant.");
+        WHO.on=false;btn.setAttribute("aria-pressed","false");leg.hidden=false;requestAnimationFrame(relayout);}
+      finally{btn.disabled=false;}});
+  })();
+
   $("binderBtn").addEventListener("click",()=>BIND.open());
   /* ---------- Studio des artworks: images stored with the artifact (assets), calibration per card (db) ---------- */
   const ART=new Map(); // card key -> {asset, zoom, fx, fy, fill, validated, img}
@@ -3836,8 +3914,12 @@ td.n{text-align:right}
 
   /* ---------- limite : 3 boosters par jour, un toutes les 8 h, stock de 3 au maximum ---------- */
   let PACK_MS=8*3600*1000;const PACK_MAX=3;  // the wait is shorter during a "speed" event (value sent by the server)
-  const avail=()=>(S.stock|0)+(S.special|0)+((SRV&&S.xpacks)||[]).length;
-  const XPK=()=>SRV&&S.xpacks&&S.xpacks.length?S.xpacks[0]:null;  // an exclusive booster waiting: it is opened first
+  const avail=()=>(S.stock|0)+(S.special|0)+((SRV&&S.xpacks)||[]).length+((SRV&&S.rpacks)||[]).length;
+  /* rarity boosters (1 card of their rarity, won in the casino): skin of each one, used once its pictures are in packs/ */
+  const RSKIN={"Légendaire":"r-legendaire","Mythique":"r-mythique","Secret":"r-secret","Originel":"r-originel"};
+  const RCOL={"Légendaire":"#ffd75e","Mythique":"#ff3b30","Secret":"#ff8a1f","Originel":"#ffffff"};
+  // an exclusive booster waiting is opened first, then the rarity boosters
+  const XPK=()=>SRV&&S.xpacks&&S.xpacks.length?S.xpacks[0]:SRV&&S.rpacks&&S.rpacks.length?{rk:S.rpacks[0],skin:RSKIN[S.rpacks[0]]||"",title:"Booster "+S.rpacks[0],n:1}:null;
   const limitOn=()=>!ADMIN||PREVIEW||$("limit").checked;
   function tickPacks(){
     if(S.stock===undefined)S.stock=PACK_MAX;
@@ -3852,10 +3934,10 @@ td.n{text-align:right}
   function takePack(){if(!limitOn())return true;tickPacks();if(avail()<=0)return false;if(S.special>0){S.special--;save();renderPacks();return true;}S.stock--;if(!S.nextAt)S.nextAt=Date.now()+PACK_MS;save();renderPacks();return true;}
   const hms=ms=>{const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h} h ${String(m).padStart(2,"0")}`:`${m} min ${String(x).padStart(2,"0")}`;};
   function renderPacks(){
-    const el=$("packs"),xp=XPK(),nx=((SRV&&S.xpacks)||[]).length;
+    const el=$("packs"),xp=XPK(),nx=((SRV&&S.xpacks)||[]).length,nr=((SRV&&S.rpacks)||[]).length;
     if(mode==="pack"&&!busy)try{setSkin(xp?xp.skin:SEASON);}catch(e){}
     if(mode==="pack"&&!busy&&SFX.mute){SFX.mute=false;VOICE.stopMusic(1200);}  // an opening that failed: no music left behind
-    const xLbl="Ouvrir le booster exclusif",xTag=nx?` <span class="xpk">+ ${nx} exclusi${nx>1?"fs":"f"}</span>`:"";
+    const xLbl=xp&&xp.rk?`Ouvrir le booster ${xp.rk}`:"Ouvrir le booster exclusif",xTag=(nx?` <span class="xpk">+ ${nx} exclusi${nx>1?"fs":"f"}</span>`:"")+(nr?` <span class="xpk">+ ${nr} de rareté</span>`:"");
     if(!limitOn()){el.innerHTML=`<b>Boosters illimités${xTag}</b><span>mode test</span>`;stage.classList.remove("nopack");
       if(mode==="pack"&&!busy){const l=xp?xLbl:"Ouvrir le booster";if(/Prochain|^Ouvrir le booster/.test(openBtn.textContent)&&openBtn.textContent!==l)setBtn(l);}return;}
     tickPacks();
@@ -3966,8 +4048,42 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
         const gs=(Array.isArray(x.gains)?x.gains:[]).slice(0,4).map(g=>`<b>${esc(nameOf(g.uid))}</b> +${fmt(+g.v||0)} 🍌`).join(", ");
         const tail=gs?`Gagnants : ${gs}`:(+x.n?"Personne n'avait misé sur lui !":"Personne n'avait parié.");
         return `<div class="fitem"><span class="fi" aria-hidden="true">🏁</span><p>Monkey Run : <b>${esc(w)}</b> gagne (cote ×${o}) ! ${tail}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="wheel"){const v=+x.v||0,what=x.r==="jackpot"?`le <b>JACKPOT</b> : ${fmt(v)} 🍌`:x.r==="boost"?`${v} boosters`:x.r==="time"?`${v/60} h d'attente en moins`:x.r==="relance"?`${v} relance${v>1?"s":""}`:`${fmt(v)} 🍌`;
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🎡</span><p>${who} a gagné ${what}${x.d||x.r==="double"?" en doublant sa mise":""} à The Monkey Wheel<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="casino_week"){const N={race:"la Monkey Run",coco:"le Crash Cocotier",wheel:"The Monkey Wheel",slot:"la Banana Machine",scratch:"le Monkey Cash",bj:"MonkeyJack 21",vp:"le Poker Monkey",bon:"le Bananateau",pk:"le Plinko Banana",fly:"le Flying Monkey",mine:"le Champ de Cocos",tour:"The Monkey Tower",rush:"Monkey Rush",jump:"Monkey Jump"},g=(Array.isArray(x.games)?x.games:[]).map(k=>`<b>${esc(N[k]||k)}</b>`);
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🎰</span><p>Nouveaux jeux de la semaine au Casino : ${g.length>1?g.slice(0,-1).join(", ")+" et "+g[g.length-1]:g[0]||"surprise"} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="bj"){const v=+x.v||0,t=x.r==="monkey"?`${who} a sorti un <b>MONKEY BLACKJACK</b> à MonkeyJack 21 : +${fmt(v)} 🍌 !`:x.r==="bj"?`${who} a fait <b>blackjack</b> à MonkeyJack 21 : +${fmt(v)} 🍌`:`${who} a battu le singe croupier${x.dbl?" en doublant sa mise":""} : +${fmt(v)} 🍌`;
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🃏</span><p>${t}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="bj_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait arnaquer par le singe croupier : une carte sortie de sa manche 🃏🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="bon")return `<div class="fitem"><span class="fi" aria-hidden="true">🥥</span><p>${who} a trouvé la banane au Bananateau${x.sp==="turbo"?" en <b>turbo</b>":x.sp==="fast"?" en rapide":x.sp==="slow"?" en lent":""} : +${fmt(+x.v||0)} 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="vp"){const VN=["","une paire de Valets","une double paire","un brelan","une quinte","une couleur","un full","un <b>carré</b>","une <b>quinte flush</b>","une <b>quinte flush royale</b> avec le Joker","<b>cinq cartes identiques</b>","une <b>QUINTE FLUSH ROYALE</b>"];
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🃏</span><p>${who} a sorti ${VN[+x.r]||"une belle main"} au Poker Monkey${x.j&&+x.r<9?" avec le Joker 🐒":""} : ${x.b?"<b>booster "+esc(x.b)+"</b> 🎁":"+"+fmt(+x.v||0)+" 🍌"} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="pk")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${x.w?`${who} a fait tourner la roulette du Plinko Banana : <b>booster ${esc(String(x.v))}</b> 🎡`:`${who} a fait tomber la bille singe tout au bord du Plinko Banana : ${x.r==="rpack"?"<b>booster "+esc(String(x.v))+"</b> 🌈":"<b>"+fmt(+x.v||0)+" boosters</b> 🎁"}`} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="fly"){const M=["🥇","🥈","🥉"],pod=(Array.isArray(x.pod)?x.pod:[]).slice(0,3).map((p,i)=>`${M[i]} <b>${esc(nameOf(p.uid))}</b> ${fmt(+p.v||0)} pts`+(+p.boost?` (+${fmt(+p.boost)} booster${+p.boost>1?"s":""} et ${fmt(+p.ban||0)} 🍌)`:+p.ban?` (+${fmt(+p.ban)} 🍌)`:"")).join(" · ");
+        return `<div class="fitem"><span class="fi" aria-hidden="true">✈️</span><p>Flying Monkey, podium de la manche : ${pod||"personne n'a volé"}${+x.n>3?` · ${fmt(+x.n)} pilotes`:""}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="rush"){const M=["🥇","🥈","🥉"],pod=(Array.isArray(x.pod)?x.pod:[]).slice(0,3).map((p,i)=>`${M[i]} <b>${esc(nameOf(p.uid))}</b> ${fmt(+p.v||0)} pts`+(+p.boost?` (+${fmt(+p.boost)} booster${+p.boost>1?"s":""} et ${fmt(+p.ban||0)} 🍌)`:+p.ban?` (+${fmt(+p.ban)} 🍌)`:"")).join(" · ");
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🏃</span><p>Monkey Rush, podium de la manche : ${pod||"personne n'a couru"}${+x.n>3?` · ${fmt(+x.n)} coureurs`:""}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="jump"){const M=["🥇","🥈","🥉"],pod=(Array.isArray(x.pod)?x.pod:[]).slice(0,3).map((p,i)=>`${M[i]} <b>${esc(nameOf(p.uid))}</b> ${fmt(+p.v||0)} pts`+(+p.boost?` (+${fmt(+p.boost)} booster${+p.boost>1?"s":""} et ${fmt(+p.ban||0)} 🍌)`:+p.ban?` (+${fmt(+p.ban)} 🍌)`:"")).join(" · ");
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🌴</span><p>Monkey Jump, podium de la manche : ${pod||"personne n'a grimpé"}${+x.n>3?` · ${fmt(+x.n)} grimpeurs`:""}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="mine"){const m="×"+(+x.m).toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1").replace(".",",");
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🥥</span><p>${who} a traversé le Champ de Cocos : ${fmt(+x.k||0)} cocos sans serpent (${esc(String(x.n||""))} 🐍), encaissé à <b>${m}</b> : +${fmt(+x.v||0)} 🍌 !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="mine_bite")return `<div class="fitem"><span class="fi" aria-hidden="true">🐍</span><p>${who} avait ouvert ${fmt(+x.k||0)} cocos au Champ de Cocos… et n'a pas résisté à « encore une » : mordu par un serpent 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="tour")return `<div class="fitem"><span class="fi" aria-hidden="true">🗿</span><p>${x.top?`${who} a atteint <b>le sommet de The Monkey Tower</b> et rapporté l'idole : +${fmt(+x.v||0)} 🍌 !`:`${who} est redescendu du <b>${+x.fl===1?"1er":(+x.fl||0)+"e"} étage</b> de The Monkey Tower : +${fmt(+x.v||0)} 🍌`}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="tour_fall")return `<div class="fitem"><span class="fi" aria-hidden="true">🕳️</span><p>${who} est tombé dans une trappe au <b>${(+x.fl||0)}e étage</b> de The Monkey Tower avec ${fmt(+x.v||0)} 🍌 en poche 🐒<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="exp_home"){const v=+x.v||0,r=+x.r||0;
+        return `<div class="fitem"><span class="fi" aria-hidden="true">${r?"🗿":"🏕️"}</span><p>${who} ${x.end?"est revenu(e) de L'Expédition":`est rentré(e) au camp de L'Expédition après l'étape ${fmt(+x.s||0)}`} avec <b>${fmt(v)} 🍌</b>${r?` et l'<b>Idole d'or</b> (+${fmt(r)} booster${r>1?"s":""})`:""} !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="exp_lost"){const D=[["🐍","un 2e serpent"],["🕷️","une 2e araignée"],["🏜️","de nouveaux sables mouvants"],["🐆","une 2e panthère"],["🪨","un 2e éboulement"]][+x.d||0]||["⚠️","un danger"];
+        const us=(Array.isArray(x.us)?x.us:[]).map(u=>`<b>${esc(nameOf(u))}</b>`),list=us.length>1?us.slice(0,-1).join(", ")+" et "+us[us.length-1]:us[0]||"Personne";
+        return `<div class="fitem"><span class="fi" aria-hidden="true">${D[0]}</span><p>L'Expédition : ${D[1]} à l'étape ${fmt(+x.s||0)} ! ${list} ${us.length>1?"perdent":"perd"} ${fmt(+x.v||0)} 🍌 de butin 🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="bon_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} avait trouvé la bonne noix de coco… mais le singe avait déjà la banane dans la main 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
+      if(x.kind==="wheel_scam")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} s'est fait scam, dommage 🐒🙊<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="scratch"){const v=+x.v||0,what=x.k==="singe"?`le <b>JACKPOT</b> : ${v} boosters`:x.r==="boost"?`${v} booster${v>1?"s":""}`:x.r==="time"?`${v/60} h d'attente en moins`:`${fmt(v)} 🍌`;
         return `<div class="fitem"><span class="fi" aria-hidden="true">🎟️</span><p>${who} a gagné ${what} au Monkey Cash<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="coco"){const fm=v=>"×"+(+v).toFixed(2).replace(".",",").replace(",00",""),m=x.m==null?null:+x.m,c=+x.c||0,v=+x.v||0;
+        const t=x.top?`${who} a emmené le singe <b>au sommet du Crash Cocotier</b> (${fm(c)}) : +${fmt(v)} 🍌 !`
+          :m!=null&&c>=10&&c>=m*4?`${who} a lâché à ${fm(m)} au Crash Cocotier… le singe est monté jusqu'à <b>${fm(c)}</b> 🙈`
+          :`${who} a encaissé à <b>${fm(m||0)}</b> au Crash Cocotier : +${fmt(v)} 🍌`;
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🌴</span><p>${t}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="slot_pity")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} a tout perdu à la Banana Machine… Le singe a eu pitié : +10 🍌<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       if(x.kind==="complete")return `<div class="fitem"><span class="fi" aria-hidden="true">🏆</span><p>${who} a complété la catégorie <b>${esc(String(x.cat||""))}</b> !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;
       return "";}
@@ -4131,9 +4247,9 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
   function renderEvents(){const bar=$("evBar");if(!bar)return;const now=Date.now(),hid=evHidden();const list=EVENTS.filter(e=>e.ends>now&&!hid.includes(String(e.id)));
     const until=t=>new Date(t).toLocaleString("fr-FR",{weekday:"long",hour:"2-digit",minute:"2-digit"});
     const hh=h=>(+h%1?String(+h).replace(".",","):String(+h))+" h";
-    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="special"?"✨":e.kind==="card"?"🃏":e.kind==="xpack"?((SKINS[e.skin]||SKINS.noel).ico):"🎁";const cd=e.card&&cardOfKey(e.card);
-      const what=e.kind==="xpack"?`Booster exclusif offert : ${e.n} carte${e.n>1?"s":""} exclusive${e.n>1?"s":""}`:e.kind==="card"?`Carte exclusive offerte${cd?` : ${esc(cd.name.trim())}`:""}`:e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
-      return `<div class="evitem"><button type="button" class="evx" data-evx="${esc(String(e.id))}" aria-label="Fermer cette annonce">×</button><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}${cd&&e.kind!=="card"?` + la carte exclusive ${esc(cd.name.trim())}`:""}<small>${e.kind==="speed"?`${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}`:e.message?esc(e.message):"Ouvre ton cadeau !"}</small></span></div>`;}).join("");
+    bar.innerHTML=list.map(e=>{const ico=e.kind==="speed"?"⚡":e.kind==="bananas"?"🍌":e.kind==="special"?"✨":e.kind==="card"?"🃏":e.kind==="xpack"?((SKINS[e.skin]||SKINS.noel).ico):"🎁";const bn=+e.bananas||0;const cd=e.card&&cardOfKey(e.card);
+      const what=e.kind==="bananas"?`${bn} banane${bn>1?"s":""} offerte${bn>1?"s":""}`:e.kind==="xpack"?`Booster exclusif offert : ${e.n} carte${e.n>1?"s":""} exclusive${e.n>1?"s":""}`:e.kind==="card"?`Carte exclusive offerte${cd?` : ${esc(cd.name.trim())}`:""}`:e.kind==="speed"?`Un booster toutes les ${hh(e.hours)}`:e.kind==="special"?`${e.boosters} booster${e.boosters>1?"s":""} spécia${e.boosters>1?"ux":"l"} offert${e.boosters>1?"s":""}`:`${e.boosters} booster${e.boosters>1?"s":""} offert${e.boosters>1?"s":""}`;
+      return `<div class="evitem"><button type="button" class="evx" data-evx="${esc(String(e.id))}" aria-label="Fermer cette annonce">×</button><span class="ei" aria-hidden="true">${ico}</span><span><b>${esc(e.title)}</b> · ${what}${cd&&e.kind!=="card"?` + la carte exclusive ${esc(cd.name.trim())}`:""}${bn&&e.kind!=="bananas"&&e.kind!=="speed"?` + ${bn} banane${bn>1?"s":""}`:""}<small>${e.kind==="speed"?`${e.message?esc(e.message)+" · ":""}jusqu'à ${until(e.ends)}`:e.message?esc(e.message):"Ouvre ton cadeau !"}</small></span></div>`;}).join("");
     bar.hidden=!list.length;document.documentElement.style.setProperty("--evh",(list.length?bar.offsetHeight+10:0)+"px");}
   setInterval(renderEvents,60000);
   $("evBar")&&$("evBar").addEventListener("click",e=>{const b=e.target.closest("[data-evx]");if(!b)return;
@@ -4218,13 +4334,14 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       const cards=(g.cards||[]).map(cardOfKey).filter(Boolean);
       const xk=+g.xpack||0,sk=SKINS[g.skin]||SKINS.noel,ul=g.kind==="collection"&&(g.ultimate||g.cat===ULT_CAT);
       if(g.kind==="collection"){root.hidden=true;inCeleb=true;CELEB.show(g,cards,ul).then(()=>{inCeleb=false;next();});return;}
-      $("gpIco").textContent=ul?"👑":g.kind==="collection"?"🏆":xk?sk.ico:g.special?"✨":cards.length&&!g.boosters?"🃏":"🎁";
+      const gb=+g.bananas||0,banTxt=gb?`<b>${gb} banane${gb>1?"s":""}</b> 🍌`:"";
+      $("gpIco").textContent=ul?"👑":g.kind==="collection"?"🏆":xk?sk.ico:g.special?"✨":gb&&!g.boosters&&!cards.length?"🍌":cards.length&&!g.boosters?"🃏":"🎁";
       $("gpTitle").textContent=ul?"Collection complète !":g.kind==="collection"?"Catégorie complète !":g.title||"Cadeau !";
       $("gpText").innerHTML=ul?`Tu as <b>toutes les cartes du jeu</b> !<br>Voici ta récompense, ${cards.length>1?"les cartes ultimes":"la carte ultime"} :`
         :g.kind==="collection"
         ?`Tu as toutes les cartes de <b>${esc(g.cat)}</b>.<br>Tu gagnes <b>${g.boosters} boosters</b>${cards.length?` et ${cards.length>1?"les cartes exclusives":"la carte exclusive"} :`:"."}`
-        :xk?`${g.message?esc(g.message)+"<br>":""}Tu reçois <b>${xk>1?xk+" boosters exclusifs":"un booster exclusif"}</b> avec ${g.n} carte${g.n>1?"s":""} exclusive${g.n>1?"s":""} à découvrir${cards.length?` et la carte exclusive <b>${esc(cards[0].name.trim())}</b>`:""} !`
-        :`${g.message?esc(g.message)+"<br>":""}Tu reçois ${g.boosters>0?`<b>${g.boosters} booster${g.boosters>1?"s":""}${g.special?` spécia${g.boosters>1?"ux":"l"}`:""}</b>${g.special?" (meilleures chances sur les dernières cartes)":""}`:""}${g.boosters>0&&cards.length?" et ":""}${cards.length?`la carte exclusive <b>${esc(cards[0].name.trim())}</b> :`:"."}`;
+        :xk?`${g.message?esc(g.message)+"<br>":""}Tu reçois <b>${xk>1?xk+" boosters exclusifs":"un booster exclusif"}</b> avec ${g.n} carte${g.n>1?"s":""} exclusive${g.n>1?"s":""} à découvrir${cards.length?`, la carte exclusive <b>${esc(cards[0].name.trim())}</b>`:""}${gb?` et ${banTxt}`:""} !`
+        :`${g.message?esc(g.message)+"<br>":""}Tu reçois ${[g.boosters>0?`<b>${g.boosters} booster${g.boosters>1?"s":""}${g.special?` spécia${g.boosters>1?"ux":"l"}`:""}</b>${g.special?" (meilleures chances sur les dernières cartes)":""}`:"",gb?banTxt:"",cards.length?`la carte exclusive <b>${esc(cards[0].name.trim())}</b> :`:""].filter(Boolean).join(cards.length?", ":" et ").replace(/, (?=[^,]*$)/," et ")}${cards.length?"":"."}`;
       const box=$("gpCards");box.innerHTML="";
       if(xk){const im=document.createElement("img");im.className="gppack";im.src=sk.src[0];im.alt=sk.name;box.appendChild(im);gsap.fromTo(im,{scale:.5,rotation:-8,opacity:0},{scale:1,rotation:0,opacity:1,duration:.8,ease:"back.out(1.6)",delay:.2});}
       cards.forEach(c=>{const cv=document.createElement("canvas");cv.width=750*ZOOM_K;cv.height=1050*ZOOM_K;cv.setAttribute("role","img");cv.setAttribute("aria-label",c.name.trim());box.appendChild(cv);paint(cv,c,0);

@@ -42,16 +42,16 @@ returns jsonb language sql immutable set search_path = public as $$
     when 'banane'  then '{"k":"banane","t":"ban","v":5}'
   end::jsonb $$;
 
--- tirage du résultat (sur 1000) : 0,4 % jackpot, 2,5 % booster, 3 % 25 🍌, 4 % −2 h, 7 % 10 🍌, 15 % 5 🍌, 68,1 % perdu
+-- tirage du résultat (sur 1000) : 1 % jackpot, 2,5 % booster, 4 % 25 🍌, 5 % −2 h, 10 % 10 🍌, 15 % 5 🍌, 62,5 % perdu
 create or replace function public._scratch_draw()
 returns text language plpgsql set search_path = public as $$
 declare r int := floor(random() * 1000)::int;
 begin
-  if r < 4   then return 'singe';   end if; r := r - 4;
+  if r < 10  then return 'singe';   end if; r := r - 10;
   if r < 25  then return 'booster'; end if; r := r - 25;
-  if r < 30  then return 'maman';   end if; r := r - 30;
-  if r < 40  then return 'sablier'; end if; r := r - 40;
-  if r < 70  then return 'camera';  end if; r := r - 70;
+  if r < 40  then return 'maman';   end if; r := r - 40;
+  if r < 50  then return 'sablier'; end if; r := r - 50;
+  if r < 100 then return 'camera';  end if; r := r - 100;
   if r < 150 then return 'banane';  end if;
   return null;  -- perdu
 end $$;
