@@ -1,7 +1,7 @@
 /* Monkey Family — Monkey Rush (le singe aventurier qui fuit le temple, façon Temple Run)
    Vue de dos en fausse 3D : 3 couloirs, glisser ← → pour changer de couloir ou tourner aux virages, ↑ sauter, ↓ glisser.
    Une manche va de 18 h à 18 h. 5 courses par manche : la 1re gratuite, puis 1 🍌. On garde la meilleure course.
-   Score = mètres parcourus + 5 points par banane. À 18 h, le serveur classe la manche et donne les récompenses
+   Score = 10 points par seconde de course + 5 points par banane. À 18 h, le serveur classe la manche et donne les récompenses
    (1er 1 booster + 20 🍌, 2e 15, 3e 10, 4e 5, 5e 3, 6e 1). Serveur : mf_rush_* (supabase-rush.sql).
    Visible par l'admin seulement tant que le jeu n'est pas ouvert (réglages admin → « Ouvrir à tous »).
    Visuels provisoires dessinés dans le code ; les images de Kévin (packs/rush-*.webp) prennent le relais dès qu'elles existent :
@@ -119,27 +119,38 @@ const ok=n=>IM[n]&&IM[n].complete&&IM[n].naturalWidth>0;
 const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 
-let mode="menu",t=0,segs=[],cur=null,s=0,lat=0,laneT=0,latV=0,y=0,vy=0,slideT=0,speed=10,dist=0,nb=0,queued=null,deadAt=0,deathKind="",token=null,shake=0;
+let pts=0,jbuf=-9,mode="menu",t=0,segs=[],cur=null,s=0,lat=0,laneT=0,latV=0,y=0,vy=0,slideT=0,speed=10,dist=0,nb=0,queued=null,deadAt=0,deathKind="",token=null,shake=0;
 let cam={x:0,z:0,th:0},off={x:0,z:0,th:0},th=0,parts=[],flash=0,turns=0,hintT=0;
-const score=()=>Math.floor(dist)+5*nb;
+// score : 10 points par seconde de course (la distance qu'on ferait à la vitesse de départ), quelle que soit la vitesse, + 5 par banane
+const score=()=>Math.floor(pts)+5*nb;
 
-// vitesse : 10 m/s au départ, +1 m/s tous les 90 m jusqu'à 20 m/s (900 m), puis +1 m/s tous les 300 m, sans limite
-const spd=d=>d<900?10+d/90:20+(d-900)/300;
+// vitesse : 12 m/s au départ, +1 m/s tous les 70 m jusqu'à 24 m/s (840 m, ≈ 48 s), puis +1 m/s tous les 200 m, sans limite
+const spd=d=>d<840?12+d/70:24+(d-840)/200;
 function blocks(g,p,n){const lanes=[-1,0,1].sort(()=>Math.random()-.5);for(let i=0;i<n;i++)g.obs.push({k:"block",s0:p,s1:p+.9,lat:lanes[i]*LW,v:Math.floor(Math.random()*3)});return lanes.slice(n);}
-// combinaisons (à partir de 300 m, de plus en plus souvent) ; renvoie la position du dernier obstacle, ou null si ça ne rentre pas
-function combo(g,p,v,lim){const D=dist,q=Math.max(7,v*.75),types=["jb","sj","zz"].concat(D>900?["bj","bj"]:[]),k=pick(types);
- if(p+q+1>=lim)return null;
- if(k==="jb"){g.obs.push({k:"low",s0:p,s1:p+.7});blocks(g,p+q,D>1500&&Math.random()<.5?2:1);return p+q;}          // racine puis bloc
- if(k==="sj"){g.obs.push({k:"high",s0:p,s1:p+.6});g.obs.push({k:"low",s0:p+q,s1:p+q+.7});return p+q;}           // arche puis racine
- if(k==="zz"){const f1=blocks(g,p,2)[0];let f2;do{f2=pick([-1,0,1]);}while(f2===f1);                              // zigzag entre deux paires de blocs
+const lowAt=(g,p)=>g.obs.push({k:"low",s0:p,s1:p+.7}),highAt=(g,p)=>g.obs.push({k:"high",s0:p,s1:p+.6});
+// combinaisons (à partir de 200 m, de plus en plus souvent) ; renvoie la position du dernier obstacle, ou null si ça ne rentre pas
+function combo(g,p,v,lim){const D=dist,q=Math.max(7,v*.75),qj=Math.max(8,v*.85),
+  types=["jb","sj","zz","jj","ss","sb","cor"].concat(D>900?["bj","bs","bj","bs"]:[]).concat(D>2000?["tri","tri"]:[]),k=pick(types);
+ const need={jj:qj,tri:2*q,cor:q}[k]||q;if(p+need+1>=lim)return null;
+ if(k==="jb"){lowAt(g,p);blocks(g,p+q,D>1500&&Math.random()<.5?2:1);return p+q;}                       // racine puis bloc
+ if(k==="sj"){highAt(g,p);lowAt(g,p+q);return p+q;}                                                       // arche puis racine
+ if(k==="jj"){lowAt(g,p);lowAt(g,p+qj);arc(g,p+.35,pick([-1,0,1])*LW);return p+qj;}                        // deux racines : sauter deux fois
+ if(k==="ss"){highAt(g,p);highAt(g,p+q);return p+q;}                                                      // deux arches : glisser deux fois
+ if(k==="sb"){highAt(g,p);blocks(g,p+q,D>1500&&Math.random()<.5?2:1);return p+q;}                       // arche puis bloc
+ if(k==="bs"){const f=blocks(g,p,2)[0];highAt(g,p+q);row(g,p-3,f*LW,.75,2);return p+q;}                    // deux blocs puis arche
+ if(k==="cor"){const f=blocks(g,p,2)[0],h=q/2;                                                              // tunnel : trois rangées de blocs, même passage
+  for(const pp of[p+h,p+q])for(const l of[-1,0,1].filter(l=>l!==f))g.obs.push({k:"block",s0:pp,s1:pp+.9,lat:l*LW,v:Math.floor(Math.random()*3)});
+  row(g,p-2,f*LW,.75,Math.min(8,Math.floor((q+4)/1.9)));return p+q;}
+ if(k==="tri"){lowAt(g,p);blocks(g,p+q,1);highAt(g,p+2*q);return p+2*q;}                                   // racine, bloc, arche
+ if(k==="zz"){const f1=blocks(g,p,2)[0];let f2;do{f2=pick([-1,0,1]);}while(f2===f1);                         // zigzag entre deux paires de blocs
   const l2=[-1,0,1].filter(l=>l!==f2);for(const l of l2)g.obs.push({k:"block",s0:p+q,s1:p+q+.9,lat:l*LW,v:Math.floor(Math.random()*3)});
   row(g,p-4,f1*LW,.75,3);return p+q;}
- const f=blocks(g,p,2)[0];g.obs.push({k:"low",s0:p+3,s1:p+3.7});row(g,p-3,f*LW,.75,2);return p+3.7;}            // deux blocs + racine juste derrière : passer dans le trou et sauter
+ const f=blocks(g,p,2)[0];lowAt(g,p+3);row(g,p-3,f*LW,.75,2);return p+3.7;}                                   // deux blocs + racine juste derrière : passer dans le trou et sauter
 function mkSeg(sx,sz,dir,first){
  const L=first?70:Math.round(rnd(40,78));
  const g={sx,sz,dir,L,obs:[],ban:[],deco:[],turn:first?pick(["L","R"]):(turns<2?pick(["L","R"]):pick(["L","R","L","R","T"]))};
  // obstacles
- const v=Math.max(speed,10),pc=first?0:clamp((dist-300)/1500,0,.55),lim=L-(dist>1200?8:14);let p=first?rnd(24,32):Math.max(16,v*1.3);
+ const v=Math.max(speed,12),pc=first?0:clamp((dist-200)/1300,0,.7),lim=L-(dist>1000?8:14);let p=first?rnd(24,32):Math.max(16,v*1.3);
  while(p<lim){
   const r=Math.random(),k=r<.27?"low":r<.5?"high":"block";
   const cb=Math.random()<pc?combo(g,p,v,lim):null;
@@ -166,7 +177,7 @@ function arc(g,sc,l){[.8,1.4,1.75,1.4,.8].forEach((h,i)=>g.ban.push({s:sc+(i-2)*
 function endPt(g){const f=fw(g.dir);return [g.sx+f[0]*g.L,g.sz+f[1]*g.L];}
 function wpt(g,ss,ll,yy){const f=fw(g.dir),r=rt(g.dir);return [g.sx+f[0]*ss+r[0]*ll,yy||0,g.sz+f[1]*ss+r[1]*ll];}
 
-function reset(){segs=[];turns=0;speed=10;const g=mkSeg(0,0,0,true);segs.push(g);cur=g;s=4;lat=0;laneT=0;latV=0;y=0;vy=0;slideT=0;dist=0;nb=0;queued=null;
+function reset(){segs=[];turns=0;speed=10;const g=mkSeg(0,0,0,true);segs.push(g);cur=g;s=4;lat=0;laneT=0;latV=0;y=0;vy=0;slideT=0;dist=0;pts=0;jbuf=-9;nb=0;queued=null;
  th=0;off={x:0,z:0,th:0};parts=[];flash=0;shake=0;deathKind="";camUpdate(0,true);}
 
 /* ---------- caméra ---------- */
@@ -183,7 +194,7 @@ function clip(cs){const o=[];for(let i=0;i<cs.length;i++){const a=cs[i],b=cs[(i+
 /* ---------- le jeu ---------- */
 function act(a){
  if(mode!=="play")return;
- if(a==="up"){if(y<=0.001){vy=6.4;slideT=0;beep(330,0,.12,.03,"triangle",660);}return;}
+ if(a==="up"){if(y<=0.001){vy=6.4;slideT=0;beep(330,0,.12,.03,"triangle",660);}else jbuf=t;return;}   // en l'air : le saut est gardé et part à l'atterrissage
  if(a==="down"){if(y>0.05)vy=-14;slideT=.7;beep(260,0,.14,.025,"sawtooth",120);return;}
  const dirOk=cur.turn==="T"||cur.turn===a;
  if(dirOk&&s>=cur.L-15){if(s>=cur.L-tw())turn(a);else queued=a;return;}
@@ -205,9 +216,9 @@ function update(dt){t+=dt;flash=Math.max(0,flash-dt*1.5);shake=Math.max(0,shake-
  if(mode==="dead"){speed=Math.max(0,speed-dt*45);const d=speed*dt;s+=d*.3;camUpdate(dt);return;}
  if(mode!=="play"){camUpdate(dt);return;}
  hintT+=dt;speed=spd(dist);
- const d=speed*dt,s0=s;s+=d;dist+=d;
+ const d=speed*dt,s0=s;s+=d;dist+=d;pts+=10*dt;
  const pl=lat;lat+=(laneT*LW-lat)*Math.min(1,dt*16);latV=(lat-pl)/Math.max(dt,1e-3);
- if(y>0||vy>0){vy-=20*dt;y+=vy*dt;if(y<=0){y=0;vy=0;for(let i=0;i<5;i++)parts.push({x:W/2+(Math.random()-.5)*40,y:H-118,vx:(Math.random()-.5)*120,vy:-Math.random()*60,l:.4,c:"#d8c79a"});}}
+ if(y>0||vy>0){vy-=20*dt;y+=vy*dt;if(y<=0){y=0;vy=0;if(t-jbuf<.2){jbuf=-9;vy=6.4;slideT=0;beep(330,0,.12,.03,"triangle",660);}for(let i=0;i<5;i++)parts.push({x:W/2+(Math.random()-.5)*40,y:H-118,vx:(Math.random()-.5)*120,vy:-Math.random()*60,l:.4,c:"#d8c79a"});}}
  slideT=Math.max(0,slideT-dt);
  if(queued&&s>=cur.L-tw())turn(queued);
  if(s>=cur.L+HW-.55){s=cur.L+HW-1.3;speed=0;die("wall");return;}   // on recule un peu le singe pour qu'il reste visible devant le mur
@@ -564,7 +575,7 @@ function menuHTML(){const [lab,dis]=goLabel(),end=S?+S.endsAt-nowS():0;
   ${boardHTML(S&&S.board,"Classement de la manche",S?"jusqu'à 18 h":"")}`;}
 let view="menu",vdata=null;
 function show(v,d){view=v;vdata=d||null;const o=$(".ru-ov");if(!v){o.hidden=true;return;}o.hidden=false;
- if(v==="menu")o.innerHTML=`<h3>Fuis le temple !</h3><div class="ru-help">Glisse ← → pour changer de couloir et tourner aux virages · ↑ sauter · ↓ glisser<br>1 point par mètre, 5 par banane</div>${menuHTML()}`;
+ if(v==="menu")o.innerHTML=`<h3>Fuis le temple !</h3><div class="ru-help">Glisse ← → pour changer de couloir et tourner aux virages · ↑ sauter · ↓ glisser<br>10 points par seconde de course, 5 par banane</div>${menuHTML()}`;
  else if(v==="end")o.innerHTML=`<h3>Fin de course !</h3><div class="ru-det">${esc(d.why)}</div><div class="ru-score">${esc(d.score)}</div><div class="ru-det">${esc(d.m)} m · ${esc(d.b)} 🍌</div><div class="ru-res${d.res.w?" win":""}">${esc(d.res.t)}</div>${menuHTML()}`;
  else if(v==="last"){const L=S.last,m=L.me||{},rk=+m.rank||0,got=rew(m);
   o.innerHTML=`<h3>Résultat de la manche</h3><div class="ru-score">${rk?(MED[rk-1]||rk+"e"):"—"}</div>
@@ -600,7 +611,7 @@ function build(){
   <ul class="r">
    <li>Le singe court tout seul et accélère sans arrêt : plus tu vas loin, plus c'est rapide, et des enchaînements d'obstacles arrivent. <b>Glisse</b> ← → pour changer de couloir, ↑ pour <b>sauter</b> les racines, ↓ pour <b>glisser</b> sous les poutres. Au clavier : flèches ou Z Q S D, Espace pour sauter.</li>
    <li>Au bout de chaque allée, un mur : glisse du bon côté pour <b>tourner</b> (tu peux glisser un peu avant le virage).</li>
-   <li><b>1 point par mètre</b> et <b>5 points par banane</b>. Un seul choc et la course est finie.</li>
+   <li><b>10 points par seconde de course</b> (même quand ça va très vite) et <b>5 points par banane</b>. Un seul choc et la course est finie.</li>
    <li>Une <b>manche</b> va de 18 h à 18 h. <b>5 courses</b> par manche : la 1re est <b>gratuite</b>, les suivantes coûtent <b>1 🍌</b>.</li>
    <li>Seule ta <b>meilleure course</b> de la manche compte. Égalité : le premier à avoir fait ce score passe devant.</li>
    <li>Chaque soir à <b>18 h</b>, le classement est figé et les récompenses arrivent toutes seules sur ton compte.</li>
