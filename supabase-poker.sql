@@ -9,7 +9,7 @@
 --    + 52 = le Joker singe, qui remplace n'importe quelle carte
 --  - 5 cartes, le joueur garde celles qu'il veut, les autres sont remplacées une seule fois par les suivantes du paquet
 --  - gain = mise × multiplicateur de la main finale (mf_vp_cfg.pays, dans l'ordre des codes ci-dessous ; ce qui revient au joueur) :
---    0 rien ×0 · 1 paire de Rois ou d'As ×1 · 2 double paire ×1 · 3 brelan ×2 · 4 quinte ×3 · 5 couleur ×5 · 6 full ×7
+--    0 rien ×0 · 1 paire de Valets ou mieux ×1 (Rois ou mieux avant le 27/11) · 2 double paire ×1 · 3 brelan ×2 · 4 quinte ×3 · 5 couleur ×5 · 6 full ×7
 --    7 carré ×20 · 8 quinte flush ×50 · 9 quinte flush royale avec le Joker ×100 · 10 cinq identiques (avec le Joker) ×200
 --    11 quinte flush royale sans Joker ×250
 --  - le paquet mélangé reste sur le serveur : la page ne voit que ses 5 cartes
@@ -48,7 +48,7 @@ begin
   for r in 0..12 loop
     if cnt[r + 1] > 0 then dist := dist + 1; end if;
     if cnt[r + 1] > mx then mx := cnt[r + 1]; end if;
-    if cnt[r + 1] = 2 then pairs := pairs + 1; if r in (0, 12) then hp := true; end if; end if;
+    if cnt[r + 1] = 2 then pairs := pairs + 1; if r in (0, 10, 11, 12) then hp := true; end if; end if;
     if cnt[r + 1] = 3 then trips := true; end if;
   end loop;
   if mx = 5 then return 10; end if;
@@ -84,7 +84,7 @@ begin
 end $$;
 
 create or replace function public._vp_name(k int) returns text language sql immutable as $$
-  select (array['Rien','Paire de Rois ou d''As','Double paire','Brelan','Quinte','Couleur','Full','Carré','Quinte flush',
+  select (array['Rien','Paire de Valets ou mieux','Double paire','Brelan','Quinte','Couleur','Full','Carré','Quinte flush',
     'Quinte flush royale (Joker)','Cinq identiques','Quinte flush royale'])[k + 1] $$;
 
 create or replace function public._vp_info(p_uid uuid)
