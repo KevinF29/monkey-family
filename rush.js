@@ -158,7 +158,7 @@ function reset(){segs=[];turns=0;speed=10;const g=mkSeg(0,0,0,true);segs.push(g)
 /* ---------- caméra ---------- */
 function playerW(){return wpt(cur,s,lat,y);}
 function camTarget(){const f=fw(cur.dir),r=rt(cur.dir),pw=wpt(cur,s,lat*.45);return {x:pw[0]-f[0]*CAMB,z:pw[2]-f[1]*CAMB,th};}
-function camUpdate(dt,snap){const tg=camTarget();if(snap){off={x:0,z:0,th:0};}else{const k=Math.exp(-dt*9);off.x*=k;off.z*=k;off.th*=Math.exp(-dt*11);}
+function camUpdate(dt,snap){const tg=camTarget();if(snap){off={x:0,z:0,th:0};}else{const k=Math.exp(-dt*13);off.x*=k;off.z*=k;off.th*=Math.exp(-dt*16);}
  cam.x=tg.x+off.x;cam.z=tg.z+off.z;cam.th=tg.th+off.th;}
 let CS=0,SN=1;
 function toCam(p){const dx=p[0]-cam.x,dz=p[2]-cam.z;return [dx*CS-dz*SN,p[1],dx*SN+dz*CS];}   // right = (cos, -sin), fwd = (sin, cos)
@@ -172,13 +172,15 @@ function act(a){
  if(a==="up"){if(y<=0.001){vy=6.4;slideT=0;beep(330,0,.12,.03,"triangle",660);}return;}
  if(a==="down"){if(y>0.05)vy=-14;slideT=.7;beep(260,0,.14,.025,"sawtooth",120);return;}
  const dirOk=cur.turn==="T"||cur.turn===a;
- if(dirOk&&s>=cur.L-15){if(s>=cur.L-.6)turn(a);else queued=a;return;}
+ if(dirOk&&s>=cur.L-15){if(s>=cur.L-tw())turn(a);else queued=a;return;}
  const nl=clamp(laneT+(a==="R"?1:-1),-1,1);if(nl!==laneT){laneT=nl;beep(520,0,.05,.015,"triangle");}}
+// zone où le virage part tout de suite (3 m jusqu'à 14 m/s, 4,4 m à 20 m/s) ; un geste plus tôt est gardé jusqu'à cette zone
+const tw=()=>Math.max(3,speed*.22);
 function turn(a){
  queued=null;turns++;const old={x:cam.x,z:cam.z,th:cam.th};
  const E=endPt(cur),nd=(cur.dir+(a==="R"?1:3))%4,pw=playerW();
  const g=mkSeg(E[0],E[1],nd,false),f=fw(nd),r=rt(nd);
- const dx=pw[0]-E[0],dz=pw[2]-E[1];s=dx*f[0]+dz*f[1];lat=dx*r[0]+dz*r[1];laneT=clamp(Math.round(lat/LW),-1,1);
+ const dx=pw[0]-E[0],dz=pw[2]-E[1];s=dx*f[0]+dz*f[1];lat=dx*r[0]+dz*r[1];lat=clamp(lat,-HW+.3,HW-.3);laneT=0;   // on repart au milieu ; si on a tourné en avance, le singe rejoint le couloir en glissant
  th+=a==="R"?Math.PI/2:-Math.PI/2;segs.push(g);if(segs.length>3)segs.shift();cur=g;
  const tg=camTarget();off={x:old.x-tg.x,z:old.z-tg.z,th:old.th-tg.th};camUpdate(0);
  beep(700,0,.12,.025,"triangle",420);}
@@ -193,7 +195,7 @@ function update(dt){t+=dt;flash=Math.max(0,flash-dt*1.5);shake=Math.max(0,shake-
  const pl=lat;lat+=(laneT*LW-lat)*Math.min(1,dt*16);latV=(lat-pl)/Math.max(dt,1e-3);
  if(y>0||vy>0){vy-=20*dt;y+=vy*dt;if(y<=0){y=0;vy=0;for(let i=0;i<5;i++)parts.push({x:W/2+(Math.random()-.5)*40,y:H-118,vx:(Math.random()-.5)*120,vy:-Math.random()*60,l:.4,c:"#d8c79a"});}}
  slideT=Math.max(0,slideT-dt);
- if(queued&&s>=cur.L-.6)turn(queued);
+ if(queued&&s>=cur.L-tw())turn(queued);
  if(s>=cur.L+HW-.55){s=cur.L+HW-.55;die("wall");return;}
  const lo=Math.min(s0,s)-.3,hi=s+.3;
  for(const o of cur.obs){if(hi<o.s0||lo>o.s1)continue;
