@@ -234,7 +234,7 @@ const CASINO=makeHub({name:"Casino",btnId:"casinoBtn",rootId:"mfCasino",before:"
   note:"N'oubliez jamais qu'à la fin, c'est toujours le Casino qui gagne 🎰",
   // jeton de casino avec une banane au centre (redessiné d'après l'icône de Kévin)
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.3"/><circle cx="12" cy="12" r="6.6" stroke-dasharray="1.6 3.58" transform="rotate(-6 12 12)"/><path d="M8.4 12.2c.7 2.5 2.9 3.6 5 3 1.8-.5 2.7-2.3 2.3-4.5-.8 1.8-2.5 2.8-4.5 2.7-1 0-1.9-.4-2.8-1.2z"/><path d="M15.7 10.7l.3-1.5"/></svg>`});
-const ARENA_HUB=makeHub({name:"L'Arène",btnId:"arenaBtn",rootId:"mfArena",after:"casinoBtn",cls:"arena",rotation:false,
+const ARENA_HUB=makeHub({name:"L'Arène",btnId:"arenaBtn",rootId:"mfArena",after:"casinoBtn",cls:"arena",rotation:false,logo:"packs/arene-titre.webp",alt:"L'Arène",
   sub:"Jeux entre potes : que le meilleur singe gagne",note:"Le classement ne ment jamais 🏆",
   // podium à trois marches avec une étoile au-dessus de la première
   icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 20v-9h6v9"/><path d="M3 20v-5h6"/><path d="M15 15h6v5"/><path d="M2 20h20"/><path d="M12 3.2l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z"/></svg>`});
