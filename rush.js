@@ -123,21 +123,35 @@ let mode="menu",t=0,segs=[],cur=null,s=0,lat=0,laneT=0,latV=0,y=0,vy=0,slideT=0,
 let cam={x:0,z:0,th:0},off={x:0,z:0,th:0},th=0,parts=[],flash=0,turns=0,hintT=0;
 const score=()=>Math.floor(dist)+5*nb;
 
+// vitesse : 10 m/s au départ, +1 m/s tous les 90 m jusqu'à 20 m/s (900 m), puis +1 m/s tous les 300 m, sans limite
+const spd=d=>d<900?10+d/90:20+(d-900)/300;
+function blocks(g,p,n){const lanes=[-1,0,1].sort(()=>Math.random()-.5);for(let i=0;i<n;i++)g.obs.push({k:"block",s0:p,s1:p+.9,lat:lanes[i]*LW,v:Math.floor(Math.random()*3)});return lanes.slice(n);}
+// combinaisons (à partir de 300 m, de plus en plus souvent) ; renvoie la position du dernier obstacle, ou null si ça ne rentre pas
+function combo(g,p,v,lim){const D=dist,q=Math.max(7,v*.75),types=["jb","sj","zz"].concat(D>900?["bj","bj"]:[]),k=pick(types);
+ if(p+q+1>=lim)return null;
+ if(k==="jb"){g.obs.push({k:"low",s0:p,s1:p+.7});blocks(g,p+q,D>1500&&Math.random()<.5?2:1);return p+q;}          // racine puis bloc
+ if(k==="sj"){g.obs.push({k:"high",s0:p,s1:p+.6});g.obs.push({k:"low",s0:p+q,s1:p+q+.7});return p+q;}           // arche puis racine
+ if(k==="zz"){const f1=blocks(g,p,2)[0];let f2;do{f2=pick([-1,0,1]);}while(f2===f1);                              // zigzag entre deux paires de blocs
+  const l2=[-1,0,1].filter(l=>l!==f2);for(const l of l2)g.obs.push({k:"block",s0:p+q,s1:p+q+.9,lat:l*LW,v:Math.floor(Math.random()*3)});
+  row(g,p-4,f1*LW,.75,3);return p+q;}
+ const f=blocks(g,p,2)[0];g.obs.push({k:"low",s0:p+3,s1:p+3.7});row(g,p-3,f*LW,.75,2);return p+3.7;}            // deux blocs + racine juste derrière : passer dans le trou et sauter
 function mkSeg(sx,sz,dir,first){
  const L=first?70:Math.round(rnd(40,78));
  const g={sx,sz,dir,L,obs:[],ban:[],deco:[],turn:first?pick(["L","R"]):(turns<2?pick(["L","R"]):pick(["L","R","L","R","T"]))};
  // obstacles
- const v=Math.max(speed,10);let p=first?26:Math.max(16,v*1.3);
- while(p<L-14){
+ const v=Math.max(speed,10),pc=first?0:clamp((dist-300)/1500,0,.55),lim=L-(dist>1200?8:14);let p=first?26:Math.max(16,v*1.3);
+ while(p<lim){
   const r=Math.random(),k=r<.27?"low":r<.5?"high":"block";
-  if(k==="low"){g.obs.push({k,s0:p,s1:p+.7});if(Math.random()<.6)arc(g,p+.35,pick([-1,0,1])*LW);}
+  const cb=Math.random()<pc?combo(g,p,v,lim):null;
+  if(cb!==null){p=cb;}
+  else if(k==="low"){g.obs.push({k,s0:p,s1:p+.7});if(Math.random()<.6)arc(g,p+.35,pick([-1,0,1])*LW);}
   else if(k==="high"){g.obs.push({k,s0:p,s1:p+.6});if(Math.random()<.5)row(g,p-3.5,pick([-1,0,1])*LW,.45,4);}
   else{const n=Math.random()<.35?2:1,lanes=[-1,0,1].sort(()=>Math.random()-.5),free=lanes[n];
    for(let i=0;i<n;i++)g.obs.push({k,s0:p,s1:p+.9,lat:lanes[i]*LW,v:Math.floor(Math.random()*3)});
    if(Math.random()<.7)row(g,p-4,free*LW,.75,5);}
   // entre deux obstacles, parfois une ligne de bananes
   const gap=rnd(Math.max(12,v*1.15),Math.max(17,v*1.75));
-  if(gap>16&&Math.random()<.45&&p+gap-6<L-14)row(g,p+5,pick([-1,0,1])*LW,.75,Math.min(6,Math.floor((gap-10)/2)));
+  if(gap>16&&Math.random()<.45&&p+gap-6<lim)row(g,p+5,pick([-1,0,1])*LW,.75,Math.min(6,Math.floor((gap-10)/2)));
   p+=gap;}
  if(first)row(g,10,0,.75,6);
  // décor : arbres, piliers, torches
@@ -190,7 +204,7 @@ function update(dt){t+=dt;flash=Math.max(0,flash-dt*1.5);shake=Math.max(0,shake-
  for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=700*dt;p.l-=dt;}parts=parts.filter(p=>p.l>0);
  if(mode==="dead"){speed=Math.max(0,speed-dt*45);const d=speed*dt;s+=d*.3;camUpdate(dt);return;}
  if(mode!=="play"){camUpdate(dt);return;}
- hintT+=dt;speed=Math.min(20,10+dist/90);
+ hintT+=dt;speed=spd(dist);
  const d=speed*dt,s0=s;s+=d;dist+=d;
  const pl=lat;lat+=(laneT*LW-lat)*Math.min(1,dt*16);latV=(lat-pl)/Math.max(dt,1e-3);
  if(y>0||vy>0){vy-=20*dt;y+=vy*dt;if(y<=0){y=0;vy=0;for(let i=0;i<5;i++)parts.push({x:W/2+(Math.random()-.5)*40,y:H-118,vx:(Math.random()-.5)*120,vy:-Math.random()*60,l:.4,c:"#d8c79a"});}}
@@ -584,7 +598,7 @@ function build(){
  <aside class="ru-panel" id="ruPanel" aria-label="Règles et réglages">
   <div class="ru-ph"><h3>Règles</h3><button type="button" class="ru-btn" style="position:static" id="ruPanelX" aria-label="Fermer les règles">✕</button></div>
   <ul class="r">
-   <li>Le singe court tout seul et accélère. <b>Glisse</b> ← → pour changer de couloir, ↑ pour <b>sauter</b> les racines, ↓ pour <b>glisser</b> sous les poutres. Au clavier : flèches ou Z Q S D, Espace pour sauter.</li>
+   <li>Le singe court tout seul et accélère sans arrêt : plus tu vas loin, plus c'est rapide, et des enchaînements d'obstacles arrivent. <b>Glisse</b> ← → pour changer de couloir, ↑ pour <b>sauter</b> les racines, ↓ pour <b>glisser</b> sous les poutres. Au clavier : flèches ou Z Q S D, Espace pour sauter.</li>
    <li>Au bout de chaque allée, un mur : glisse du bon côté pour <b>tourner</b> (tu peux glisser un peu avant le virage).</li>
    <li><b>1 point par mètre</b> et <b>5 points par banane</b>. Un seul choc et la course est finie.</li>
    <li>Une <b>manche</b> va de 18 h à 18 h. <b>5 courses</b> par manche : la 1re est <b>gratuite</b>, les suivantes coûtent <b>1 🍌</b>.</li>
@@ -665,6 +679,6 @@ async function boot(){
    if(+I.left>0)return {line:`Encore ${I.left} course${+I.left>1?"s":""} · ${I.price} 🍌 la course${pos}`,pre:"Classement dans ",in:end,hot:false};
    return {line:"Plus de courses dans cette manche"+pos,pre:"Classement dans ",in:end,hot:false};}});
 }
-window.MF_RUSH={open,_test:{act,get st(){return {mode,s,lat,y,dist,nb,speed,turns,cur,view};}}};
+window.MF_RUSH={open,_test:{act,setDist(v){dist=v;},get st(){return {mode,s,lat,y,dist,nb,speed,turns,cur,view,deathKind,slideT,laneT};}}};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();

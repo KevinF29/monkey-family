@@ -200,9 +200,11 @@ begin
   if t.uid is null or t.token is null or t.token <> p_token then raise exception 'rush_token'; end if;
   el := extract(epoch from now() - t.started_at);
   update public.mf_rush set token = null where uid = u;
-  -- plafond : au plus 20 m/s de course (1 point par mètre) et une banane (5 points) tous les 2 m
-  mx := floor(75 * el)::int + 50;
-  if el > 3600 or sc > mx or sc > 200000 then
+  -- plafond : la distance la plus longue possible en el secondes (10 m/s, +1 m/s tous les 90 m jusqu'à 20 m/s,
+  -- puis +1 m/s tous les 300 m sans limite), 1 point par mètre + 5 par banane (au plus une tous les 1,9 m), marge 15 %
+  mx := least(2000000000, floor(1.15 * (case when el <= 62.383 then 900 * (exp(el / 90) - 1) else 900 + 6000 * (exp(least(el - 62.383, 3600) / 300) - 1) end)
+        * (1 + 5 / 1.9)) + 100)::int;
+  if el > 3600 or sc > mx or sc > 100000000 then
     counted := false; why := 'rush_bad';
     perform public._rush_log(u, 'Course refusée : ' || sc || ' points en ' || round(el) || ' s');
     return jsonb_build_object('score', sc, 'counted', false, 'why', why, 'info', public._rush_info(u));
