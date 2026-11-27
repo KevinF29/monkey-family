@@ -11,7 +11,7 @@
 const OPEN_TO_ALL=true;           // passer à true pour lancer le Casino chez tous les joueurs
 const TOP=112,STEP=56;            // position sous le bouton Classement (et espacement des anciens boutons)
 const LOGO="packs/casino-titre.webp";
-const ARENA=["exp","rush","fly"];     // jeux communautaires et compétitifs : dans l'Arène, hors rotation du Casino
+const ARENA=["exp","rush","fly","jump"];     // jeux communautaires et compétitifs : dans l'Arène, hors rotation du Casino
 let ADMIN=null,adminP=null,want=null,wantT=0,cssDone=false;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const useHub=()=>OPEN_TO_ALL||ADMIN;
