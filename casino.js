@@ -1,5 +1,8 @@
-/* Monkey Family — Casino
-   Un seul bouton rond (sous le Classement) qui ouvre la salle de jeux : une carte par mini-jeu, avec son état du moment.
+/* Monkey Family — Casino et Arène
+   Deux salles, chacune derrière un bouton rond sous le Classement : le Casino (jeux contre la banque, rotation des jeux de la semaine)
+   et l'Arène (jeux communautaires et compétitifs : L'Expédition, Monkey Rush, Flying Monkey). Les jeux de l'Arène s'inscrivent
+   aussi avec MF_CASINO.add : la liste ARENA les envoie dans la bonne salle.
+   Casino : un seul bouton rond (sous le Classement) qui ouvre la salle de jeux : une carte par mini-jeu, avec son état du moment.
    Chaque jeu s'inscrit lui-même avec MF_CASINO.add({...}) une fois ses droits vérifiés (admin, ou jeu ouvert à tous).
    La pastille rouge du bouton compte les jeux qui ont quelque chose pour le joueur (ticket gratuit, résultat de course non vu…).
    Tant que OPEN_TO_ALL est faux, seul l'admin voit le Casino ; les autres joueurs gardent les anciens boutons ronds. */
@@ -8,9 +11,8 @@
 const OPEN_TO_ALL=true;           // passer à true pour lancer le Casino chez tous les joueurs
 const TOP=112,STEP=56;            // position sous le bouton Classement (et espacement des anciens boutons)
 const LOGO="packs/casino-titre.webp";
-const GAMES=[];                   // {id,name,icon,order,open,status,root,line,hot}
-let CFG=null,cfgAt=0;          // rotation des jeux de la semaine (mf_casino_status)
-let ADMIN=null,adminP=null,btn=null,hub=null,watch=null,want=null,wantT=0;
+const ARENA=["exp","rush","fly"];     // jeux communautaires et compétitifs : dans l'Arène, hors rotation du Casino
+let ADMIN=null,adminP=null,want=null,wantT=0,cssDone=false;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const useHub=()=>OPEN_TO_ALL||ADMIN;
 const CLOCK=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
@@ -25,10 +27,11 @@ function isAdmin(){
 /* ---------- style ---------- */
 const CSS=`
 #casinoBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + ${TOP}px)}
-#mfCasino{position:fixed;inset:0;z-index:8900;display:flex;flex-direction:column;align-items:center;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;height:100dvh;
+#arenaBtn{top:calc(max(12px,env(safe-area-inset-top,0px)) + ${TOP+STEP}px)}
+.cs-hub{position:fixed;inset:0;z-index:8900;display:flex;flex-direction:column;align-items:center;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;height:100dvh;
  padding:max(12px,env(safe-area-inset-top)) 16px max(12px,env(safe-area-inset-bottom));box-sizing:border-box;color:#f6f0d8;font:16px/1.45 Quicksand,system-ui,sans-serif;
  background:radial-gradient(ellipse 90% 45% at 50% 0,rgba(255,200,60,.18),transparent 70%),linear-gradient(180deg,#2a1450,#140a26)}
-#mfCasino[hidden]{display:none}
+.cs-hub[hidden]{display:none}
 .cs-top{flex:none;position:relative;width:min(520px,100%);margin:0 0 clamp(8px,1.6dvh,14px);padding-top:clamp(30px,5dvh,44px)}
 .cs-top h2{margin:0;display:flex;justify-content:center}
 .cs-top img{display:block;width:100%;max-width:calc(min(20dvh,170px)*1100/367);height:auto;aspect-ratio:1100/367;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
@@ -52,7 +55,7 @@ const CSS=`
 .cs-card:not(.hot) .cs-dot{display:none}
 .cs-go{flex:none;font-size:22px;color:#ffd23f}
 /* très petit écran (téléphone couché…) : on laisse défiler plutôt que de couper un jeu */
-@media (max-height:540px){#mfCasino{overflow-y:auto;overscroll-behavior:contain}.cs-list{flex:none}}
+@media (max-height:540px){.cs-hub{overflow-y:auto;overscroll-behavior:contain}.cs-list{flex:none}}
 .cs-sec{flex:none;display:flex;align-items:center;gap:8px;margin:2px 2px 0;font:400 16px/1.2 "Titan One",sans-serif;color:#ffd23f}
 .cs-sec small{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:999px;font:700 12.5px/1.3 Quicksand,system-ui,sans-serif;white-space:nowrap;color:#ffe7a8;background:rgba(255,210,63,.12);border:1px solid rgba(255,210,63,.3)}
 .cs-sec small svg{width:13px;height:13px}.cs-sec i{font-style:normal}
@@ -60,7 +63,7 @@ const CSS=`
 .cs-card.off{opacity:.55;border-style:dashed}
 .cs-adm{position:absolute;top:0;left:0;z-index:1;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#ffd23f;font-size:20px;cursor:pointer}
 .cs-adm[hidden]{display:none}
-#mfCasino.admin,#mfCasino.many{overflow-y:auto;overscroll-behavior:contain}#mfCasino.admin .cs-list,#mfCasino.many .cs-list{flex:none}
+.cs-hub.admin,.cs-hub.many{overflow-y:auto;overscroll-behavior:contain}.cs-hub.admin .cs-list,.cs-hub.many .cs-list{flex:none}
 .cs-panel{position:absolute;inset:0;z-index:5;display:flex;justify-content:center;align-items:flex-start;padding:max(12px,env(safe-area-inset-top)) 16px 16px;background:rgba(10,5,20,.78);overflow-y:auto}
 .cs-panel[hidden]{display:none}
 .cs-pbox{width:min(440px,100%);padding:16px 18px;border-radius:18px;background:#24123f;border:1px solid rgba(255,217,138,.35);box-shadow:0 18px 40px rgba(0,0,0,.5)}
@@ -74,23 +77,32 @@ const CSS=`
 .cs-btns button{flex:1 1 auto;min-height:42px;padding:8px 12px;border-radius:12px;font:700 14px Quicksand,system-ui,sans-serif;cursor:pointer;border:1px solid rgba(255,217,138,.4);background:rgba(255,255,255,.06);color:#fff}
 .cs-btns .cs-main{background:#ffd23f;color:#2a1450;border-color:#ffd23f}
 .cs-msg{min-height:1.2em;margin:10px 0 0;font-size:13px;color:#8fe3a8}
+.cs-hub.arena{background:radial-gradient(ellipse 90% 45% at 50% 0,rgba(90,200,255,.18),transparent 70%),linear-gradient(180deg,#123049,#0a1424)}
+.cs-title{margin:0;font:400 clamp(34px,6.5dvh,52px)/1 "Titan One",sans-serif;color:#ffd23f;letter-spacing:.02em;text-shadow:0 4px 0 #8a4b00,0 0 24px rgba(255,180,0,.4);text-align:center}
+.cs-sub{display:block;margin-top:6px;font:700 14px/1.3 Quicksand,system-ui,sans-serif;color:#bfe3ff;text-shadow:none;letter-spacing:0}
 .cs-note{flex:none;width:min(520px,100%);margin:clamp(8px,1.6dvh,16px) 0 0;text-align:center;font-size:13px;color:#a99cc4}
 `;
 
+function makeHub(K){
+const GAMES=[];                   // {id,name,icon,order,open,status,root,line,hot}
+let btn=null,hub=null,watch=null;
+let CFG=null,cfgAt=0;          // rotation des jeux de la semaine (mf_casino_status), Casino seulement
 /* ---------- bouton rond ---------- */
 function ensureBtn(){
   if(btn)return;
-  const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);
-  btn=document.createElement("button");btn.className="socialbtn";btn.id="casinoBtn";btn.type="button";btn.title="Casino";btn.setAttribute("aria-label","Casino");
-  // jeton de casino avec une banane au centre (redessiné d'après l'icône de Kévin)
-  btn.innerHTML=`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.3"/><circle cx="12" cy="12" r="6.6" stroke-dasharray="1.6 3.58" transform="rotate(-6 12 12)"/><path d="M8.4 12.2c.7 2.5 2.9 3.6 5 3 1.8-.5 2.7-2.3 2.3-4.5-.8 1.8-2.5 2.8-4.5 2.7-1 0-1.9-.4-2.8-1.2z"/><path d="M15.7 10.7l.3-1.5"/></svg><span class="sbadge" hidden></span>`;
+  if(!cssDone){cssDone=true;const st=document.createElement("style");st.textContent=CSS;document.head.appendChild(st);}
+  btn=document.createElement("button");btn.className="socialbtn";btn.id=K.btnId;btn.type="button";btn.title=K.name;btn.setAttribute("aria-label",K.name);
+  btn.innerHTML=K.icon+`<span class="sbadge" hidden></span>`;
   btn.addEventListener("click",openHub);
-  {const i=new Image();i.src=LOGO;}
-  const rank=document.getElementById("rankBtn");if(rank)rank.after(btn);else document.body.appendChild(btn);
+  if(K.logo){const i=new Image();i.src=K.logo;}
+  // toujours dans le même ordre sous le Classement : Casino puis Arène
+  const prev=K.after&&document.getElementById(K.after),rank=document.getElementById("rankBtn");
+  if(prev)prev.after(btn);else if(rank)rank.after(btn);else document.body.appendChild(btn);
+  const nxt=K.before&&document.getElementById(K.before);if(nxt)btn.after(nxt);
 }
 function badge(){
   if(!btn)return;const n=GAMES.filter(g=>g.hot).length,b=btn.querySelector(".sbadge");
-  b.hidden=!n;b.textContent=String(n);btn.setAttribute("aria-label",n?`Casino : ${n} jeu${n>1?"x":""} t'attend${n>1?"ent":""}`:"Casino");
+  b.hidden=!n;b.textContent=String(n);btn.setAttribute("aria-label",n?`${K.name} : ${n} jeu${n>1?"x":""} t'attend${n>1?"ent":""}`:K.name);
 }
 
 /* ---------- anciens boutons (joueurs, tant que le Casino n'est pas lancé) ---------- */
@@ -104,9 +116,9 @@ function legacy(g){
 
 /* ---------- la salle ---------- */
 function build(){
-  hub=document.createElement("div");hub.id="mfCasino";hub.hidden=true;hub.setAttribute("role","dialog");hub.setAttribute("aria-modal","true");hub.setAttribute("aria-label","Casino");
-  hub.innerHTML=`<div class="cs-top"><h2><img src="${LOGO}" alt="Monkey Family Casino"></h2><button type="button" class="cs-adm" id="csAdm" aria-label="Réglages de la rotation" hidden>⚙</button><button type="button" class="cs-x" id="csClose" aria-label="Fermer">✕</button></div>
-    <div class="cs-list" id="csList"></div><div class="cs-panel" id="csPanel" hidden role="dialog" aria-label="Rotation des jeux"><div class="cs-pbox" id="csPbox"></div></div><p class="cs-note">N'oubliez jamais qu'à la fin, c'est toujours le Casino qui gagne 🎰</p>`;
+  hub=document.createElement("div");hub.id=K.rootId;hub.className="cs-hub"+(K.cls?" "+K.cls:"");hub.hidden=true;hub.setAttribute("role","dialog");hub.setAttribute("aria-modal","true");hub.setAttribute("aria-label",K.name);
+  hub.innerHTML=`<div class="cs-top"><h2>${K.logo?`<img src="${K.logo}" alt="${esc(K.alt)}">`:`<span class="cs-title">${esc(K.name)}<span class="cs-sub">${esc(K.sub||"")}</span></span>`}</h2><button type="button" class="cs-adm" id="csAdm" aria-label="Réglages de la rotation" hidden>⚙</button><button type="button" class="cs-x" id="csClose" aria-label="Fermer">✕</button></div>
+    <div class="cs-list" id="csList"></div><div class="cs-panel" id="csPanel" hidden role="dialog" aria-label="Rotation des jeux"><div class="cs-pbox" id="csPbox"></div></div><p class="cs-note">${esc(K.note)}</p>`;
   document.body.appendChild(hub);
   hub.querySelector("#csClose").addEventListener("click",closeHub);
   hub.querySelector("#csAdm").addEventListener("click",()=>panel(true));
@@ -114,14 +126,14 @@ function build(){
 }
 const card=(g,off)=>`<button type="button" class="cs-card${g.hot&&!off?" hot":""}${off?" off":""}" data-id="${g.id}"><span class="cs-ic">${g.icon}</span>
     <span class="cs-tx"><b>${esc(g.name)}</b><span>${esc(off?"Hors rotation cette semaine (visible par toi seul)":g.line||"…")}</span>${g.until&&!off?`<span class="cs-when">${CLOCK}<i>${esc(when(g))}</i></span>`:""}</span><span class="cs-go" aria-hidden="true">›</span><i class="cs-dot"></i></button>`;
-const inPool=g=>!!(CFG&&CFG.pool&&CFG.pool.includes(g.id));
+const inPool=g=>!!(K.rotation&&CFG&&CFG.pool&&CFG.pool.includes(g.id));
 const featured=g=>!CFG||!CFG.enabled||!inPool(g)||CFG.featured.includes(g.id);
 function paint(){
   if(!hub)return;const list=hub.querySelector("#csList");
   hub.classList.toggle("admin",!!ADMIN);
   // plus de 6 jeux affichés (rotation coupée) : la salle défile au lieu de tout tasser
-  const rot=!!(CFG&&CFG.enabled);
-  hub.classList.toggle("many",GAMES.filter(g=>!rot||!inPool(g)||featured(g)).length>6);hub.querySelector("#csAdm").hidden=!ADMIN;
+  const rot=!!(K.rotation&&CFG&&CFG.enabled);
+  hub.classList.toggle("many",GAMES.filter(g=>!rot||!inPool(g)||featured(g)).length>6);hub.querySelector("#csAdm").hidden=!(ADMIN&&K.rotation);
   // jeux fixes en haut, puis les jeux de la rotation (même quand la rotation est coupée)
   const fixed=GAMES.filter(g=>!inPool(g)),week=GAMES.filter(g=>inPool(g)&&(!rot||featured(g))),out=rot&&ADMIN?GAMES.filter(g=>inPool(g)&&!featured(g)):[];
   let h=fixed.map(g=>card(g)).join("");
@@ -198,7 +210,7 @@ async function one(g){
 let busy=null;
 function refresh(){
   if(busy)return busy;
-  busy=Promise.all([loadCfg(),...GAMES.map(one)]).then(()=>{busy=null;badge();paint();});
+  busy=Promise.all([K.rotation?loadCfg():null,...GAMES.map(one)]).then(()=>{busy=null;badge();paint();});
   return busy;
 }
 
@@ -206,23 +218,38 @@ function refresh(){
 async function add(g){
   if(GAMES.some(x=>x.id===g.id))return;
   GAMES.push(g);GAMES.sort((a,b)=>(a.order||0)-(b.order||0));
-  await isAdmin();await loadCfg();
+  await isAdmin();if(K.rotation)await loadCfg();
   if(useHub())ensureBtn();else legacy(g);
   await one(g);badge();paint();
   if(want===g.id){want=null;clearTimeout(wantT);openGame(g.id);}
 }
-// ouvrir un jeu directement (notification de la Monkey Run…), sans passer par la salle
-function openGame(id){
-  const g=GAMES.find(x=>x.id===id);
-  if(!g){want=id;clearTimeout(wantT);wantT=setTimeout(()=>{want=null;},20000);return;}
-  g.open();
-}
-
-window.MF_CASINO={add,refresh,openGame,open:openHub};
 
 // rafraîchit la pastille : au retour dans l'appli, et toutes les 10 min (à minuit, le ticket gratuit revient sans relancer)
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&GAMES.length)refresh();});
 setInterval(()=>{if(GAMES.length&&(!hub||hub.hidden))refresh();},10*60*1000);
+return {add,refresh,open:openHub,find:id=>GAMES.find(g=>g.id===id)};
+}
+
+const CASINO=makeHub({name:"Casino",btnId:"casinoBtn",rootId:"mfCasino",before:"arenaBtn",rotation:true,logo:LOGO,alt:"Monkey Family Casino",
+  note:"N'oubliez jamais qu'à la fin, c'est toujours le Casino qui gagne 🎰",
+  // jeton de casino avec une banane au centre (redessiné d'après l'icône de Kévin)
+  icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.3"/><circle cx="12" cy="12" r="6.6" stroke-dasharray="1.6 3.58" transform="rotate(-6 12 12)"/><path d="M8.4 12.2c.7 2.5 2.9 3.6 5 3 1.8-.5 2.7-2.3 2.3-4.5-.8 1.8-2.5 2.8-4.5 2.7-1 0-1.9-.4-2.8-1.2z"/><path d="M15.7 10.7l.3-1.5"/></svg>`});
+const ARENA_HUB=makeHub({name:"L'Arène",btnId:"arenaBtn",rootId:"mfArena",after:"casinoBtn",cls:"arena",rotation:false,
+  sub:"Jeux entre potes : que le meilleur singe gagne",note:"Le classement ne ment jamais 🏆",
+  // podium à trois marches avec une étoile au-dessus de la première
+  icon:`<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 20v-9h6v9"/><path d="M3 20v-5h6"/><path d="M15 15h6v5"/><path d="M2 20h20"/><path d="M12 3.2l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z"/></svg>`});
+
+const hubOf=id=>ARENA.includes(id)?ARENA_HUB:CASINO;
+const add=g=>hubOf(g.id).add(g);
+// ouvrir un jeu directement (notification de la Monkey Run, de L'Expédition…), sans passer par la salle
+function openGame(id){
+  const g=hubOf(id).find(id);
+  if(!g){want=id;clearTimeout(wantT);wantT=setTimeout(()=>{want=null;},20000);return;}
+  g.open();
+}
+const refresh=()=>Promise.all([CASINO.refresh(),ARENA_HUB.refresh()]);
+window.MF_CASINO={add,refresh,openGame,open:CASINO.open};
+window.MF_ARENA={add:g=>ARENA_HUB.add(g),refresh:ARENA_HUB.refresh,openGame,open:ARENA_HUB.open};
 
 // clic sur une notification de course : l'appli était fermée (#race) ou déjà ouverte (message du service worker)
 if(location.hash==="#race"||location.hash==="#exp"){openGame(location.hash.slice(1));try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
