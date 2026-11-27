@@ -189,8 +189,8 @@ function build(){
    <p class="sc-note" id="scOpenNote"></p>
    <div class="sc-bar"><button type="button" class="sc-sbtn sc-warn" id="scOpen"></button></div>
    <h3>Chances par ticket</h3>
-   <ul class="sc-odds">${[["Jackpot · 3 boosters","1 %"],["1 booster","2,5 %"],["25 🍌","4 %"],["−2 h d'attente","5 %"],["10 🍌","10 %"],["5 🍌","15 %"],["Perdu","62,5 %"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("")}</ul>
-   <p class="sc-note">Un ticket gagne un peu plus d'1 fois sur 3 (37,5 %). Un ticket payant rend en moyenne 4,95 🍌 pour 5 🍌 (en comptant un booster à 40 🍌), sans compter le sablier.</p>
+   <ul class="sc-odds">${[["Jackpot · 3 boosters","1 %"],["1 booster","3 %"],["25 🍌","5 %"],["−2 h d'attente","7 %"],["10 🍌","12 %"],["5 🍌","17 %"],["Perdu","55 %"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("")}</ul>
+   <p class="sc-note">Un ticket gagne presque 1 fois sur 2 (45 %). Un ticket payant rend en moyenne 5,7 🍌 pour 5 🍌 (en comptant un booster à 40 🍌), sans compter le sablier.</p>
   </aside>
   <div class="sc-jp" id="scJp" hidden><div class="sc-rays"></div><div class="sc-jpin"><img class="sc-coin" id="scJpImg" alt=""><div class="sc-jpt" id="scJpT"></div><div class="sc-jps" id="scJpS"></div><button type="button" class="sc-btn" id="scJpOk">Récupérer</button></div></div>`;
   document.body.appendChild(root);
