@@ -543,7 +543,7 @@ async function send(sc){
  const res=!r?{t:"Score non envoyé : "+errText(err),w:false}
   :r.why==="rush_bad"?{t:"Cette course n'a pas été comptée.",w:false}
   :r.why==="rush_late"?{t:"La manche était déjà terminée : cette course ne compte pas.",w:false}
-  :r.newBest?{t:`Meilleure course de la manche ! Tu es ${rk1(r.rank)}.`,w:true}
+  :r.newBest?{t:`Meilleure course de la manche !${r.rank?` Tu es ${rk1(r.rank)}.`:" (hors classement)"}`,w:true}
   :{t:`Ta meilleure course reste ${S&&S.myBest!=null?S.myBest:"—"} points${r.rank?` · ${rk1(r.rank)}`:""}.`,w:false};
  if(r){take(r.info);render();}
  if(r&&r.newBest)[523,659,784,1047].forEach((f,i)=>beep(f,i*.08,.16,.05,"triangle"));
