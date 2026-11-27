@@ -11,7 +11,8 @@
 
 const NAME="Monkey Rush";
 const P="packs/rush-";
-const IMG={logo:P+"titre.webp",monkey:P+"singe.webp",fall:P+"chute.webp",jump:P+"saut.webp",slide:P+"glisse.webp",banana:"packs/fly-banana.webp"};
+const IMG={logo:P+"titre.webp",monkey:P+"singe.webp",fall:P+"chute.webp",jump:P+"saut.webp",slide:P+"glisse.webp",
+ root:P+"racine.webp",beam:P+"poutre.webp",block:P+"bloc.webp",wall:P+"mur.webp",tree:P+"arbre.webp",pillar:P+"pilier.webp",torch:P+"torche.webp",bush:P+"buisson.webp",bg:P+"fond.webp",path:P+"dalles.webp",banana:"packs/fly-banana.webp"};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",rush_limit:"Plus de courses dans cette manche : reviens après 18 h !",rush_closed:NAME+" n'est pas ouvert en ce moment.",
  rush_token:"Cette course n'est plus valable.",not_member:"Ton accès est en pause."};
@@ -215,8 +216,10 @@ function poly(ws,col,layer,zb){const cs=clip(ws.map(toCam));if(cs.length<3)retur
 const STONE=[[186,164,122],[171,149,108]],MOSS=[[160,160,104],[150,148,98]],CURBC=[112,92,62],GRASS=[[62,112,52],[55,101,46]];
 function floorSeg(g,stub){
  const a=stub?HW:(g===segs[0]?-14:HW),b=stub?HW+48:g.L+HW;
+ const tx=ok("path");
  for(let q=a;q<b;q+=2){const q1=Math.min(b,q+2),i=Math.floor(q/2)&1,m=((q*7)%11)<2;
-  poly([wpt(g,q,-HW),wpt(g,q1,-HW),wpt(g,q1,HW),wpt(g,q,HW)],(m?MOSS:STONE)[i],1);
+  if(tx){for(let h=q;h<q1;h+=1)tile(g,h,Math.min(q1,h+1));}
+  else poly([wpt(g,q,-HW),wpt(g,q1,-HW),wpt(g,q1,HW),wpt(g,q,HW)],(m?MOSS:STONE)[i],1);
   const open=!stub&&q1>g.L-HW;
   if(!(open&&(g.turn==="L"||g.turn==="T")))poly([wpt(g,q,-HW-CURB,.18),wpt(g,q1,-HW-CURB,.18),wpt(g,q1,-HW,.18),wpt(g,q,-HW,.18)],CURBC,1,-.01);
   if(!(open&&(g.turn==="R"||g.turn==="T")))poly([wpt(g,q,HW,.18),wpt(g,q1,HW,.18),wpt(g,q1,HW+CURB,.18),wpt(g,q,HW+CURB,.18)],CURBC,1,-.01);}
@@ -225,9 +228,24 @@ function floorSeg(g,stub){
   poly([wpt(g,q,-HW-14),wpt(g,q1,-HW-14),wpt(g,q1,-HW-CURB),wpt(g,q,-HW-CURB)],GRASS[i],0);
   poly([wpt(g,q,HW+CURB),wpt(g,q1,HW+CURB),wpt(g,q1,HW+14),wpt(g,q,HW+14)],GRASS[i],0);}
  if(!stub){const e=g.L+HW;   // le mur du bout : il faut tourner !
-  poly([wpt(g,e,-HW-CURB,0),wpt(g,e,HW+CURB,0),wpt(g,e,HW+CURB,2.8),wpt(g,e,-HW-CURB,2.8)],[120,104,76],2);
-  poly([wpt(g,e,-HW-CURB,2.8),wpt(g,e,HW+CURB,2.8),wpt(g,e+.8,HW+CURB,2.8),wpt(g,e+.8,-HW-CURB,2.8)],[150,132,96],2,-.02);
+  if(ok("wall"))bill(g,"wall",e,-HW-CURB-.3,HW+CURB+.3,0,null);   // mur du temple : packs/rush-mur.webp
+  else{poly([wpt(g,e,-HW-CURB,0),wpt(g,e,HW+CURB,0),wpt(g,e,HW+CURB,2.8),wpt(g,e,-HW-CURB,2.8)],[120,104,76],2);
+  poly([wpt(g,e,-HW-CURB,2.8),wpt(g,e,HW+CURB,2.8),wpt(g,e+.8,HW+CURB,2.8),wpt(g,e+.8,-HW-CURB,2.8)],[150,132,96],2,-.02);}
   Q.push({z:Q[Q.length-1]?Q[Q.length-1].z-.03:0,layer:2,wall:g});}}
+// dalles du chemin (packs/rush-dalles.webp) : une image carrée qui se répète, couvre toute la largeur et 4 m de long
+function tile(g,q,q1){const c=[wpt(g,q,-HW),wpt(g,q,HW),wpt(g,q1,-HW),wpt(g,q1,HW)].map(toCam);let zm=1e9,zs=0;for(const v of c){zs+=v[2];if(v[2]<zm)zm=v[2];}
+ const z=zs/4;if(zm<NEAR||zm>FAR)return;const P=c.map(prj),u=((q%4)+4)%4;
+ Q.push({z,layer:1,tex:{P,u,u1:u+(q1-q)},fog:fogK(z)});}
+function drawTile(T,f){const im=IM.path,iw=im.naturalWidth,ih=im.naturalHeight,P=T.P,sy=ih*(1-T.u1/4),sh=ih*(T.u1-T.u)/4;
+ cx.save();cx.beginPath();cx.moveTo(P[0][0],P[0][1]);cx.lineTo(P[1][0],P[1][1]);cx.lineTo(P[3][0],P[3][1]);cx.lineTo(P[2][0],P[2][1]);cx.closePath();cx.clip();
+ const ax=(P[1][0]-P[0][0])/iw,ay=(P[1][1]-P[0][1])/iw,ccx=(P[2][0]-P[0][0])/-sh,ccy=(P[2][1]-P[0][1])/-sh;
+ cx.transform(ax,ay,ccx,ccy,P[0][0]-ccx*(sy+sh),P[0][1]-ccy*(sy+sh));cx.drawImage(im,0,sy,iw,sh+1,0,sy,iw,sh+1);cx.restore();
+ if(f>0){cx.fillStyle=`rgba(${FOG[0]},${FOG[1]},${FOG[2]},${f})`;cx.beginPath();cx.moveTo(P[0][0],P[0][1]);cx.lineTo(P[1][0],P[1][1]);cx.lineTo(P[3][0],P[3][1]);cx.lineTo(P[2][0],P[2][1]);cx.closePath();cx.fill();}}
+// image posée debout face à la caméra, entre deux couloirs (l0 → l1), le bas à la hauteur y0 ; hauteur hM (m) ou selon les proportions de l'image
+function bill(g,im,ss,l0,l1,y0,hM,zb){const a=toCam(wpt(g,ss,l0,y0)),b=toCam(wpt(g,ss,l1,y0));if(Math.min(a[2],b[2])<NEAR+.3)return;
+ const z=(a[2]+b[2])/2;if(z>FAR)return;Q.push({z:z+(zb||0),layer:3,bill:{im,a:prj(a),b:prj(b),k:F/z,hM,f:fogK(z)}});}
+function drawBill(B){const x=Math.min(B.a[0],B.b[0]),w=Math.abs(B.b[0]-B.a[0]),yb=(B.a[1]+B.b[1])/2,im=IM[B.im],h=B.hM?B.hM*B.k:w*im.naturalHeight/im.naturalWidth;
+ cx.globalAlpha=1-B.f*.75;cx.drawImage(im,x,yb-h,w,h);cx.globalAlpha=1;}
 function sideStubs(g){if(g!==cur)return;const E=endPt(g);for(const a of g.turn==="T"?["L","R"]:[g.turn]){const nd=(g.dir+(a==="R"?1:3))%4;floorSeg({sx:E[0],sz:E[1],dir:nd,L:0,turn:"S"},true);}}
 function box(g,s0,s1,l0,l1,y0,y1,cF,cT,cS){
  const cc=toSeg(g);
@@ -238,7 +256,10 @@ function box(g,s0,s1,l0,l1,y0,y1,cF,cT,cS){
 function toSeg(g){const f=fw(g.dir),r=rt(g.dir),dx=cam.x-g.sx,dz=cam.z-g.sz;return {s:dx*f[0]+dz*f[1],l:dx*r[0]+dz*r[1]};}
 const BLK=[[[138,128,104],[160,150,124],[112,104,84]],[[126,120,96],[150,144,118],[100,96,78]],[[146,124,96],[168,146,116],[118,100,78]]];
 function obstacles(g){for(const o of g.obs){
- if(o.k==="low"){box(g,o.s0,o.s1,-HW-.15,HW+.15,0,.55,[104,66,34],[134,90,48],[84,52,26]);Q.push({z:depth(g,o.s0,0),layer:3,root:[g,o]});}
+ if(o.k==="low"&&ok("root"))bill(g,"root",o.s0,-HW-.3,HW+.3,0,null);          // racine : packs/rush-racine.webp
+ else if(o.k==="high"&&ok("beam"))bill(g,"beam",o.s0,-HW-.55,HW+.55,0,2.1);  // arche : packs/rush-poutre.webp
+ else if(o.k==="block"&&ok("block"))bill(g,"block",o.s0,o.lat-.62,o.lat+.62,0,null); // bloc : packs/rush-bloc.webp
+ else if(o.k==="low"){box(g,o.s0,o.s1,-HW-.15,HW+.15,0,.55,[104,66,34],[134,90,48],[84,52,26]);Q.push({z:depth(g,o.s0,0),layer:3,root:[g,o]});}
  else if(o.k==="high"){for(const sd of[-1,1])box(g,o.s0,o.s1,sd*(HW+.05)-.22,sd*(HW+.05)+.22,0,1.8,[120,108,84],[150,138,110],[98,88,68]);
   box(g,o.s0,o.s1,-HW-.3,HW+.3,1.12,1.8,[132,118,90],[160,146,114],[104,94,72]);Q.push({z:depth(g,o.s0,0)-.06,layer:3,vine:[g,o]});}
  else{const c=BLK[o.v||0];box(g,o.s0,o.s1,o.lat-.58,o.lat+.58,0,1.5,c[0],c[1],c[2]);Q.push({z:depth(g,o.s0,o.lat)-.06,layer:3,face:[g,o]});}}}
@@ -247,6 +268,9 @@ function sprites(g){
  for(const b of g.ban){if(b.got)continue;const c=toCam(wpt(g,b.s,b.lat,b.y));if(c[2]<NEAR||c[2]>FAR*.85)continue;Q.push({z:c[2],layer:3,ban:c});}
  for(const d of g.deco){const c=toCam(wpt(g,d.s,d.lat,0));if(c[2]<NEAR+.5||c[2]>FAR)continue;Q.push({z:c[2],layer:3,deco:[d,c]});}}
 function sky(){const yaw=cam.th;
+ if(ok("bg")){const im=IM.bg,h=HZ+24,w=h*im.naturalWidth/im.naturalHeight,ox=((-yaw*F*.9)%w+w)%w;   // panorama : packs/rush-fond.webp (se répète à l'horizontale)
+  for(let x=ox-w;x<W;x+=w)cx.drawImage(im,x,0,w+1,h);
+  const g2=cx.createLinearGradient(0,HZ,0,H);g2.addColorStop(0,mix([62,112,52],.9));g2.addColorStop(.25,"#4a7a40");g2.addColorStop(1,"#2e5326");cx.fillStyle=g2;cx.fillRect(0,HZ+2,W,H-HZ);return;}
  const gr=cx.createLinearGradient(0,0,0,HZ);gr.addColorStop(0,"#2f7f9a");gr.addColorStop(.6,"#9cc7b0");gr.addColorStop(1,"#f2d7a0");cx.fillStyle=gr;cx.fillRect(0,0,W,HZ+2);
  const sx=((-yaw*F*.9)%1600+1600)%1600;
  cx.fillStyle="rgba(255,236,170,.75)";cx.beginPath();cx.arc(((sx+300)%1600)-200,HZ-70,26,0,7);cx.fill();
@@ -259,6 +283,8 @@ function sky(){const yaw=cam.th;
  ridge(sx,26,HZ+1,"#4f7a52",420,4);
  const g2=cx.createLinearGradient(0,HZ,0,H);g2.addColorStop(0,mix([62,112,52],.9));g2.addColorStop(.25,"#4a7a40");g2.addColorStop(1,"#2e5326");cx.fillStyle=g2;cx.fillRect(0,HZ,W,H-HZ);}
 function drawQ(q){
+ if(q.tex){drawTile(q.tex,q.fog);return;}
+ if(q.bill){drawBill(q.bill);return;}
  if(q.pts){cx.fillStyle=q.col;cx.beginPath();cx.moveTo(q.pts[0][0],q.pts[0][1]);for(let i=1;i<q.pts.length;i++)cx.lineTo(q.pts[i][0],q.pts[i][1]);cx.closePath();cx.fill();return;}
  if(q.ban){const c=q.ban,p=prj(c),k=F/c[2],sz=.62*k,fa=1-fogK(c[2])*.8,bob=Math.sin(t*5+c[2])*.06*k;cx.globalAlpha=fa;
   if(ok("banana"))cx.drawImage(IM.banana,p[0]-sz/2,p[1]-sz/2+bob,sz,sz*41/42);else{cx.fillStyle="#ffd23f";cx.beginPath();cx.arc(p[0],p[1]+bob,sz*.3,0,7);cx.fill();}
@@ -280,7 +306,10 @@ function wallArrows(g){const e=g.L+HW-.02,dirs=g.turn==="T"?["L","R"]:[g.turn];
   cx.save();cx.translate(p[0],p[1]);cx.scale(sd,1);cx.fillStyle=mix([255,210,63],fogK(c[2])*.7);cx.strokeStyle=mix([90,60,20],fogK(c[2]));cx.lineWidth=Math.max(1,.05*k);
   cx.beginPath();cx.moveTo(-.5*k,-.18*k);cx.lineTo(.05*k,-.18*k);cx.lineTo(.05*k,-.42*k);cx.lineTo(.55*k,0);cx.lineTo(.05*k,.42*k);cx.lineTo(.05*k,.18*k);cx.lineTo(-.5*k,.18*k);cx.closePath();cx.fill();cx.stroke();cx.restore();}}
 const LEAF=["#2f7a3a","#3c8a3f","#2a6a36"];
+const DH={tree:null,pillar:null,torch:1.7,bush:1.3};
 function deco(d,c){const p=prj(c),k=F/c[2],fk=fogK(c[2]);
+ if(ok(d.k)){const im=IM[d.k],h=(d.k==="tree"?d.h+1.5:d.k==="pillar"?d.h*.75:DH[d.k])*k,w=h*im.naturalWidth/im.naturalHeight;   // décor : packs/rush-arbre / pilier / torche / buisson
+  cx.globalAlpha=1-fk*.75;cx.save();cx.translate(p[0],p[1]);if(d.c===1||(d.lat>0&&d.k!=="torch"))cx.scale(-1,1);cx.drawImage(im,-w/2,-h*.97,w,h);cx.restore();cx.globalAlpha=1;return;}
  if(d.k==="torch"){const top=prj([c[0],1.25,c[2]]);cx.strokeStyle=mix([80,56,30],fk);cx.lineWidth=Math.max(1,.12*k);cx.beginPath();cx.moveTo(p[0],p[1]);cx.lineTo(top[0],top[1]);cx.stroke();
   const fl=1+Math.sin(t*17+c[2])*.15;cx.fillStyle=`rgba(255,${150+Math.floor(Math.sin(t*11+c[0])*40)},40,${.9-fk*.6})`;cx.beginPath();cx.ellipse(top[0],top[1]-.14*k*fl,.11*k,.2*k*fl,0,0,7);cx.fill();
   cx.fillStyle=`rgba(255,240,160,${.9-fk*.6})`;cx.beginPath();cx.ellipse(top[0],top[1]-.1*k,.05*k,.09*k,0,0,7);cx.fill();return;}
