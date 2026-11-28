@@ -1,6 +1,6 @@
 /* Monkey Family : fonctionnement hors ligne de l'appli (les images sont mises en cache par la page elle-même) */
-const VERSION="mf-1795860766";
-const SHELL=["./","index.html","config.js","cloud.js","admin.js","pop.js","casino.js","mystere.js","slot.js","race.js","scratch.js","cocotier.js","wheel.js","blackjack.js","bonneteau.js","poker.js","plinko.js","flying.js","champ.js","tour.js","expedition.js","rush.js","jump.js","lib/gsap.min.js","lib/three.min.js","lib/supabase.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png"];
+const VERSION="mf-1795884114";
+const SHELL=["./","index.html","config.js","cloud.js","admin.js","pop.js","casino.js","mystere.js","slot.js","race.js","scratch.js","cocotier.js","wheel.js","blackjack.js","bonneteau.js","poker.js","plinko.js","flying.js","champ.js","tour.js","expedition.js","criee.js","rush.js","jump.js","lib/gsap.min.js","lib/three.min.js","lib/supabase.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(SHELL.map(u=>new Request(u,{cache:"reload"})))).then(()=>self.skipWaiting()));});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith("mf-")&&k!==VERSION&&k!=="mf-media-v1").map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener("fetch",e=>{
@@ -14,7 +14,7 @@ self.addEventListener("fetch",e=>{
 /* notifications envoyées par le serveur (booster prêt, événement) */
 self.addEventListener("push",e=>{
   let d={};try{d=e.data?e.data.json():{};}catch(x){d={body:e.data&&e.data.text()};}
-  e.waitUntil(self.registration.showNotification(d.title||"Monkey Family",{body:d.body||"",tag:d.tag||"mf",renotify:true,icon:"icons/icon-192.png",badge:"icons/icon-192.png",data:{url:"./",game:String(d.tag||"").startsWith("race")?"race":String(d.tag||"").startsWith("exp")?"exp":""}}));
+  e.waitUntil(self.registration.showNotification(d.title||"Monkey Family",{body:d.body||"",tag:d.tag||"mf",renotify:true,icon:"icons/icon-192.png",badge:"icons/icon-192.png",data:{url:"./",game:String(d.tag||"").startsWith("race")?"race":String(d.tag||"").startsWith("exp")?"exp":String(d.tag||"").startsWith("cri")?"cri":""}}));
 });
 self.addEventListener("notificationclick",e=>{
   e.notification.close();

@@ -883,6 +883,7 @@ td.n{text-align:right}
 <script src="champ.js"></script>
 <script src="tour.js"></script>
 <script src="expedition.js"></script>
+<script src="criee.js"></script>
 <script src="rush.js"></script>
 <script src="jump.js"></script>
 <script>
@@ -4002,6 +4003,8 @@ const id=Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8);
       if(x.kind==="exp_lost"){const D=[["🐍","un 2e serpent"],["🕷️","une 2e araignée"],["🏜️","de nouveaux sables mouvants"],["🐆","une 2e panthère"],["🪨","un 2e éboulement"]][+x.d||0]||["⚠️","un danger"];
         const us=(Array.isArray(x.us)?x.us:[]).map(u=>`<b>${esc(nameOf(u))}</b>`),list=us.length>1?us.slice(0,-1).join(", ")+" et "+us[us.length-1]:us[0]||"Personne";
         return `<div class="fitem"><span class="fi" aria-hidden="true">${D[0]}</span><p>L'Expédition : ${D[1]} à l'étape ${fmt(+x.s||0)} ! ${list} ${us.length>1?"perdent":"perd"} ${fmt(+x.v||0)} 🍌 de butin 🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
+      if(x.kind==="cri"){const M=["🥇","🥈","🥉"],pod=(Array.isArray(x.pod)?x.pod:[]).slice(0,3).map((p,i)=>`${M[i]} <b>${esc(nameOf(p.uid))}</b> ${(+p.v>0?"+":"")+fmt(+p.v||0)} 🍌`+(+p.b?` et ${fmt(+p.b)} 🎁`:"")).join(" · ");
+        return `<div class="fitem"><span class="fi" aria-hidden="true">🔨</span><p>La Criée aux bananes, podium du jour : ${pod||"personne n'a misé"}${+x.n>3?` · ${fmt(+x.n)} enchérisseurs`:""}<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="mys"){const N={slot:"à la Banana Machine",scratch:"au Monkey Cash",wheel:"à The Monkey Wheel",mine:"au Champ de Cocos",tour:"à The Monkey Tower",vp:"au Poker Monkey",coco:"au Crash Cocotier",pk:"au Plinko Banana",bon:"au Bananateau",bj:"à MonkeyJack 21"},w=N[x.g]||"au Casino";
         return `<div class="fitem"><span class="fi" aria-hidden="true">🔮</span><p>Le Singe Mystère est apparu ${esc(w)} pour ${who}… et lui a donné un sacré coup de pouce !<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;}
       if(x.kind==="bon_cheat")return `<div class="fitem"><span class="fi" aria-hidden="true">🐒</span><p>${who} avait trouvé la bonne noix de coco… mais le singe avait déjà la banane dans la main 🥥🙈<br><small>${ago(x.t)}</small></p>${reacts(x)}</div>`;

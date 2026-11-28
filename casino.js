@@ -10,10 +10,10 @@
 "use strict";
 const TOP=112;                    // position sous le bouton Classement
 const MAIN_IDS=["race"];                       // jeu fixe, directement dans la salle de jeux
-const ARENA=["exp","rush","fly","jump"];       // jeux communautaires et compétitifs : dans l'Arène
+const ARENA=["exp","cri","rush","fly","jump"];       // jeux communautaires et compétitifs : dans l'Arène
 // noms de secours (réglages admin) pour les jeux qu'un joueur n'a pas chargés
 const NAMES={race:"Monkey Run",slot:"Banana Machine",scratch:"Monkey Cash",wheel:"The Monkey Wheel",mine:"Le Champ de Cocos",tour:"The Monkey Tower",
-  coco:"Crash Cocotier",bj:"MonkeyJack 21",bon:"Bananateau",vp:"Poker Monkey",pk:"Plinko Banana",fly:"Flying Monkey",rush:"Monkey Rush",jump:"Monkey Jump",exp:"L'Expédition"};
+  coco:"Crash Cocotier",bj:"MonkeyJack 21",bon:"Bananateau",vp:"Poker Monkey",pk:"Plinko Banana",fly:"Flying Monkey",rush:"Monkey Rush",jump:"Monkey Jump",exp:"L'Expédition",cri:"La Criée aux bananes"};
 let ADMIN=null,adminP=null,want=null,wantT=0,cssDone=false;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const CLOCK=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
@@ -299,6 +299,6 @@ window.MF_ARENA={add:g=>ARENA_HUB.add(g),refresh,openGame,open:()=>{MAIN.open();
 window.MF_GAMES={open:MAIN.open,refresh};
 
 // clic sur une notification de course : l'appli était fermée (#race) ou déjà ouverte (message du service worker)
-if(location.hash==="#race"||location.hash==="#exp"){openGame(location.hash.slice(1));try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
+if(location.hash==="#race"||location.hash==="#exp"||location.hash==="#cri"){openGame(location.hash.slice(1));try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
 if(navigator.serviceWorker)navigator.serviceWorker.addEventListener("message",e=>{const d=e.data;if(d&&d.mf==="open"&&d.game)openGame(d.game);});
 })();
