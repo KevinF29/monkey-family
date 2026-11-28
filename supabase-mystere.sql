@@ -2,7 +2,7 @@
 -- À lancer une seule fois dans Supabase (installé le 27/11/2026).
 --
 -- Règles :
---  - à chaque partie, 1 % de chances (mf_mys_cfg.chance) qu'il apparaisse ;
+--  - à chaque partie, 0,5 % de chances (1 % au lancement, baissé le 28/11) (mf_mys_cfg.chance) qu'il apparaisse ;
 --  - anti-frustration : chaque joueur a, pour chaque jeu, un compteur de perte nette (mises − gains) depuis la dernière
 --    visite du singe ; quand il atteint le seuil du jeu (mf_mys_cfg.threshold), le singe vient à coup sûr à la partie suivante ;
 --  - au plus une visite par joueur, par jeu et par jour (heure de Paris) ;
@@ -26,13 +26,13 @@
 create table if not exists public.mf_mys_cfg (
   game text primary key,
   threshold int not null,             -- perte nette (🍌) qui fait venir le singe à coup sûr
-  chance numeric not null default 0.01,
+  chance numeric not null default 0.005,
   enabled boolean not null default true
 );
 alter table public.mf_mys_cfg enable row level security;
 insert into public.mf_mys_cfg(game, threshold) values
-  ('slot', 10), ('scratch', 20), ('wheel', 6), ('mine', 30), ('tour', 25),
-  ('vp', 30), ('coco', 30), ('pk', 20), ('bon', 12), ('bj', 40)
+  ('slot', 10), ('scratch', 20), ('wheel', 12), ('mine', 30), ('tour', 25),
+  ('vp', 30), ('coco', 30), ('pk', 20), ('bon', 20), ('bj', 40)
 on conflict do nothing;
 
 create table if not exists public.mf_mys (
