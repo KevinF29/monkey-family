@@ -1,5 +1,5 @@
 /* Monkey Family — La Criée aux bananes (enchères secrètes entre potes, façon Raj / Hol's der Geier)
-   Chaque jour, 15 lots mis aux enchères (bananes, 1 booster, pertes). Chaque joueur a 15 cartes de 1 à 15 et en mise une en secret
+   Chaque jour, 15 lots mis aux enchères (boosters, temps d'attente en moins, bananes, pertes : mf_cri_cfg.items). Chaque joueur a 15 cartes de 1 à 15 et en mise une en secret
    par lot : la plus haute gagne un lot positif, la plus BASSE prend une perte, les mises identiques s'annulent.
    Le lot suivant arrive dès que tout le monde a misé (au plus tard 1 h après). Tout se passe sur le serveur (mf_cri_*, supabase-criee.sql).
    Jeu de l'Arène, toujours là. Visible par l'admin seulement tant que le jeu n'est pas ouvert (réglages admin → « Ouvrir à tous »).
@@ -16,8 +16,10 @@ const rpc=(n,a)=>window.MF_RPC(n,a||{});
 const dur=ms=>{ms=Math.max(0,ms);const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return h?`${h} h ${String(m).padStart(2,"0")}`:`${Math.max(1,m)} min`;};
 const hh=ms=>{const d=new Date(ms);return d.getMinutes()?`${d.getHours()} h ${String(d.getMinutes()).padStart(2,"0")}`:`${d.getHours()} h`;};
 const sgn=v=>(v>0?"+":"")+v;
-// « +8 🍌 », « -6 🍌 », « 1 booster et +4 🍌 »
-const ltxt=(v,b)=>{const a=[];if(b>0)a.push(`${b} booster${b>1?"s":""}`);if(v)a.push(`${sgn(v)} 🍌`);return a.join(" et ")||"rien";};
+// « +25 🍌 », « -6 🍌 », « 2 boosters et +10 🍌 », « -2 h d'attente »
+const htxt=h=>`-${h%60?h+" min":h/60+" h"} d'attente`;
+const ltxt=(v,b,h)=>{const a=[];if(b>0)a.push(`${b} booster${b>1?"s":""}`);if(h>0)a.push(htxt(h));if(v)a.push(`${sgn(v)} 🍌`);return a.join(" et ")||"rien";};
+const lt=o=>ltxt(+o.v||0,+o.b||0,+o.h||0);
 const rk=r=>r===1?"1er":`${r}e`;
 
 /* ---------- style ---------- */
@@ -52,6 +54,7 @@ const CSS=`
 .cr-lot .e{font-size:34px}
 .cr-lot.g{background:linear-gradient(160deg,#4fb24a,#1f6b2a)}
 .cr-lot.x{background:linear-gradient(160deg,#d0503a,#7a1a12)}
+.cr-lot.t{background:linear-gradient(160deg,#5ab0ff,#1f4f9a)}
 .cr-lot.b{background:linear-gradient(160deg,#ffd86a,#c48a12);color:#4a2a00;text-shadow:0 1px 0 rgba(255,255,255,.5)}
 .cr-lot.q{background:repeating-linear-gradient(45deg,#6b3f1d 0 10px,#5a3216 10px 20px);font-size:40px;color:#ffd23f}
 .cr-lot.new{animation:crFlip .6s cubic-bezier(.2,1.4,.4,1) both}
@@ -61,7 +64,7 @@ const CSS=`
 .cr-pot{display:inline-block;align-self:flex-start;background:#ffd23f;color:#3b2410;border-radius:999px;padding:2px 10px;font-weight:700;font-size:13px}
 .cr-left{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
 .cr-left span{font:700 12px/1 Quicksand,sans-serif;padding:4px 6px;border-radius:6px;background:rgba(0,0,0,.35)}
-.cr-left .g{color:#9ff0a0}.cr-left .x{color:#ffab98}.cr-left .b{color:#ffd23f}
+.cr-left .t{color:#9fd0ff}.cr-left .g{color:#9ff0a0}.cr-left .x{color:#ffab98}.cr-left .b{color:#ffd23f}
 /* ta main */
 .cr-hand{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
 .cr-c{aspect-ratio:3/4;border-radius:10px;border:2px solid #fff3c4;background:linear-gradient(160deg,#fff8e0,#f0d79a);color:#5a2a12;font:400 clamp(20px,6vw,28px)/1 "Titan One",sans-serif;cursor:pointer;
@@ -138,14 +141,16 @@ const run=()=>S&&S.status==="run"&&S.step<+S.cards;
 const live=()=>run()&&!!S.lot;
 
 /* ---------- morceaux d'écran ---------- */
-function lotCard(v,b,isNew){const cls=b>0?"b":v<0?"x":"g";
- const main=b>0?`<span class="e">🎁</span>${v?`<small>et ${esc(sgn(v))} 🍌</small>`:""}`:`${esc(sgn(v))}<small>🍌</small>`;
- return `<div class="cr-lot ${cls}${isNew?" new":""}" aria-hidden="true">${main}${b>1?`<small>${b} boosters</small>`:b?`<small>1 booster</small>`:""}</div>`;}
+function lotCard(v,b,h,isNew){const cls=b>0?"b":h>0?"t":v<0?"x":"g",x=[];
+ if(b>0)x.push(`<small>${b} booster${b>1?"s":""}</small>`);if(h>0&&b>0)x.push(`<small>et ${esc(htxt(h))}</small>`);
+ if(v&&(b>0||h>0))x.push(`<small>et ${esc(sgn(v))} 🍌</small>`);
+ const main=b>0?`<span class="e">${b>1?"🎁🎁":"🎁"}</span>`:h>0?`<span class="e">⏳</span>-${h%60?h+"<small>min</small>":h/60+" h"}<small>d'attente</small>`:`${esc(sgn(v))}<small>🍌</small>`;
+ return `<div class="cr-lot ${cls}${isNew?" new":""}" aria-hidden="true">${main}${x.join("")}</div>`;}
 // lots encore à venir (le paquet du jour est public, l'ordre non)
-function leftLots(){const all=(S.lots||[]).map(v=>({v,b:0})).concat(Array.from({length:+S.boosts||0},()=>({v:0,b:1})));
- const out=(S.rounds||[]).map(r=>({v:+r.lv,b:+r.lb}));if(S.lot)out.push({v:+S.lot.lv,b:+S.lot.lb});
- out.forEach(o=>{const i=all.findIndex(a=>a.v===o.v&&a.b===o.b);if(i>=0)all.splice(i,1);});
- return all.sort((a,b)=>b.b-a.b||b.v-a.v);}
+function leftLots(){const all=(S.items||[]).map(x=>({v:+x.v||0,b:+x.b||0,h:+x.h||0}));
+ const out=(S.rounds||[]).map(r=>({v:+r.lv||0,b:+r.lb||0,h:+r.lh||0}));if(S.lot)out.push({v:+S.lot.lv||0,b:+S.lot.lb||0,h:+S.lot.lh||0});
+ out.forEach(o=>{const i=all.findIndex(a=>a.v===o.v&&a.b===o.b&&a.h===o.h);if(i>=0)all.splice(i,1);});
+ return all.sort((a,b)=>b.b-a.b||b.h-a.h||b.v-a.v);}
 function bannerHTML(){const n=+S.inN||0,need=+S.minPlayers||2;
  if(S.status!=="run"){const last=(S.rounds||[]).slice(-1)[0];return `<div class="cr-ban"><span class="big">Criée terminée</span>${last&&last.at?`Dernier lot adjugé à ${esc(hh(+last.at))}. `:""}Prochaine Criée demain à ${esc(hh(+S.next.startAt))}.</div>`;}
  if(!S.lot){
@@ -154,13 +159,13 @@ function bannerHTML(){const n=+S.inN||0,need=+S.minPlayers||2;
  const bd=+S.bidN||0,left=+S.dueAt-nowS();
  return `<div class="cr-ban"><span class="big">Lot ${S.step+1}/${S.cards} : misez !</span>${bd}/${n} ${n>1?"ont":"a"} misé · adjugé dès que tout le monde a misé, au plus tard à ${esc(hh(+S.dueAt))} (dans ${esc(dur(left))})</div>`;}
 function lotHTML(){const L=S.lot,isNew=S.step+1>shownStep();
- const left=leftLots().map(x=>`<span class="${x.b?"b":x.v<0?"x":"g"}">${x.b?"🎁":esc(sgn(x.v))}</span>`).join("");
+ const left=leftLots().map(x=>`<span class="${x.b?"b":x.h?"t":x.v<0?"x":"g"}">${x.b?"🎁".repeat(Math.min(x.b,3)):x.h?"⏳ -"+(x.h%60?x.h+" min":x.h/60+" h"):esc(sgn(x.v))}</span>`).join("");
  const head=`<h3>Le lot en vente<small>${esc(S.step)}/${esc(S.cards)} adjugés</small></h3>`;
  if(!L)return `${head}<div class="cr-lotw"><div class="cr-lot q" aria-hidden="true">?</div><div class="cr-lotd"><span class="cr-sub">${run()?"Le commissaire-priseur singe prépare le premier lot…":"Plus rien à vendre aujourd'hui."}</span></div></div>${left&&run()?`<div class="cr-left" aria-label="Lots à venir">${left}</div>`:""}`;
  const pos=!!L.pos;
- return `${head}<div class="cr-lotw" role="group" aria-label="Lot ${S.step+1} : ${esc(ltxt(+L.v,+L.b))}">${lotCard(+L.v,+L.b,isNew)}<div class="cr-lotd">
+ return `${head}<div class="cr-lotw" role="group" aria-label="Lot ${S.step+1} : ${esc(lt(L))}">${lotCard(+L.v,+L.b,+L.h||0,isNew)}<div class="cr-lotd">
    <span class="cr-dir ${pos?"up":"dn"}">${pos?"⬆️ La plus HAUTE mise l'emporte":"⬇️ La plus BASSE mise prend la perte"}</span>
-   ${+L.n>1?`<span class="cr-pot">Avec le report de ${+L.n-1} lot${+L.n>2?"s":""} : ${esc(ltxt(+L.v,+L.b))}</span>`:""}
+   ${+L.n>1?`<span class="cr-pot">Avec le report de ${+L.n-1} lot${+L.n>2?"s":""} : ${esc(lt(L))}</span>`:""}
    <span class="cr-sub">Les mises identiques s'annulent. Si tout s'annule, le lot reste en jeu et s'ajoute au suivant.</span></div></div>
   ${left?`<div class="cr-left" aria-label="Lots à venir après celui-ci">${left}</div>`:""}`;}
 function meHTML(){const me=S.me;
@@ -171,12 +176,12 @@ function meHTML(){const me=S.me;
   return `<div class="cr-join"><p class="cr-sub">Tu n'as pas participé à la Criée d'aujourd'hui.</p><button type="button" class="cr-big" id="crJoin"${busy?" disabled":""}>${busy?"…":"Je m'inscris pour demain"}</button></div>`;}
  const hand=me.hand||[],lv=live(),bid=lv?me.bid:null,all=Array.from({length:+S.cards||15},(_,i)=>i+1);
  const sc=+me.score;
- const msg=me.done?`Criée terminée${me.rank?` : tu finis <b>${esc(rk(+me.rank))}</b>`:""} avec ${esc(sc)} 🍌 → <b>+${esc(me.gain)} 🍌</b>${+me.boost?` et <b>${esc(me.boost)} booster${+me.boost>1?"s":""}</b>`:""}.`
+ const msg=me.done?`Criée terminée${me.rank?` : tu finis <b>${esc(rk(+me.rank))}</b>`:""} avec ${esc(sc)} 🍌 → <b>+${esc(me.gain)} 🍌</b>${+me.boost?` et <b>${esc(me.boost)} booster${+me.boost>1?"s":""}</b>`:""}${+me.mins?` et <b>${esc(htxt(+me.mins))}</b>`:""}.`
   :!lv?"Tes cartes sont prêtes. Tu pourras miser dès que le lot est dévoilé."
   :bid?`<b>✅ Tu mises ton ${esc(bid)}.</b> ${(+S.inN-(+S.bidN))>0?`En attente de ${+S.inN-(+S.bidN)} joueur${+S.inN-(+S.bidN)>1?"s":""}…`:"Adjugé dans un instant !"} Tu peux encore changer de carte.`
   :`<b>Choisis ta carte pour le lot ${S.step+1} !</b> Sans mise à ${esc(hh(+S.dueAt))}, une de tes cartes sera jouée au hasard.`;
  return `<h3>Ta main<small>${hand.length} carte${hand.length>1?"s":""}</small></h3>
-  <div class="cr-me"><div><span class="cr-sub">Score du jour</span><b class="${sc<0?"neg":""}">${esc(sgn(sc))} 🍌</b></div><div><span class="cr-sub">Boosters</span><b>${esc(me.boost)} 🎁</b></div><div><span class="cr-sub">Lots gagnés</span><b>${esc(me.wins)}</b></div></div>
+  <div class="cr-me"><div><span class="cr-sub">Score du jour</span><b class="${sc<0?"neg":""}">${esc(sgn(sc))} 🍌</b></div><div><span class="cr-sub">Bonus</span><b>${esc(me.boost)} 🎁${+me.mins?` <small class="cr-sub">⏳ -${+me.mins%60?+me.mins+" min":+me.mins/60+" h"}</small>`:""}</b></div><div><span class="cr-sub">Lots gagnés</span><b>${esc(me.wins)}</b></div></div>
   ${me.done?"":`<div class="cr-hand" role="group" aria-label="Tes cartes">${all.map(c=>{const has=hand.includes(c);
    return has?`<button type="button" class="cr-c${bid===c?" on":""}" data-c="${c}" aria-pressed="${bid===c}"${busy||!lv?" disabled":""} aria-label="Miser ${c}">${c}</button>`
     :`<span class="cr-c gone" aria-hidden="true">${c}</span>`;}).join("")}</div>`}
@@ -184,17 +189,17 @@ function meHTML(){const me=S.me;
   ${me.ghost?`<p class="cr-sub" style="text-align:center">👻 Admin : tu joues sans compter. Ta carte ne gêne personne, tu gagnes seulement les bananes d'un lot que tu aurais remporté (jamais de booster), et tu ne bloques pas les lots.</p>`:""}`;}
 function roundHTML(r,isNew){const pos=!!r.pos,bids=r.bids||[],cnt={};bids.forEach(b=>{cnt[b.c]=(cnt[b.c]||0)+1;});
  const w=r.w,me=S.me_uid,meAdm=S.me&&S.me.ghost;
- const head=w?`<b>${esc(nameOf(w))}</b> ${pos?"remporte":"se prend"} <b>${esc(ltxt(+r.v,+r.b))}</b> avec un ${esc(r.wc)} !`:`Toutes les mises se sont annulées : <b>${esc(ltxt(+r.v,+r.b))}</b> ${+r.s<+S.cards?"reste en jeu":"ne part chez personne"} !`;
+ const head=w?`<b>${esc(nameOf(w))}</b> ${pos?"remporte":"se prend"} <b>${esc(lt(r))}</b> avec un ${esc(r.wc)} !`:`Toutes les mises se sont annulées : <b>${esc(lt(r))}</b> ${+r.s<+S.cards?"reste en jeu":"ne part chez personne"} !`;
  return `<div class="cr-res${isNew?" new":""}"><span>Lot ${esc(r.s)} · ${head}</span>
   <div class="cr-bids">${bids.map(b=>`<span class="cr-bid${cnt[b.c]>1?" x":""}${b.uid===w?" w"+(pos?"":" neg"):""}"><i>${esc(b.c)}</i>${esc(nameOf(b.uid))}${b.uid===me?" (toi)":""}${b.a?" <small>· au hasard</small>":""}</span>`).join("")}</div>
   ${meAdm&&r.agc!=null?`<span class="cr-sub">👻 Ta carte : ${esc(r.agc)}${r.ag?` → tu ${pos?"gagnes":"prends"} ${esc(sgn(+r.v))} 🍌`:""}</span>`:""}</div>`;}
 function playersHTML(){const L=S.players||[],me=S.me_uid,lv=live();if(!L.length)return `<p class="cr-empty">Personne n'est encore inscrit. Sois le premier !</p>`;
  return `<ul class="cr-pl">${L.map((p,i)=>{const sc=+p.score,ic=S.status!=="run"&&p.rank?(["🥇","🥈","🥉"][+p.rank-1]||"🐒"):lv&&!p.admin?(p.bid?"✅":"⏳"):"🐒";
   return `<li class="${p.uid===me?"me":""}"><span aria-hidden="true">${ic}</span><span class="nm">${esc(p.name)}${p.uid===me?(p.admin?" (toi · ne compte pas)":" (toi)"):""}</span>
-   <span class="v${sc<0?" neg":""}">${esc(sgn(sc))} 🍌${+p.boost?` · ${esc(p.boost)} 🎁`:""}</span>
+   <span class="v${sc<0?" neg":""}">${esc(sgn(sc))} 🍌${+p.boost?` · ${esc(p.boost)} 🎁`:""}${+p.mins?` · ⏳`:""}</span>
    ${S.status==="run"&&(p.hand||[]).length?`<span class="hd" aria-label="Cartes restantes de ${esc(p.name)}">Reste : ${(p.hand||[]).join(" ")}</span>`:""}</li>`;}).join("")}</ul>`;}
 function logHTML(){const R=(S.rounds||[]).slice(0,-1).reverse();if(!R.length)return "";
- return `<div class="cr-box"><h3>Les lots précédents<small>${R.length}</small></h3><ul class="cr-log">${R.map(r=>`<li>Lot ${esc(r.s)} · ${esc(ltxt(+r.v,+r.b))} : ${r.w?`${esc(nameOf(r.w))} (${esc(r.wc)})`:"tout s'est annulé"}<br><small class="cr-sub">${(r.bids||[]).map(b=>`${esc(nameOf(b.uid))} ${esc(b.c)}`).join(" · ")}</small></li>`).join("")}</ul></div>`;}
+ return `<div class="cr-box"><h3>Les lots précédents<small>${R.length}</small></h3><ul class="cr-log">${R.map(r=>`<li>Lot ${esc(r.s)} · ${esc(lt(r))} : ${r.w?`${esc(nameOf(r.w))} (${esc(r.wc)})`:"tout s'est annulé"}<br><small class="cr-sub">${(r.bids||[]).map(b=>`${esc(nameOf(b.uid))} ${esc(b.c)}`).join(" · ")}</small></li>`).join("")}</ul></div>`;}
 
 function render(){if(!root||!S)return;const st=S.state,old=shownStep();
  $("#crBan").textContent=st?st.bananas:"…";$("#crStep").textContent=`${S.step}/${S.cards}`;
@@ -207,7 +212,7 @@ function render(){if(!root||!S)return;const st=S.state,old=shownStep();
   ${logHTML()}`;
  const j=$("#crJoin");if(j)j.addEventListener("click",join);
  root.querySelectorAll("button.cr-c").forEach(b=>b.addEventListener("click",()=>bid(+b.dataset.c)));
- $("#crHist").innerHTML=(S.hist||[]).map(h=>`<li>${esc(fmtDay(h.day))} : ${h.rank?`${esc(rk(+h.rank))}, `:""}${esc(sgn(+h.score))} 🍌 → +${esc(h.gain)} 🍌${+h.boost?` et ${esc(h.boost)} 🎁`:""}</li>`).join("");
+ $("#crHist").innerHTML=(S.hist||[]).map(h=>`<li>${esc(fmtDay(h.day))} : ${h.rank?`${esc(rk(+h.rank))}, `:""}${esc(sgn(+h.score))} 🍌 → +${esc(h.gain)} 🍌${+h.boost?` et ${esc(h.boost)} 🎁`:""}${+h.mins?` et ⏳ ${esc(htxt(+h.mins))}`:""}</li>`).join("");
  if(ADMIN){const o=$("#crOpen");o.textContent=S.open?"Cacher aux joueurs":"Ouvrir à tous les joueurs";o.classList.toggle("on",!S.open);
   $("#crState").textContent=S.open?"La Criée est ouverte à tous les joueurs (jeu de l'Arène, toujours là).":"La Criée est visible par toi seulement.";}
  if(old>=0&&S.step>old)vib(30);
@@ -219,7 +224,7 @@ function showLast(){const L=S.last;if(!L)return;
  const em=L.rank===1?"🥇":L.rank===2?"🥈":L.rank===3?"🥉":"🍌";
  o.innerHTML=`<div class="cr-card"><h3>Criée du ${esc(fmtDay(L.day))}</h3><div class="em" aria-hidden="true">${em}</div>
   <p>${L.rank?`Tu termines <b>${esc(rk(+L.rank))}</b> sur ${esc(L.n)} avec ${esc(sgn(+L.score))} 🍌 (${esc(L.wins)} lot${+L.wins>1?"s":""} gagné${+L.wins>1?"s":""}).`:`Tu as fini avec ${esc(sgn(+L.score))} 🍌.`}<br>
-  ${+L.gain||+L.boost?`Gain : <b>+${esc(L.gain)} 🍌</b>${+L.boost?` et <b>${esc(L.boost)} booster${+L.boost>1?"s":""}</b> 🎁`:""} !`:"Score négatif : pas de gain, mais tu ne perds rien de ta réserve."}</p>
+  ${+L.gain||+L.boost||+L.mins?`Gain : <b>+${esc(L.gain)} 🍌</b>${+L.boost?` et <b>${esc(L.boost)} booster${+L.boost>1?"s":""}</b> 🎁`:""}${+L.mins?` et <b>${esc(htxt(+L.mins))}</b> ⏳`:""} !`:"Score négatif : pas de gain, mais tu ne perds rien de ta réserve."}</p>
   <button type="button" class="cr-big" id="crOk">Continuer</button></div>`;
  root.appendChild(o);const b=o.querySelector("#crOk");b.focus({preventScroll:true});
  b.addEventListener("click",()=>{o.remove();const d=L.day;S.last=null;rpc("mf_cri_seen",{p_day:d}).then(x=>{take(x);render();},()=>{});});}
@@ -253,12 +258,12 @@ function build(){
  <aside class="cr-panel" id="crPanel" aria-label="Règles et réglages">
   <div class="cr-ph"><h3>Règles</h3><button type="button" class="cr-btn" style="position:static" id="crPanelX" aria-label="Fermer les règles">✕</button></div>
   <ul class="r">
-   <li>Chaque jour, une <b>Criée commune</b> de <b>15 lots</b> : 9 lots de bananes (+2 à +18 🍌), <b>1 booster</b> 🎁 et <b>5 pertes</b> (-2 à -10 🍌). C'est <b>gratuit</b>.</li>
+   <li>Chaque jour, une <b>Criée commune</b> de <b>15 lots</b> : <b>2 boosters</b> 🎁🎁, <b>1 booster</b> 🎁, <b>2 h d'attente en moins</b> ⏳, 7 lots de bananes (+10 à +25 🍌) et <b>5 pertes</b> (-2 à -10 🍌). C'est <b>gratuit</b>.</li>
    <li>Tu as <b>15 cartes, de 1 à 15</b>. Pour chaque lot, tu en mises <b>une en secret</b>. Une carte jouée est perdue pour la journée.</li>
    <li>Lot de bananes ou booster : la <b>plus haute</b> mise l'emporte. Perte : la <b>plus basse</b> mise se la prend.</li>
    <li><b>Les mises identiques s'annulent</b> : seules les cartes jouées par un seul joueur comptent. Si tout s'annule, le lot reste et <b>s'ajoute au suivant</b>.</li>
    <li>1er lot à <b>10 h</b> (il faut au moins 2 joueurs). Le lot suivant arrive <b>dès que tout le monde a misé</b>, au plus tard 1 h après. Sans mise, une de tes cartes est jouée <b>au hasard</b>.</li>
-   <li>À la fin, tu gagnes ton score s'il est positif, et tes boosters. Tu ne perds jamais de bananes de ta réserve.</li>
+   <li>À la fin, tu gagnes ton score s'il est positif, tes boosters et ton temps d'attente en moins (sur ton prochain booster, ou mis de côté si ton stock est plein). Tu ne perds jamais de bananes de ta réserve.</li>
    <li>Tu peux entrer en cours de route : tu reçois une carte au hasard par lot restant. Les cartes qui restent à chacun sont visibles.</li>
    <li>Une notification à chaque lot, et une quand tout le monde n'attend plus que toi (réglage « enchères » des notifications). À minuit, une Criée pas finie s'arrête.</li>
   </ul>
@@ -311,7 +316,7 @@ async function boot(){
    if(R&&!me){const started=+I.startAt<=nowS();
     if(L)return {line:`Lot ${I.step+1}/${I.cards} en vente · ${I.inN} joueur${+I.inN>1?"s":""} : entre dans la Criée !`,pre:"Adjugé au plus tard dans ",in:due,hot:true};
     return {line:started?`La Criée attend ses enchérisseurs (${I.inN}/${I.minPlayers}) : entre !`:`Ouverture à ${hh(+I.startAt)} : inscris-toi, c'est gratuit !`,pre:started?"":"Ouverture dans ",in:started?null:+I.startAt-nowS(),hot:true};}
-   if(me&&R&&L&&!me.bid)return {line:`À toi de miser sur le lot ${I.step+1} : ${ltxt(+I.lot.v,+I.lot.b)} !`,pre:"Au plus tard dans ",in:due,hot:true};
+   if(me&&R&&L&&!me.bid)return {line:`À toi de miser sur le lot ${I.step+1} : ${lt(I.lot)} !`,pre:"Au plus tard dans ",in:due,hot:true};
    if(me&&R&&L)return {line:`Tu mises ton ${me.bid} · ${I.bidN}/${I.inN} ont misé · score ${sgn(+me.score)} 🍌`,pre:"Au plus tard dans ",in:due,hot:false};
    if(me&&R)return {line:`Inscrit · ${I.inN}/${I.minPlayers} joueurs`,pre:+I.startAt>nowS()?"Ouverture dans ":"",in:+I.startAt>nowS()?+I.startAt-nowS():null,hot:false};
    if(me&&me.done)return {line:`${me.rank?rk(+me.rank)+" · ":""}${sgn(+me.score)} 🍌 aujourd'hui`,pre:"Prochaine Criée dans ",in:tomorrow,hot:false};
