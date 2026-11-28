@@ -28,7 +28,7 @@ const WH={
 const IMG={fond:"packs/roue-fond.webp",cadre:"packs/roue-cadre.webp",ptr:"packs/roue-pointeur.webp",logo:"packs/roue-logo.webp",scam:"packs/monkey-scam.webp",scam2:"packs/monkey-scam-ferme.webp"};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ERR={no_bananas:"Pas assez de bananes.",wheel_limit:"Plus de tours aujourd'hui : reviens demain !",wheel_free_used:"Tu as déjà pris ton tour doré aujourd'hui.",
- wheel_closed:"La roue n'est pas encore ouverte.",wheel_pending:"Choisis d'abord : garder ton gain ou le doubler.",wheel_no_relance:"Tu n'as pas de relance.",
+ wheel_closed:"The Monkey Wheel n'est pas dans les jeux de cette semaine.",wheel_pending:"Choisis d'abord : garder ton gain ou le doubler.",wheel_no_relance:"Tu n'as pas de relance.",
  wheel_nothing:"Rien à doubler.",not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
 const rpc=(n,a)=>window.MF_RPC(n,a||{});

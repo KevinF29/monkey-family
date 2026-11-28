@@ -40,7 +40,7 @@ const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* ---------- état (le serveur fait foi) ---------- */
 let S={bal:0,left:TURNS,feed:[],spins:0,spent:0,won:0,boosters:0,mins:0};
 let ME="Admin",ADMIN=false,force="",busy=false,sound=true,loaded=false;
-const ERR={no_bananas:"Pas assez de bananes.",slot_limit:"Plus de tours aujourd'hui : reviens demain !",slot_closed:"La machine n'est pas encore ouverte.",not_member:"Ton accès est en pause."};
+const ERR={no_bananas:"Pas assez de bananes.",slot_limit:"Plus de tours aujourd'hui : reviens demain !",slot_closed:"La Banana Machine n'est pas dans les jeux de cette semaine.",not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
 function applyState(st){if(!st)return;S.bal=+st.bananas||0;try{if(window.MF_APPLY)window.MF_APPLY(st);}catch(e){}}

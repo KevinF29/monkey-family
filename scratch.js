@@ -22,7 +22,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const label=r=>!r?"":r.t==="ban"?r.v+" banane"+(r.v>1?"s":""):r.t==="boost"?r.v+" booster"+(r.v>1?"s":""):(r.v/60)+" h d'attente en moins";
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const rpc=(n,a)=>window.MF_RPC(n,a||{});
-const ERR={no_bananas:"Pas assez de bananes.",scratch_limit:"Plus de tickets payants aujourd'hui : reviens demain !",scratch_free_used:"Ton ticket gratuit du jour est déjà pris.",scratch_closed:"Les tickets ne sont pas encore en vente.",not_member:"Ton accès est en pause."};
+const ERR={no_bananas:"Pas assez de bananes.",scratch_limit:"Plus de tickets payants aujourd'hui : reviens demain !",scratch_free_used:"Ton ticket gratuit du jour est déjà pris.",scratch_closed:"Le Monkey Cash n'est pas dans les jeux de cette semaine.",not_member:"Ton accès est en pause."};
 const errText=e=>{const m=String(e&&e.message||e);const k=Object.keys(ERR).find(x=>m.includes(x));return k?ERR[k]:"Connexion impossible : réessaie dans un instant.";};
 
 /* ---------- état ---------- */
